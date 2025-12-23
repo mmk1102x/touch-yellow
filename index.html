@@ -3,132 +3,148 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Touch Yellow RE - Menu</title>
-    <!-- Importing a playful font similar to the image -->
-    <link href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Roboto:wght@400&display=swap" rel="stylesheet">
+    <title>Touch Yellow RE</title>
+    <!-- Playful font for the title -->
+    <link href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Roboto:wght@700&display=swap" rel="stylesheet">
     <style>
         body {
             margin: 0;
             padding: 0;
-            background-color: #4d4d4d; /* Dark gray background */
+            background-color: #4d4d4d; /* Match the gray in your image */
+            color: white;
+            font-family: 'Roboto', sans-serif;
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
-            font-family: 'Roboto', sans-serif;
             overflow: hidden;
-            color: black;
         }
 
-        .menu-container {
+        /* Menu Screen Styling */
+        #menu-screen {
             text-align: center;
             display: flex;
             flex-direction: column;
             align-items: center;
         }
 
-        /* Title Styling */
         .title {
             font-family: 'Luckiest Guy', cursive;
             color: #f2ef45; /* Bright yellow */
-            font-size: 80px;
-            line-height: 0.9;
-            margin-bottom: 60px;
+            font-size: clamp(50px, 10vw, 90px);
+            line-height: 0.8;
+            margin-bottom: 50px;
             text-transform: uppercase;
-            letter-spacing: 2px;
-            /* Slight tilt to mimic the jagged look */
-            transform: skew(-5deg);
+            transform: skew(-2deg);
+            text-shadow: 3px 3px 0px #000;
         }
 
-        .title span {
-            display: block;
-        }
-
-        /* Menu Items Container */
-        .menu-options {
+        .options-container {
             display: flex;
             flex-direction: column;
-            align-items: flex-start; /* Align dots to the left of the text group */
-            gap: 20px;
+            gap: 30px;
+            align-items: flex-start;
         }
 
         .option {
             display: flex;
             align-items: center;
             cursor: pointer;
-            transition: transform 0.1s;
-            text-decoration: none;
-            color: black;
+            transition: transform 0.2s;
+            color: #000; /* Text color from image */
         }
 
         .option:hover {
-            transform: scale(1.05);
+            transform: scale(1.1);
         }
 
-        /* The circular buttons */
         .circle {
-            background-color: #f2a922; /* Orange-yellow */
+            background-color: #f2a922; /* Orange-yellow from image */
             border-radius: 50%;
             margin-right: 15px;
-            border: 2px solid #b37a15; /* Slight border for depth */
+            border: 3px solid #333;
         }
 
-        /* Specific sizes for circles as seen in image */
-        .start-circle {
-            width: 40px;
-            height: 40px;
+        /* Different sizes to match your image */
+        .start-circle { width: 45px; height: 45px; }
+        .exit-circle { width: 75px; height: 75px; }
+
+        .label { font-size: 30px; font-weight: 900; }
+        .label-large { font-size: 65px; }
+
+        /* Game Screen Styling (Hidden by default) */
+        #game-screen {
+            display: none;
+            text-align: center;
         }
 
-        .exit-circle {
-            width: 70px;
-            height: 70px;
+        #maze-container {
+            width: 500px;
+            height: 500px;
+            background: #333;
+            border: 5px solid #f2ef45;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
         }
 
-        /* Text labels */
-        .label {
-            font-size: 32px;
+        .btn-back {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background: #f2ef45;
+            color: black;
+            border: none;
+            cursor: pointer;
             font-weight: bold;
         }
-
-        .exit-label {
-            font-size: 60px;
-        }
-
     </style>
 </head>
 <body>
 
-    <div class="menu-container">
-        <h1 class="title">
-            Touch yellow<br>
-            <span>RE</span>
-        </h1>
-
-        <div class="menu-options">
-            <!-- Start Button -->
+    <!-- MENU SCREEN -->
+    <div id="menu-screen">
+        <h1 class="title">Touch yellow<br>RE</h1>
+        
+        <div class="options-container">
             <div class="option" onclick="startGame()">
                 <div class="circle start-circle"></div>
                 <div class="label"><- Start/Restart</div>
             </div>
 
-            <!-- Exit Button -->
             <div class="option" onclick="exitGame()">
                 <div class="circle exit-circle"></div>
-                <div class="label exit-label"><-Exit</div>
+                <div class="label label-large"><-Exit</div>
             </div>
         </div>
     </div>
 
+    <!-- GAME SCREEN -->
+    <div id="game-screen">
+        <h1>Maze Level 1</h1>
+        <div id="maze-container">
+            <p>Maze Canvas will go here!</p>
+        </div>
+        <button class="btn-back" onclick="showMenu()">Back to Menu</button>
+    </div>
+
     <script>
         function startGame() {
-            alert("Game Starting...");
-            // You can redirect to your game page here:
-            // window.location.href = "game.html";
+        // This points to the new file inside the levels folder
+        window.location.href = "levels/level1.html";
+        }
+
+        function showMenu() {
+            document.getElementById('game-screen').style.display = 'none';
+            document.getElementById('menu-screen').style.display = 'flex';
         }
 
         function exitGame() {
-            alert("Exiting... (Note: Browser security usually prevents closing tabs via script unless opened by one)");
-            // window.close();
+            if(confirm("Close the game?")) {
+                window.close();
+                // If window.close doesn't work (browser security), we redirect
+                window.location.href = "https://github.com"; 
+            }
         }
     </script>
 

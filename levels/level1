@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Touch Yellow - Level 1</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: black;
+        }
+
+        canvas {
+            display: block;
+            cursor: none; /* Hide cursor for difficulty */
+        }
+
+        /* The custom cursor/dot */
+        #cursor-dot {
+            width: 10px;
+            height: 10px;
+            background: white;
+            border-radius: 50%;
+            position: absolute;
+            pointer-events: none;
+            z-index: 10;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="cursor-dot"></div>
+    <canvas id="gameCanvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        const dot = document.getElementById('cursor-dot');
+
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            drawLevel();
+        }
+
+        function drawLevel() {
+            const w = canvas.width;
+            const h = canvas.height;
+
+            // 1. Background (Black = Danger)
+            ctx.fillStyle = "black";
+            ctx.fillRect(0, 0, w, h);
+
+            // 2. The Blue Path (Safe)
+            ctx.fillStyle = "#26a9e1"; // The exact blue from your image
+            
+            // Draw the "S" shape path from your screenshot
+            // Horizontal bottom
+            ctx.fillRect(0, h * 0.65, w * 0.6, h * 0.15); 
+            // Vertical middle
+            ctx.fillRect(w * 0.55, h * 0.4, h * 0.1, h * 0.25);
+            // Horizontal top-middle
+            ctx.fillRect(w * 0.55, h * 0.4, w * 0.4, h * 0.1);
+            // Vertical right
+            ctx.fillRect(w * 0.9, h * 0.1, h * 0.1, h * 0.35);
+            // Horizontal top
+            ctx.fillRect(w * 0.6, h * 0.1, w * 0.35, h * 0.1);
+
+            // 3. The Goal (Yellow/Orange)
+            ctx.fillStyle = "#f1a92a"; // The exact orange from your image
+            ctx.fillRect(w * 0.6, h * 0.02, h * 0.15, h * 0.08);
+        }
+
+        window.addEventListener('mousemove', (e) => {
+            // Update custom dot position
+            dot.style.left = e.clientX - 5 + 'px';
+            dot.style.top = e.clientY - 5 + 'px';
+
+            // Collision Check
+            const pixel = ctx.getImageData(e.clientX, e.clientY, 1, 1).data;
+            const r = pixel[0], g = pixel[1], b = pixel[2];
+
+            // If it's BLACK (0,0,0) -> Back to menu
+            if (r === 0 && g === 0 && b === 0) {
+                window.location.href = "../index.html";
+            }
+
+            // If it's YELLOW/ORANGE -> Next level
+            if (r === 241 && g === 169 && b === 42) {
+                alert("Level 1 Clear!");
+                // window.location.href = "level2.html"; // You'll create this later!
+            }
+        });
+
+        window.addEventListener('resize', resize);
+        resize();
+    </script>
+</body>
+</html>
