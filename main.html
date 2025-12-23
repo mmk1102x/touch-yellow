@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Touch Yellow RE - Menu</title>
+    <!-- Importing a playful font similar to the image -->
+    <link href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Roboto:wght@400&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #4d4d4d; /* Dark gray background */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: 'Roboto', sans-serif;
+            overflow: hidden;
+            color: black;
+        }
+
+        .menu-container {
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* Title Styling */
+        .title {
+            font-family: 'Luckiest Guy', cursive;
+            color: #f2ef45; /* Bright yellow */
+            font-size: 80px;
+            line-height: 0.9;
+            margin-bottom: 60px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            /* Slight tilt to mimic the jagged look */
+            transform: skew(-5deg);
+        }
+
+        .title span {
+            display: block;
+        }
+
+        /* Menu Items Container */
+        .menu-options {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start; /* Align dots to the left of the text group */
+            gap: 20px;
+        }
+
+        .option {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            transition: transform 0.1s;
+            text-decoration: none;
+            color: black;
+        }
+
+        .option:hover {
+            transform: scale(1.05);
+        }
+
+        /* The circular buttons */
+        .circle {
+            background-color: #f2a922; /* Orange-yellow */
+            border-radius: 50%;
+            margin-right: 15px;
+            border: 2px solid #b37a15; /* Slight border for depth */
+        }
+
+        /* Specific sizes for circles as seen in image */
+        .start-circle {
+            width: 40px;
+            height: 40px;
+        }
+
+        .exit-circle {
+            width: 70px;
+            height: 70px;
+        }
+
+        /* Text labels */
+        .label {
+            font-size: 32px;
+            font-weight: bold;
+        }
+
+        .exit-label {
+            font-size: 60px;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="menu-container">
+        <h1 class="title">
+            Touch yellow<br>
+            <span>RE</span>
+        </h1>
+
+        <div class="menu-options">
+            <!-- Start Button -->
+            <div class="option" onclick="startGame()">
+                <div class="circle start-circle"></div>
+                <div class="label"><- Start/Restart</div>
+            </div>
+
+            <!-- Exit Button -->
+            <div class="option" onclick="exitGame()">
+                <div class="circle exit-circle"></div>
+                <div class="label exit-label"><-Exit</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function startGame() {
+            alert("Game Starting...");
+            // You can redirect to your game page here:
+            // window.location.href = "game.html";
+        }
+
+        function exitGame() {
+            alert("Exiting... (Note: Browser security usually prevents closing tabs via script unless opened by one)");
+            // window.close();
+        }
+    </script>
+
+</body>
+</html>
