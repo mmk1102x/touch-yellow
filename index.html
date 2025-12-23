@@ -4,114 +4,43 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Touch Yellow RE</title>
-    <!-- Playful font for the title -->
     <link href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Roboto:wght@700&display=swap" rel="stylesheet">
     <style>
-        body {
-            margin: 0;
-            padding: 0;
-            background-color: #4d4d4d; /* Match the gray in your image */
-            color: white;
-            font-family: 'Roboto', sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            overflow: hidden;
-        }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; font-family: 'Roboto', sans-serif; background-color: #4d4d4d; }
+        
+        /* Screens */
+        .screen { position: absolute; width: 100%; height: 100%; display: none; }
+        #menu-screen { display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 20; }
+        
+        /* The Game World */
+        #game-screen { background-color: black; z-index: 10; cursor: default; }
 
-        /* Menu Screen Styling */
-        #menu-screen {
-            text-align: center;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .title {
-            font-family: 'Luckiest Guy', cursive;
-            color: #f2ef45; /* Bright yellow */
-            font-size: clamp(50px, 10vw, 90px);
-            line-height: 0.8;
-            margin-bottom: 50px;
-            text-transform: uppercase;
-            transform: skew(-2deg);
-            text-shadow: 3px 3px 0px #000;
-        }
-
-        .options-container {
-            display: flex;
-            flex-direction: column;
-            gap: 30px;
-            align-items: flex-start;
-        }
-
-        .option {
-            display: flex;
-            align-items: center;
-            cursor: pointer;
-            transition: transform 0.2s;
-            color: #000; /* Text color from image */
-        }
-
-        .option:hover {
-            transform: scale(1.1);
-        }
-
-        .circle {
-            background-color: #f2a922; /* Orange-yellow from image */
-            border-radius: 50%;
-            margin-right: 15px;
-            border: 3px solid #333;
-        }
-
-        /* Different sizes to match your image */
+        /* Menu UI */
+        .title { font-family: 'Luckiest Guy', cursive; color: #f2ef45; font-size: clamp(50px, 10vw, 90px); line-height: 0.8; margin-bottom: 80px; text-transform: uppercase; text-shadow: 3px 3px 0px #000; text-align: center; pointer-events: none; }
+        .options-container { display: flex; flex-direction: column; gap: 40px; width: 300px; }
+        .option { display: flex; align-items: center; cursor: pointer; color: #000; transition: transform 0.1s; }
+        .option:hover { transform: scale(1.05); }
+        .circle { background-color: #f2a922; border-radius: 50%; border: 3px solid #333; margin-right: 20px; flex-shrink: 0; }
         .start-circle { width: 45px; height: 45px; }
         .exit-circle { width: 75px; height: 75px; }
-
-        .label { font-size: 30px; font-weight: 900; }
+        .label { font-size: 30px; font-weight: 900; white-space: nowrap; }
         .label-large { font-size: 65px; }
 
-        /* Game Screen Styling (Hidden by default) */
-        #game-screen {
-            display: none;
-            text-align: center;
-        }
-
-        #maze-container {
-            width: 500px;
-            height: 500px;
-            background: #333;
-            border: 5px solid #f2ef45;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            position: relative;
-        }
-
-        .btn-back {
-            margin-top: 20px;
-            padding: 10px 20px;
-            background: #f2ef45;
-            color: black;
-            border: none;
-            cursor: pointer;
-            font-weight: bold;
-        }
+        /* Maze Segments */
+        .path { position: absolute; background-color: #26a9e1; z-index: 11; }
+        .goal { position: absolute; background-color: #f1a92a; z-index: 12; }
     </style>
 </head>
-<body>
+<body oncontextmenu="return false;"> <!-- Block right click to prevent cheating -->
 
     <!-- MENU SCREEN -->
-    <div id="menu-screen">
+    <div id="menu-screen" class="screen" style="display: flex;">
         <h1 class="title">Touch yellow<br>RE</h1>
-        
         <div class="options-container">
-            <div class="option" onclick="startGame()">
-                <div class="circle start-circle"></div>
+            <div class="option" onclick="startLevel(1)">
+                <div id="start-anchor" class="circle start-circle"></div>
                 <div class="label"><- Start/Restart</div>
             </div>
-
             <div class="option" onclick="exitGame()">
                 <div class="circle exit-circle"></div>
                 <div class="label label-large"><-Exit</div>
@@ -120,33 +49,85 @@
     </div>
 
     <!-- GAME SCREEN -->
-    <div id="game-screen">
-        <h1>Maze Level 1</h1>
-        <div id="maze-container">
-            <p>Maze Canvas will go here!</p>
-        </div>
-        <button class="btn-back" onclick="showMenu()">Back to Menu</button>
+    <div id="game-screen" class="screen" onmouseenter="checkDeath(event)">
+        <!-- Path segments will be generated here by JavaScript -->
     </div>
 
     <script>
-        function startGame() {
-        // This points to the new file inside the levels folder
-        window.location.href = "levels/level1.html";
+        const menu = document.getElementById('menu-screen');
+        const game = document.getElementById('game-screen');
+        const startAnchor = document.getElementById('start-anchor');
+
+        let gameActive = false;
+
+        function startLevel(lvl) {
+            game.innerHTML = ''; // Clear previous level
+            game.style.display = 'block';
+            menu.style.display = 'none';
+            
+            // Get Start Button Position
+            const rect = startAnchor.getBoundingClientRect();
+            const startX = rect.left;
+            const startY = rect.top;
+            const size = rect.width;
+
+            if (lvl === 1) {
+                createPath(0, startY, startX + size + 200, size); // Path from left to start button and beyond
+                createPath(startX + size + 150, startY - 200, size, 200 + size); // Vertical Up
+                createPath(startX + size + 150, startY - 200, 300, size); // Horizontal Right
+                createPath(startX + size + 400, startY - 450, size, 250 + size); // Vertical Up again
+                createPath(startX + size + 200, startY - 450, 200 + size, size); // Horizontal Left
+                
+                // The Goal (Yellow)
+                createGoal(startX + size + 200, startY - 550, 100, 100);
+            }
+
+            // Small delay to prevent instant death when clicking
+            setTimeout(() => { gameActive = true; }, 100);
         }
 
-        function showMenu() {
-            document.getElementById('game-screen').style.display = 'none';
-            document.getElementById('menu-screen').style.display = 'flex';
+        function createPath(x, y, w, h) {
+            const div = document.createElement('div');
+            div.className = 'path';
+            div.style.left = x + 'px';
+            div.style.top = y + 'px';
+            div.style.width = w + 'px';
+            div.style.height = h + 'px';
+            // Stop death trigger when mouse is over the path
+            div.onmouseenter = (e) => { e.stopPropagation(); }; 
+            game.appendChild(div);
+        }
+
+        function createGoal(x, y, w, h) {
+            const div = document.createElement('div');
+            div.className = 'goal';
+            div.style.left = x + 'px';
+            div.style.top = y + 'px';
+            div.style.width = w + 'px';
+            div.style.height = h + 'px';
+            div.onmouseenter = (e) => {
+                e.stopPropagation();
+                alert("LEVEL COMPLETE!");
+                resetToMenu();
+            };
+            game.appendChild(div);
+        }
+
+        function checkDeath(e) {
+            if (!gameActive) return;
+            // If mouse enters the black background (#game-screen)
+            resetToMenu();
+        }
+
+        function resetToMenu() {
+            gameActive = false;
+            game.style.display = 'none';
+            menu.style.display = 'flex';
         }
 
         function exitGame() {
-            if(confirm("Close the game?")) {
-                window.close();
-                // If window.close doesn't work (browser security), we redirect
-                window.location.href = "https://github.com"; 
-            }
+            window.location.href = "https://github.com/mmk1102x/touch-yellow";
         }
     </script>
-
 </body>
 </html>
