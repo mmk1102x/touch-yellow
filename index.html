@@ -5,106 +5,113 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Touch Yellow</title>
     
-    <!-- Browser Tab Logo -->
+    <!-- Tab Logo -->
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%23f2a922' stroke='%23333' stroke-width='10'/></svg>">
     
     <link href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Roboto:wght@700&display=swap" rel="stylesheet">
     <style>
+        /* 1. RESET & BLACK BACKGROUND */
         body, html { 
             margin: 0; padding: 0; width: 100%; height: 100%; 
-            overflow: hidden; font-family: 'Roboto', sans-serif; 
-            background-color: #4d4d4d; user-select: none;
+            background-color: black; /* The "Black Lines" for other resolutions */
+            overflow: hidden; 
+            font-family: 'Roboto', sans-serif; 
+            user-select: none;
             touch-action: none;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
-        
-        .screen { position: absolute; width: 100%; height: 100%; display: none; }
-        #menu-screen { background-color: #4d4d4d; z-index: 20; }
-        #game-screen { background-color: black; z-index: 10; cursor: default; }
+
+        /* 2. THE 16:9 GAME CONTAINER */
+        /* This div is the "Game Console". It always keeps 16:9 ratio */
+        #game-container {
+            width: 100%;
+            max-width: 177.78vh; /* Limit width based on height (16/9 = 1.7778) */
+            aspect-ratio: 16/9;
+            position: relative;
+            background-color: #4d4d4d; /* Menu Background */
+            overflow: hidden;
+            box-shadow: 0 0 50px rgba(0,0,0,0.5);
+        }
+
+        .screen { position: absolute; width: 100%; height: 100%; top: 0; left: 0; }
+        #menu-screen { z-index: 20; }
+        #game-screen { background-color: black; z-index: 10; display: none; }
 
         /* TITLE */
         .title { 
-            position: absolute; width: 100%; top: 15%;
+            position: absolute; width: 100%; top: 12%;
             font-family: 'Luckiest Guy', cursive; color: #f2ef45; 
-            font-size: clamp(50px, 12vw, 110px); line-height: 0.9; 
+            font-size: clamp(40px, 10cqi, 120px); /* Responsive font size based on container */
+            line-height: 0.9; 
             text-transform: uppercase; 
-            text-shadow: 3px 3px 0 #000;
+            text-shadow: 0.3cqi 0.3cqi 0 #000;
             text-align: center; 
         }
 
         /* MENU ITEMS */
         .menu-item { position: absolute; display: flex; align-items: center; }
         
-        /* Start Button */
-        #start-item { left: 0; bottom: 30%; }
-        .start-circle { 
-            width: 50px; height: 80px; 
+        /* Start Button - Restored to Circle, positioned inside the 16:9 box */
+        #start-item { left: 5%; bottom: 30%; }
+        #exit-item { left: 5%; bottom: 10%; }
+
+        .circle { 
+            width: 8cqi; height: 8cqi; /* cqi = Container Query Inline (scales with width) */
             background-color: #f2a922; 
-            border-radius: 0 50px 50px 0; 
-            border: 4px solid #333; 
-            border-left: none; 
+            border-radius: 50%; 
+            border: 0.5cqi solid #333; 
             cursor: pointer; 
             transition: transform 0.1s;
         }
 
-        /* Exit Button */
-        #exit-item { left: 5%; bottom: 10%; }
-        .exit-circle { 
-            width: 70px; height: 70px; 
-            background-color: #f2a922;
-            border-radius: 50%; 
-            border: 4px solid #333; 
-            cursor: pointer; 
-            transition: transform 0.1s;
+        .label { 
+            font-size: 4cqi; font-weight: 900; color: #000; 
+            margin-left: 2cqi; white-space: nowrap; pointer-events: none;
         }
+        .label-large { font-size: 6cqi; }
 
         .circle:hover { transform: scale(1.1); filter: brightness(1.1); }
         .circle:active { transform: scale(0.95); }
 
-        .label { 
-            font-size: 32px; font-weight: 900; color: #000; 
-            margin-left: 15px; white-space: nowrap; pointer-events: none;
-        }
-        .label-large { font-size: 60px; }
-
-        /* GAME ELEMENTS - FIXED HERE */
-        /* pointer-events MUST be auto so the game detects them */
+        /* GAME OBJECTS */
+        /* pointer-events: auto is CRITICAL for detection */
         .path { position: absolute; background-color: #26a9e1; z-index: 11; pointer-events: auto; }
         .goal { position: absolute; background-color: #f1a92a; z-index: 12; pointer-events: auto; }
 
-        /* DEBUG STYLES */
+        /* DEBUG */
         .debug-border { border: 2px solid red !important; opacity: 0.8; }
-        .debug-goal { border: 2px solid lime !important; }
-
-        @media (max-width: 600px) {
-            #start-item { bottom: 40%; }
-            .label { font-size: 24px; }
-            .title { top: 10%; }
-        }
     </style>
 </head>
 <body oncontextmenu="return false;">
 
-    <!-- MENU SCREEN -->
-    <div id="menu-screen" class="screen" style="display: flex;">
-        <h1 class="title">Touch Yellow</h1>
+    <!-- THE 16:9 CONTAINER -->
+    <div id="game-container">
         
-        <div id="start-item" class="menu-item">
-            <div id="start-anchor" class="start-circle circle" 
-                 onmousedown="startLevel(1)" 
-                 ontouchstart="startLevel(1)"></div>
-            <div class="label"><- Start/Restart</div>
+        <!-- MENU -->
+        <div id="menu-screen" class="screen">
+            <h1 class="title">Touch Yellow</h1>
+            
+            <div id="start-item" class="menu-item">
+                <div id="start-anchor" class="circle" 
+                     onmousedown="startLevel(1)" 
+                     ontouchstart="startLevel(1)"></div>
+                <div class="label"><- Start/Restart</div>
+            </div>
+
+            <div id="exit-item" class="menu-item">
+                <div class="circle" onclick="exitGame()"></div>
+                <div class="label label-large"><-Exit</div>
+            </div>
         </div>
 
-        <div id="exit-item" class="menu-item">
-            <div class="exit-circle circle" onclick="exitGame()"></div>
-            <div class="label label-large"><-Exit</div>
-        </div>
+        <!-- GAME -->
+        <div id="game-screen" class="screen"></div>
     </div>
 
-    <!-- GAME SCREEN -->
-    <div id="game-screen" class="screen"></div>
-
     <script>
+        const container = document.getElementById('game-container');
         const menu = document.getElementById('menu-screen');
         const game = document.getElementById('game-screen');
         const startAnchor = document.getElementById('start-anchor');
@@ -113,75 +120,94 @@
         let gameActive = false;
         let debugMode = false;
 
-        // CMD Console
-        window.cmd = function(command) {
-            if (command === 'hitbox') {
-                debugMode = !debugMode;
-                const paths = document.querySelectorAll('.path');
-                const goals = document.querySelectorAll('.goal');
-                paths.forEach(el => el.classList.toggle('debug-border'));
-                goals.forEach(el => el.classList.toggle('debug-goal'));
-                console.log(`%c Hitbox Mode: ${debugMode ? 'ON' : 'OFF'}`, 'color: lime; background: black;');
+        // --- FULLSCREEN LOGIC ---
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    console.log(`Error attempting to enable fullscreen: ${err.message}`);
+                });
             }
-        };
+        }
 
+        function exitFullscreenMode() {
+            if (document.fullscreenElement) {
+                document.exitFullscreen();
+            }
+        }
+
+        // --- GAME ENGINE ---
         function startLevel(lvl) {
-            const rect = startAnchor.getBoundingClientRect();
-            // Calculate center Y of the button to align path perfectly
-            const startY = rect.top + (rect.height / 2);
+            // Force Fullscreen on interaction
+            toggleFullscreen();
+
+            // Get coordinates relative to the 16:9 container, not the window
+            const containerRect = container.getBoundingClientRect();
+            const btnRect = startAnchor.getBoundingClientRect();
             
+            // Calculate button position as percentages of the container
+            // This ensures the level lines up perfect even if window resizes
+            const startTop = btnRect.top - containerRect.top;
+            const startLeft = btnRect.left - containerRect.left;
+            const btnHeight = btnRect.height;
+            const btnCenterY = startTop + (btnHeight / 2);
+
             game.innerHTML = ''; 
             isDraggingFromStart = true;
-            
             menu.style.display = 'none';
             game.style.display = 'block';
 
-            const isMobile = window.innerWidth < 600;
-            const scale = isMobile ? (window.innerWidth / 1000) : 1.0;
-            const thick = 90 * scale;
-
             if (lvl === 1) {
-                // *** SAFE LANDING ZONE ***
-                // A large block right under the button to prevent instant death
-                // rect.height is ~80px, we make it 100px tall
-                createPath(0, rect.top - 10, 200 * scale, rect.height + 20); 
+                // Everything is calculated in percentages (%) or relative units 
+                // to match the 16:9 container size.
+                
+                const w = containerRect.width;
+                const h = containerRect.height;
+                const thick = h * 0.15; // Path thickness is 15% of screen height (Chunky!)
 
-                // 1. Bottom Horizontal
-                // Align to center of button
-                const pathCenterY = startY - (thick / 2);
-                createPath(0, pathCenterY, 500 * scale, thick);
+                // 1. SAFE ZONE (Behind the button)
+                // Starts at x=0, goes to button center. Height is slightly taller than thickness for safety.
+                createPath(0, btnCenterY - (thick/2) - 10, startLeft + btnRect.width, thick + 20);
 
-                // 2. Vertical Up
-                createPath((500 * scale) - thick, pathCenterY - (220 * scale), thick, 220 * scale);
+                // 2. PATH 1: Bottom Horizontal (Left to Middle)
+                // y = aligned with button center
+                createPath(0, btnCenterY - (thick/2), w * 0.55, thick);
 
-                // 3. Horizontal Right
-                createPath((500 * scale) - thick, pathCenterY - (220 * scale), 400 * scale, thick);
+                // 3. PATH 2: Vertical Up
+                // x = end of path 1. y = goes up.
+                const path2X = (w * 0.55) - thick;
+                const path2Height = h * 0.35;
+                createPath(path2X, btnCenterY - (thick/2) - path2Height, thick, path2Height + thick);
 
-                // 4. Vertical Up
-                createPath((500 * scale) + (400 * scale) - thick*2, pathCenterY - (450 * scale), thick, 230 * scale);
+                // 4. PATH 3: Horizontal Right
+                const path3Y = btnCenterY - (thick/2) - path2Height;
+                createPath(path2X, path3Y, w * 0.35, thick);
 
-                // 5. Top Horizontal Left
-                createPath((450 * scale), pathCenterY - (450 * scale), (450 + 90) * scale, thick);
+                // 5. PATH 4: Vertical Up (Final)
+                const path4X = path2X + (w * 0.35) - thick;
+                const path4Height = h * 0.3;
+                createPath(path4X, path3Y - path4Height, thick, path4Height + thick);
 
-                // Goal
-                createGoal((450 * scale), pathCenterY - (540 * scale), 90 * scale, 90 * scale);
+                // 6. PATH 5: Top Horizontal Left
+                const path5Y = path3Y - path4Height;
+                const path5Width = w * 0.4;
+                createPath(path4X - path5Width + thick, path5Y, path5Width, thick);
+
+                // 7. GOAL
+                const goalSize = thick;
+                createGoal(path4X - path5Width, path5Y - goalSize, goalSize, goalSize);
             }
 
-            // Short safety delay
-            setTimeout(() => { gameActive = true; }, 100);
+            // Safety Delay
+            setTimeout(() => { gameActive = true; }, 200);
         }
 
         function handleMove(clientX, clientY, multiTouch) {
             if (!gameActive || !isDraggingFromStart) return;
-
-            if (multiTouch) {
-                resetToMenu();
-                return;
-            }
+            if (multiTouch) { resetToMenu(); return; }
 
             const target = document.elementFromPoint(clientX, clientY);
 
-            // Win Condition
+            // Win
             if (target && target.classList.contains('goal')) {
                 gameActive = false;
                 alert("Level 1 Clear!");
@@ -189,57 +215,66 @@
                 return;
             }
 
-            // Death Condition
-            // We check if we are touching a path, a goal, or the start button itself
-            const isSafe = target && (target.classList.contains('path') || target.classList.contains('goal') || target.classList.contains('start-circle'));
+            // Death - Check if touching path, goal, or start button
+            const isSafe = target && (
+                target.classList.contains('path') || 
+                target.classList.contains('goal') || 
+                target.id === 'start-anchor'
+            );
 
             if (!isSafe) {
-                if(debugMode) console.log("Died on:", target);
+                if(debugMode) {
+                    // Visual debug
+                    const dot = document.createElement('div');
+                    dot.style.position = 'fixed'; dot.style.left = clientX+'px'; dot.style.top = clientY+'px';
+                    dot.style.width = '5px'; dot.style.height = '5px'; dot.style.background = 'red'; dot.style.zIndex = 9999;
+                    document.body.appendChild(dot);
+                }
                 resetToMenu();
             }
         }
 
-        // Event Listeners
-        window.addEventListener('mousemove', (e) => {
-            if (gameActive) handleMove(e.clientX, e.clientY, false);
-        });
-        window.addEventListener('mouseup', () => { if (gameActive) resetToMenu(); });
-
-        window.addEventListener('touchmove', (e) => {
-            if (gameActive) {
-                e.preventDefault();
-                const touch = e.touches[0];
-                handleMove(touch.clientX, touch.clientY, e.touches.length > 1);
-            }
-        }, { passive: false });
-        window.addEventListener('touchend', () => { if (gameActive) resetToMenu(); });
-
-        function createPath(x, y, w, h) {
-            const div = document.createElement('div');
-            div.className = 'path';
-            div.style.left = x + 'px'; div.style.top = y + 'px';
-            div.style.width = w + 'px'; div.style.height = h + 'px';
-            game.appendChild(div);
+        // --- HELPERS ---
+        function createPath(l, t, w, h) {
+            const d = document.createElement('div');
+            d.className = 'path';
+            if(debugMode) d.classList.add('debug-border');
+            d.style.left = l + 'px'; d.style.top = t + 'px';
+            d.style.width = w + 'px'; d.style.height = h + 'px';
+            game.appendChild(d);
         }
 
-        function createGoal(x, y, w, h) {
-            const div = document.createElement('div');
-            div.className = 'goal';
-            div.style.left = x + 'px'; div.style.top = y + 'px';
-            div.style.width = w + 'px'; div.style.height = h + 'px';
-            game.appendChild(div);
+        function createGoal(l, t, w, h) {
+            const d = document.createElement('div');
+            d.className = 'goal';
+            d.style.left = l + 'px'; d.style.top = t + 'px';
+            d.style.width = w + 'px'; d.style.height = h + 'px';
+            game.appendChild(d);
         }
 
         function resetToMenu() {
             gameActive = false;
             isDraggingFromStart = false;
             game.style.display = 'none';
-            menu.style.display = 'flex';
+            menu.style.display = 'block'; // Use block to restore flex layout via CSS
         }
 
         function exitGame() {
+            exitFullscreenMode();
+            // Optional: redirect to google or github
             window.location.href = "https://github.com/mmk1102x/touch-yellow";
         }
+
+        // LISTENERS
+        window.addEventListener('mousemove', e => gameActive && handleMove(e.clientX, e.clientY));
+        window.addEventListener('touchmove', e => {
+            if(gameActive) { e.preventDefault(); handleMove(e.touches[0].clientX, e.touches[0].clientY, e.touches.length > 1); }
+        }, {passive: false});
+        window.addEventListener('mouseup', () => gameActive && resetToMenu());
+        window.addEventListener('touchend', () => gameActive && resetToMenu());
+        
+        // Debug
+        window.cmd = (c) => { if(c==='hitbox') { debugMode=!debugMode; document.querySelectorAll('.path').forEach(e=>e.classList.toggle('debug-border')); }};
     </script>
 </body>
 </html>
