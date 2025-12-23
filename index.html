@@ -6,32 +6,29 @@
     <title>Touch Yellow RE</title>
     <link href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Roboto:wght@700&display=swap" rel="stylesheet">
     <style>
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; font-family: 'Roboto', sans-serif; background-color: #4d4d4d; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; font-family: 'Roboto', sans-serif; background-color: #4d4d4d; user-select: none; }
         
-        /* Screens */
         .screen { position: absolute; width: 100%; height: 100%; display: none; }
         #menu-screen { display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 20; }
-        
-        /* The Game World */
-        #game-screen { background-color: black; z-index: 10; cursor: default; }
+        #game-screen { background-color: black; z-index: 10; }
 
-        /* Menu UI */
-        .title { font-family: 'Luckiest Guy', cursive; color: #f2ef45; font-size: clamp(50px, 10vw, 90px); line-height: 0.8; margin-bottom: 80px; text-transform: uppercase; text-shadow: 3px 3px 0px #000; text-align: center; pointer-events: none; }
-        .options-container { display: flex; flex-direction: column; gap: 40px; width: 300px; }
+        /* Title & Menu */
+        .title { font-family: 'Luckiest Guy', cursive; color: #f2ef45; font-size: clamp(40px, 8vw, 80px); line-height: 0.8; margin-bottom: 50px; text-transform: uppercase; text-shadow: 3px 3px 0px #000; text-align: center; pointer-events: none; }
+        .options-container { display: flex; flex-direction: column; gap: 30px; width: 300px; }
         .option { display: flex; align-items: center; cursor: pointer; color: #000; transition: transform 0.1s; }
         .option:hover { transform: scale(1.05); }
-        .circle { background-color: #f2a922; border-radius: 50%; border: 3px solid #333; margin-right: 20px; flex-shrink: 0; }
-        .start-circle { width: 45px; height: 45px; }
-        .exit-circle { width: 75px; height: 75px; }
-        .label { font-size: 30px; font-weight: 900; white-space: nowrap; }
-        .label-large { font-size: 65px; }
+        .circle { background-color: #f2a922; border-radius: 50%; border: 3px solid #333; margin-right: 15px; flex-shrink: 0; }
+        .start-circle { width: 40px; height: 40px; }
+        .exit-circle { width: 70px; height: 70px; }
+        .label { font-size: 28px; font-weight: 900; white-space: nowrap; }
+        .label-large { font-size: 60px; }
 
-        /* Maze Segments */
-        .path { position: absolute; background-color: #26a9e1; z-index: 11; }
-        .goal { position: absolute; background-color: #f1a92a; z-index: 12; }
+        /* Maze Pieces (No Images used) */
+        .path { position: absolute; background-color: #26a9e1; z-index: 11; pointer-events: auto; }
+        .goal { position: absolute; background-color: #f1a92a; z-index: 12; cursor: pointer; }
     </style>
 </head>
-<body oncontextmenu="return false;"> <!-- Block right click to prevent cheating -->
+<body oncontextmenu="return false;">
 
     <!-- MENU SCREEN -->
     <div id="menu-screen" class="screen" style="display: flex;">
@@ -49,8 +46,8 @@
     </div>
 
     <!-- GAME SCREEN -->
-    <div id="game-screen" class="screen" onmouseenter="checkDeath(event)">
-        <!-- Path segments will be generated here by JavaScript -->
+    <div id="game-screen" class="screen" onmousemove="checkDeath(event)">
+        <!-- Maze elements will be injected here -->
     </div>
 
     <script>
@@ -58,69 +55,82 @@
         const game = document.getElementById('game-screen');
         const startAnchor = document.getElementById('start-anchor');
 
-        let gameActive = false;
+        let isAlive = false;
 
         function startLevel(lvl) {
-            game.innerHTML = ''; // Clear previous level
-            game.style.display = 'block';
-            menu.style.display = 'none';
+            game.innerHTML = ''; // Clear old maze
+            isAlive = false; // Disable death briefly
             
-            // Get Start Button Position
+            menu.style.display = 'none';
+            game.style.display = 'block';
+
+            // Get the Start Circle position
             const rect = startAnchor.getBoundingClientRect();
             const startX = rect.left;
             const startY = rect.top;
-            const size = rect.width;
+            const thick = rect.width; // Use the circle size as path thickness
 
             if (lvl === 1) {
-                createPath(0, startY, startX + size + 200, size); // Path from left to start button and beyond
-                createPath(startX + size + 150, startY - 200, size, 200 + size); // Vertical Up
-                createPath(startX + size + 150, startY - 200, 300, size); // Horizontal Right
-                createPath(startX + size + 400, startY - 450, size, 250 + size); // Vertical Up again
-                createPath(startX + size + 200, startY - 450, 200 + size, size); // Horizontal Left
+                // We create the "S" shape path using DIVs
+                // 1. Horizontal from Left edge to Button
+                createPath(0, startY, startX + thick, thick);
                 
-                // The Goal (Yellow)
-                createGoal(startX + size + 200, startY - 550, 100, 100);
+                // 2. Vertical Up from Button
+                createPath(startX, startY - 150, thick, 150);
+
+                // 3. Horizontal Right
+                createPath(startX, startY - 150, 250, thick);
+
+                // 4. Vertical Up again
+                createPath(startX + 250 - thick, startY - 350, thick, 200);
+
+                // 5. Horizontal Left (Top path)
+                createPath(startX + 100, startY - 350, 150, thick);
+
+                // 6. The Goal (Yellow Box)
+                createGoal(startX + 100, startY - 430, 80, 80);
             }
 
-            // Small delay to prevent instant death when clicking
-            setTimeout(() => { gameActive = true; }, 100);
+            // Give the player 200ms to register their mouse position before enabling death
+            setTimeout(() => { isAlive = true; }, 200);
         }
 
         function createPath(x, y, w, h) {
-            const div = document.createElement('div');
-            div.className = 'path';
-            div.style.left = x + 'px';
-            div.style.top = y + 'px';
-            div.style.width = w + 'px';
-            div.style.height = h + 'px';
-            // Stop death trigger when mouse is over the path
-            div.onmouseenter = (e) => { e.stopPropagation(); }; 
-            game.appendChild(div);
+            const d = document.createElement('div');
+            d.className = 'path';
+            d.style.left = x + 'px';
+            d.style.top = y + 'px';
+            d.style.width = w + 'px';
+            d.style.height = h + 'px';
+            // Stop the move event from reaching the black background
+            d.onmousemove = (e) => { e.stopPropagation(); };
+            game.appendChild(d);
         }
 
         function createGoal(x, y, w, h) {
-            const div = document.createElement('div');
-            div.className = 'goal';
-            div.style.left = x + 'px';
-            div.style.top = y + 'px';
-            div.style.width = w + 'px';
-            div.style.height = h + 'px';
-            div.onmouseenter = (e) => {
-                e.stopPropagation();
+            const g = document.createElement('div');
+            g.className = 'goal';
+            g.style.left = x + 'px';
+            g.style.top = y + 'px';
+            g.style.width = w + 'px';
+            g.style.height = h + 'px';
+            g.onmouseenter = () => {
+                isAlive = false;
                 alert("LEVEL COMPLETE!");
                 resetToMenu();
             };
-            game.appendChild(div);
+            g.onmousemove = (e) => { e.stopPropagation(); };
+            game.appendChild(g);
         }
 
         function checkDeath(e) {
-            if (!gameActive) return;
-            // If mouse enters the black background (#game-screen)
-            resetToMenu();
+            if (isAlive) {
+                resetToMenu();
+            }
         }
 
         function resetToMenu() {
-            gameActive = false;
+            isAlive = false;
             game.style.display = 'none';
             menu.style.display = 'flex';
         }
