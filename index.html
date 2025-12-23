@@ -2,15 +2,20 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Touch Yellow RE</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Touch Yellow</title>
     
     <!-- Browser Tab Logo -->
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%23f2a922' stroke='%23333' stroke-width='10'/></svg>">
     
     <link href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Roboto:wght@700&display=swap" rel="stylesheet">
     <style>
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; font-family: 'Roboto', sans-serif; background-color: #4d4d4d; user-select: none; }
+        body, html { 
+            margin: 0; padding: 0; width: 100%; height: 100%; 
+            overflow: hidden; font-family: 'Roboto', sans-serif; 
+            background-color: #4d4d4d; user-select: none;
+            touch-action: none; /* Disables browser zoom/scroll while playing */
+        }
         
         .screen { position: absolute; width: 100%; height: 100%; display: none; }
         #menu-screen { background-color: #4d4d4d; z-index: 20; }
@@ -20,14 +25,14 @@
         .title { 
             position: absolute; width: 100%; top: 10%;
             font-family: 'Luckiest Guy', cursive; color: #f2ef45; 
-            font-size: clamp(40px, 10vw, 100px); line-height: 0.9; 
-            text-transform: uppercase; text-shadow: 4px 4px 0px #000; text-align: center; 
+            font-size: clamp(40px, 12vw, 110px); line-height: 0.9; 
+            text-transform: uppercase; text-shadow: 5px 5px 0px #000; text-align: center; 
         }
 
         /* Menu Items */
         .menu-item { position: absolute; display: flex; align-items: center; }
         
-        /* Start Button at the far left edge to match the level start in your image */
+        /* Start Button at left edge to match level start */
         #start-item { left: 0; bottom: 25%; }
         #exit-item { left: 5%; bottom: 5%; }
 
@@ -36,8 +41,6 @@
             cursor: pointer; transition: transform 0.1s;
         }
         .start-circle { width: 60px; height: 60px; }
-        
-        /* Exit is a full circle */
         .exit-circle { width: 85px; height: 85px; border-radius: 50%; border-left: 4px solid #333; }
 
         .circle:hover { transform: scale(1.05); }
@@ -49,18 +52,27 @@
         .label-large { font-size: 70px; }
 
         /* Maze Segments */
-        .path { position: absolute; background-color: #26a9e1; z-index: 11; }
-        .goal { position: absolute; background-color: #f1a92a; z-index: 12; }
+        .path { position: absolute; background-color: #26a9e1; z-index: 11; pointer-events: none; }
+        .goal { position: absolute; background-color: #f1a92a; z-index: 12; pointer-events: none; }
+
+        /* Responsive scaling for mobile */
+        @media (max-width: 600px) {
+            #start-item { bottom: 35%; }
+            .label { font-size: 24px; }
+            .title { top: 5%; }
+        }
     </style>
 </head>
 <body oncontextmenu="return false;">
 
     <!-- MENU SCREEN -->
     <div id="menu-screen" class="screen" style="display: flex;">
-        <h1 class="title">Touch yellow<br>RE</h1>
+        <h1 class="title">Touch Yellow</h1>
         
         <div id="start-item" class="menu-item">
-            <div id="start-anchor" class="circle start-circle" onclick="startLevel(1)"></div>
+            <div id="start-anchor" class="circle start-circle" 
+                 onmousedown="startLevel(1)" 
+                 ontouchstart="startLevel(1)"></div>
             <div class="label"><- Start/Restart</div>
         </div>
 
@@ -71,60 +83,96 @@
     </div>
 
     <!-- GAME SCREEN -->
-    <div id="game-screen" class="screen" onmousemove="triggerDeath()"></div>
+    <div id="game-screen" class="screen"></div>
 
     <script>
         const menu = document.getElementById('menu-screen');
         const game = document.getElementById('game-screen');
         const startAnchor = document.getElementById('start-anchor');
 
+        let isDraggingFromStart = false;
         let gameActive = false;
 
         function startLevel(lvl) {
-            // Capture position BEFORE hiding the menu
             const rect = startAnchor.getBoundingClientRect();
             const startX = rect.left;
             const startY = rect.top;
-            const size = rect.height;
 
             game.innerHTML = ''; 
-            gameActive = false; 
+            isDraggingFromStart = true;
             
             menu.style.display = 'none';
             game.style.display = 'block';
 
+            // Scale for mobile horizontal fit
+            const isMobile = window.innerWidth < 600;
+            const scale = isMobile ? (window.innerWidth / 1000) : 1.0;
+            const thick = 90 * scale;
+
             if (lvl === 1) {
-                const thick = 90; // Matching the thick path in your image
-
-                // 1. Bottom Horizontal: Starts from left edge, goes right
-                createPath(0, startY - 15, startX + 450, thick);
-
-                // 2. First Vertical: Turns UP
-                createPath(startX + 450 - thick, startY - 200, thick, 200);
-
-                // 3. Middle Horizontal: Turns RIGHT
-                createPath(startX + 450 - thick, startY - 200, 300, thick);
-
-                // 4. Second Vertical: Turns UP
-                createPath(startX + 450 + 300 - thick*2, startY - 400, thick, 200);
-
-                // 5. Top Horizontal: Turns LEFT
-                createPath(startX + 420, startY - 400, 330 + thick, thick);
-
-                // 6. Yellow Goal: Sitting on top of the left end of the top bar
-                createGoal(startX + 420, startY - 490, 90, 90);
+                // Segment 1: Bottom Horizontal Right
+                createPath(0, startY - 15, startX + (500 * scale), thick);
+                // Segment 2: Vertical Up
+                createPath(startX + (500 * scale) - thick, startY - (220 * scale), thick, 220 * scale);
+                // Segment 3: Horizontal Right
+                createPath(startX + (500 * scale) - thick, startY - (220 * scale), 400 * scale, thick);
+                // Segment 4: Vertical Up
+                createPath(startX + (500 * scale) + (400 * scale) - thick*2, startY - (450 * scale), thick, 230 * scale);
+                // Segment 5: Top Horizontal Left
+                createPath(startX + (450 * scale), startY - (450 * scale), (450 + 90) * scale, thick);
+                // The Goal: Yellow Box at the end of the top-left bar
+                createGoal(startX + (450 * scale), startY - (540 * scale), 90 * scale, 90 * scale);
             }
 
-            // Delay to ensure the mouse is positioned before death triggers
-            setTimeout(() => { gameActive = true; }, 300);
+            gameActive = true;
         }
+
+        // Handle logical movement across both mouse and touch
+        function handleMove(clientX, clientY, multiTouch) {
+            if (!gameActive || !isDraggingFromStart) return;
+
+            // Cheat detection: Multi-touch
+            if (multiTouch) {
+                resetToMenu();
+                return;
+            }
+
+            const target = document.elementFromPoint(clientX, clientY);
+
+            // Logic: Win condition
+            if (target && target.classList.contains('goal')) {
+                gameActive = false;
+                alert("Level 1 Clear!");
+                resetToMenu();
+                return;
+            }
+
+            // Logic: Death condition (Touch background or outside path)
+            if (!target || (!target.classList.contains('path') && target !== startAnchor)) {
+                resetToMenu();
+            }
+        }
+
+        // Listeners
+        window.addEventListener('mousemove', (e) => {
+            if (gameActive) handleMove(e.clientX, e.clientY, false);
+        });
+        window.addEventListener('mouseup', () => { if (gameActive) resetToMenu(); });
+
+        window.addEventListener('touchmove', (e) => {
+            if (gameActive) {
+                e.preventDefault();
+                const touch = e.touches[0];
+                handleMove(touch.clientX, touch.clientY, e.touches.length > 1);
+            }
+        }, { passive: false });
+        window.addEventListener('touchend', () => { if (gameActive) resetToMenu(); });
 
         function createPath(x, y, w, h) {
             const div = document.createElement('div');
             div.className = 'path';
             div.style.left = x + 'px'; div.style.top = y + 'px';
             div.style.width = w + 'px'; div.style.height = h + 'px';
-            div.onmousemove = (e) => { e.stopPropagation(); };
             game.appendChild(div);
         }
 
@@ -133,21 +181,12 @@
             div.className = 'goal';
             div.style.left = x + 'px'; div.style.top = y + 'px';
             div.style.width = w + 'px'; div.style.height = h + 'px';
-            div.onmouseenter = () => {
-                gameActive = false;
-                alert("LEVEL 1 COMPLETE!");
-                backToMenu();
-            };
-            div.onmousemove = (e) => { e.stopPropagation(); };
             game.appendChild(div);
         }
 
-        function triggerDeath() {
-            if (gameActive) backToMenu();
-        }
-
-        function backToMenu() {
+        function resetToMenu() {
             gameActive = false;
+            isDraggingFromStart = false;
             game.style.display = 'none';
             menu.style.display = 'flex';
         }
