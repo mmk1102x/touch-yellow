@@ -4,76 +4,69 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Touch Yellow</title>
-    
     <!-- Tab Logo -->
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%23f2a922' stroke='%23333' stroke-width='10'/></svg>">
-    
     <link href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Roboto:wght@700&display=swap" rel="stylesheet">
+    
     <style>
-        /* RESET */
+        /* --- CORE STYLES --- */
         * { box-sizing: border-box; }
-        body, html { 
-            margin: 0; padding: 0; width: 100%; height: 100%; 
-            background-color: black; 
-            overflow: hidden; 
-            font-family: 'Roboto', sans-serif; 
-            user-select: none;
-            touch-action: none;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; overflow: hidden; user-select: none; touch-action: none; font-family: 'Roboto', sans-serif; display: flex; justify-content: center; align-items: center; }
+        
         /* 16:9 CONTAINER */
         #game-container {
-            width: 100%;
-            max-width: 177.78vh; 
-            aspect-ratio: 16/9;
-            position: relative;
-            background-color: #4d4d4d; 
-            overflow: hidden;
+            width: 100%; max-width: 177.78vh; aspect-ratio: 16/9;
+            position: relative; background: #4d4d4d; overflow: hidden;
             box-shadow: 0 0 50px rgba(0,0,0,0.5);
         }
 
-        .screen { position: absolute; width: 100%; height: 100%; top: 0; left: 0; }
-        #menu-screen { z-index: 20; }
-        #game-screen { background-color: black; z-index: 10; display: none; }
+        /* LAYERS */
+        .layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+        
+        /* Graphics Layer: Visuals only. No mouse interaction. */
+        #gfx-layer { z-index: 10; }
+        
+        /* Physics Layer: Invisible Hitboxes. Handles mouse interaction. */
+        #phy-layer { z-index: 20; pointer-events: auto; }
+        
+        /* UI Layer: Menus and HUD */
+        #ui-layer { z-index: 30; pointer-events: none; display: flex; justify-content: center; align-items: center; }
 
-        /* TITLE */
+        /* --- VISUALS (Graphics) --- */
+        .visual-path { position: absolute; background-color: #26a9e1; }
+        .visual-goal { position: absolute; background-color: #f1a92a; }
+        .visual-obs { position: absolute; background-color: black; }
+        
+        /* --- PHYSICS (Hitboxes) --- */
+        /* By default, hitboxes are invisible but interactable */
+        .hitbox { position: absolute; opacity: 0; cursor: crosshair; }
+        /* Debug mode makes them visible */
+        .debug .hitbox { opacity: 0.5; border: 2px solid red; background: rgba(255, 0, 0, 0.2); }
+        .debug .hitbox.goal-box { border-color: lime; background: rgba(0, 255, 0, 0.2); }
+
+        /* --- MENU UI --- */
+        .menu-content { pointer-events: auto; text-align: center; width: 100%; height: 100%; position: relative; }
         .title { 
             position: absolute; width: 100%; top: 10%;
-            font-family: 'Luckiest Guy', cursive; color: #f2ef45; 
-            font-size: 10cqi; 
-            line-height: 0.9; 
-            text-transform: uppercase; 
+            font-family: 'Luckiest Guy', cursive; color: #f2ef45; font-size: 10cqi; 
+            line-height: 0.9; text-transform: uppercase; 
             text-shadow: 0.4cqi 0.4cqi 0 #000;
-            text-align: center; 
         }
+        
+        .menu-btn-wrapper { position: absolute; display: flex; align-items: center; pointer-events: auto; }
+        #btn-start-wrap { left: 5%; bottom: 25%; height: 12%; }
+        #btn-exit-wrap { left: 5%; bottom: 8%; height: 12%; }
 
-        /* MENU ITEMS */
-        .menu-item { position: absolute; display: flex; align-items: center; }
-        #start-item { left: 5%; bottom: 25%; height: 12%; }
-        #exit-item { left: 5%; bottom: 8%; height: 12%; }
-
-        .circle { 
-            height: 100%; aspect-ratio: 1/1; 
-            background-color: #f2a922; 
-            border-radius: 50%; 
-            border: 0.5cqi solid #333; 
-            cursor: pointer; 
-            transition: transform 0.1s;
+        .circle-btn {
+            height: 100%; aspect-ratio: 1/1; background-color: #f2a922; 
+            border-radius: 50%; border: 0.5cqi solid #333; cursor: pointer; transition: transform 0.1s;
         }
-        .label { 
-            font-size: 4cqi; font-weight: 900; color: #000; 
-            margin-left: 2cqi; white-space: nowrap; pointer-events: none;
-        }
-        .label-large { font-size: 6cqi; }
-        .circle:hover { transform: scale(1.1); filter: brightness(1.1); }
-        .circle:active { transform: scale(0.95); }
+        .circle-btn:hover { transform: scale(1.1); filter: brightness(1.1); }
+        .label { font-size: 4cqi; font-weight: 900; color: #000; margin-left: 2cqi; white-space: nowrap; }
 
         /* TOGGLE SWITCH */
-        #toggle-item { position: absolute; right: 8%; bottom: 15%; display: flex; flex-direction: column; align-items: center; }
-        .switch-label { font-family: 'Luckiest Guy', cursive; color: #f2ef45; font-size: 3cqi; text-transform: uppercase; margin-bottom: 1cqi; text-shadow: 0.1cqi 0.1cqi 0 #000; }
+        #toggle-wrap { position: absolute; right: 8%; bottom: 15%; display: flex; flex-direction: column; align-items: center; pointer-events: auto; }
+        .switch-label { font-family: 'Luckiest Guy', cursive; color: #f2ef45; font-size: 3cqi; margin-bottom: 1cqi; text-shadow: 0.1cqi 0.1cqi 0 #000; }
         .switch { position: relative; display: inline-block; width: 8cqi; height: 4cqi; }
         .switch input { opacity: 0; width: 0; height: 0; }
         .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #333; transition: .4s; border-radius: 4cqi; border: 0.3cqi solid #000; }
@@ -81,325 +74,356 @@
         input:checked + .slider { background-color: #f2a922; }
         input:checked + .slider:before { transform: translateX(4cqi); }
 
-        /* GAME OBJECTS */
-        .path { position: absolute; background-color: #26a9e1; z-index: 11; pointer-events: auto; }
-        .goal { position: absolute; background-color: #f1a92a; z-index: 12; pointer-events: auto; cursor: pointer; }
-        .obstacle { position: absolute; background-color: black; z-index: 15; pointer-events: auto; }
-
-        /* ANIMATION */
+        /* ANIMATIONS */
         @keyframes slicerMove {
             0% { transform: translateY(0%); }      
             50% { transform: translateY(150%); }   
             100% { transform: translateY(0%); }    
         }
-
-        /* DEBUG */
-        .debug-border { border: 2px solid red !important; opacity: 0.8; }
-        .debug-obs { border: 2px solid purple !important; background-color: rgba(128,0,128,0.5) !important; }
     </style>
 </head>
 <body oncontextmenu="return false;">
 
     <div id="game-container">
-        <!-- MENU -->
-        <div id="menu-screen" class="screen">
-            <h1 class="title">Touch Yellow</h1>
-            
-            <div id="start-item" class="menu-item">
-                <div id="start-btn" class="circle" 
-                     onmousedown="startLevel(1)" 
-                     ontouchstart="startLevel(1)"></div>
-                <div class="label"><- Start/Restart</div>
-            </div>
+        <!-- Layer 1: Graphics (Pretty things) -->
+        <div id="gfx-layer" class="layer"></div>
 
-            <div id="exit-item" class="menu-item">
-                <div class="circle" onclick="exitGame()"></div>
-                <div class="label label-large"><-Exit</div>
-            </div>
+        <!-- Layer 2: Physics (Invisible Hitboxes) -->
+        <div id="phy-layer" class="layer"></div>
 
-            <div id="toggle-item">
-                <div class="switch-label" id="mode-text">Hover Mode</div>
-                <label class="switch">
-                    <input type="checkbox" id="mode-check" onchange="toggleMode()">
-                    <span class="slider"></span>
-                </label>
+        <!-- Layer 3: UI (Menu, HUD) -->
+        <div id="ui-layer" class="layer">
+            <div id="menu-screen" class="menu-content">
+                <h1 class="title">Touch Yellow</h1>
+                
+                <div id="btn-start-wrap" class="menu-btn-wrapper">
+                    <div id="start-btn" class="circle-btn"></div>
+                    <div class="label"><- Start/Restart</div>
+                </div>
+
+                <div id="btn-exit-wrap" class="menu-btn-wrapper">
+                    <div class="circle-btn" onclick="Engine.exit()"></div>
+                    <div class="label" style="font-size: 6cqi;"><-Exit</div>
+                </div>
+
+                <div id="toggle-wrap">
+                    <div class="switch-label" id="mode-text">Hover Mode</div>
+                    <label class="switch">
+                        <input type="checkbox" id="mode-check" onchange="Engine.toggleMode()">
+                        <span class="slider"></span>
+                    </label>
+                </div>
             </div>
         </div>
-
-        <!-- GAME -->
-        <div id="game-screen" class="screen"></div>
     </div>
 
     <script>
-        // --- LOGGING UTILITY ---
-        function log(msg, type='info') {
-            const styles = {
-                info: 'color: #26a9e1; font-weight: bold;',
-                success: 'color: #f1a92a; font-weight: bold; font-size: 1.1em;',
-                death: 'color: red; font-weight: bold;',
-                system: 'color: #888;'
-            };
-            console.log(`%c[TouchYellow] ${msg}`, styles[type] || styles.info);
-        }
-
-        const container = document.getElementById('game-container');
-        const menu = document.getElementById('menu-screen');
-        const game = document.getElementById('game-screen');
-        const startBtn = document.getElementById('start-btn');
-        const modeText = document.getElementById('mode-text');
-        
-        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-
-        let isDraggingFromStart = false;
-        let gameActive = false;
-        let debugMode = false;
-        let holdMode = false;
-        
-        // We store the start button coordinates here so Level 2 can use them 
-        // even after the menu is hidden.
-        let savedBtnData = null;
-
-        if (isMobile) {
-            holdMode = true;
-            document.getElementById('toggle-item').style.display = 'none'; 
-            log("Mobile detected. Forced Hold Mode.", "system");
-        }
-
-        function toggleMode() {
-            if (isMobile) return; 
-            holdMode = document.getElementById('mode-check').checked;
-            modeText.innerText = holdMode ? "Hold Mode" : "Hover Mode";
-            modeText.style.color = holdMode ? "#f2a922" : "#f2ef45";
-            log(`Mode switched to: ${holdMode ? "HOLD" : "HOVER"}`, "system");
-        }
-
-        function toggleFullscreen() {
-            if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
-                document.documentElement.requestFullscreen().catch(e => console.log(e));
-            }
-        }
-        function exitFullscreenMode() {
-            if (document.fullscreenElement) document.exitFullscreen();
-        }
-
-        function saveButtonCoords() {
-            // This must run while menu is VISIBLE
-            const btnRect = startBtn.getBoundingClientRect();
-            const contRect = container.getBoundingClientRect();
-            
-            savedBtnData = {
-                relativeTop: btnRect.top - contRect.top,
-                relativeLeft: btnRect.left - contRect.left,
-                height: btnRect.height,
-                centerY: (btnRect.top - contRect.top) + (btnRect.height / 2)
-            };
-            log("Coordinates Saved: " + JSON.stringify(savedBtnData), "system");
-        }
-
-        function startLevel(lvl) {
-            log(`Loading Level ${lvl}...`);
-            toggleFullscreen();
-
-            // Save coordinates if starting from menu
-            if (lvl === 1 && menu.style.display !== 'none') {
-                saveButtonCoords();
-            }
-            
-            // Safety check: if coords missing, try to recapture or use defaults (fallback)
-            if (!savedBtnData) {
-                log("Error: Missing button coordinates! Attempting rescue.", "death");
-                if (menu.style.display === 'none') {
-                    // Temporarily show menu to measure, then hide? 
-                    // Better to just fail safely or use defaults.
-                    savedBtnData = { relativeTop: 100, relativeLeft: 50, height: 50, centerY: 125 };
-                } else {
-                    saveButtonCoords();
+        /**
+         * PLUGIN SYSTEM
+         * Allows community to hook into the game without editing core code.
+         */
+        const PluginManager = {
+            hooks: {},
+            on: function(event, callback) {
+                if (!this.hooks[event]) this.hooks[event] = [];
+                this.hooks[event].push(callback);
+            },
+            trigger: function(event, data) {
+                if (this.hooks[event]) {
+                    this.hooks[event].forEach(cb => cb(data));
                 }
             }
+        };
 
-            const w = container.clientWidth;
-            const h = container.clientHeight;
-            const thick = h * 0.14; 
-            
-            // USE SAVED COORDS
-            const btnCenterY = savedBtnData.centerY;
-            const startY = btnCenterY - (thick / 2); 
+        /**
+         * LEVEL DATABASE
+         * Easily add new levels here.
+         */
+        const LevelData = {
+            1: (draw, w, h, savedBtn) => {
+                const thick = h * 0.14; 
+                // Determine Start Y based on button position (or default center if null)
+                const centerY = savedBtn ? savedBtn.centerY : h * 0.75;
+                const startY = centerY - (thick / 2);
 
-            // GEOMETRY
-            const p2Height = h * 0.20; 
-            const p4Height = h * 0.24; 
-            const p2X = (w * 0.55) - thick;
-            const p2Y = startY - p2Height;
-            const p3Width = w * 0.35;
-            const p4X = p2X + p3Width - thick;
-            const p4Y = p2Y - p4Height;
-            const p5Width = w * 0.45;
-            const topPathLeftX = p4X - p5Width + thick;
+                // Calculations
+                const p2X = (w * 0.55) - thick;
+                const p2Y = startY - (h * 0.20);
+                const p4X = p2X + (w * 0.35) - thick;
+                const p4Y = p2Y - (h * 0.24);
+                const topPathLeftX = p4X - (w * 0.45) + thick;
 
-            // RENDER
-            game.innerHTML = ''; 
-            isDraggingFromStart = true;
-            menu.style.display = 'none';
-            game.style.display = 'block';
-            gameActive = false; // Grace period start
-
-            if (lvl === 1) {
-                createPath(0, startY, w * 0.55 + 1, thick);
-                createPath(p2X, p2Y, thick, p2Height + thick);
-                createPath(p2X, p2Y, p3Width + 1, thick);
-                createPath(p4X, p4Y, thick, p4Height + thick);
-                createPath(topPathLeftX, p4Y, p5Width, thick);
+                // Draw World
+                draw.path(0, startY, w * 0.55 + 1, thick);
+                draw.path(p2X, p2Y, thick, (h * 0.20) + thick);
+                draw.path(p2X, p2Y, (w * 0.35) + 1, thick);
+                draw.path(p4X, p4Y, thick, (h * 0.24) + thick);
+                draw.path(topPathLeftX, p4Y, (w * 0.45), thick);
                 
-                const g = createGoal(topPathLeftX, p4Y - thick, thick, thick);
-                g.dataset.nextLevel = 2; 
-            }
-            else if (lvl === 2) {
-                createPath(0, startY, w * 0.55 + 1, thick);
-                createPath(p2X, p2Y, thick, p2Height + thick);
-                createPath(p2X, p2Y, p3Width + 1, thick);
-                createPath(p4X, p4Y, thick, p4Height + thick);
-                createPath(topPathLeftX, p4Y, p5Width, thick);
+                // Draw Goal (triggers level 2)
+                draw.goal(topPathLeftX, p4Y - thick, thick, thick, 2);
+            },
+            
+            2: (draw, w, h, savedBtn) => {
+                // Re-draw Level 1 Layout
+                LevelData[1](draw, w, h, savedBtn); 
 
-                // Start Zone
-                createPath(topPathLeftX, p4Y - thick, thick, thick * 2);
+                // Overwrite Goal to be Start Zone (Safe)
+                const thick = h * 0.14;
+                const centerY = savedBtn ? savedBtn.centerY : h * 0.75;
+                const startY = centerY - (thick / 2);
+                const p2X = (w * 0.55) - thick;
+                const p2Y = startY - (h * 0.20);
+                const p4X = p2X + (w * 0.35) - thick;
+                const p4Y = p2Y - (h * 0.24);
+                const topPathLeftX = p4X - (w * 0.45) + thick;
 
-                // GOAL (Bottom Left)
-                // Use saved coordinates so it spawns EXACTLY where the button was
-                const g = createGoal(savedBtnData.relativeLeft, savedBtnData.relativeTop, savedBtnData.height, savedBtnData.height);
-                g.dataset.nextLevel = "menu";
+                // Safe Start Zone (Top Left)
+                draw.path(topPathLeftX, p4Y - thick, thick, thick * 2);
 
-                // OBSTACLE
+                // New Goal (Bottom Left - Start Button location)
+                // Note: The previous call to LevelData[1] drew a goal at the top. 
+                // Since this draws later, it's fine, but technically we have 2 goals. 
+                // Ideally we'd separate geometry, but for this simple game, overlapping is fine.
+                // Actually, let's just draw the new goal ON TOP.
+                const goalSize = savedBtn ? savedBtn.height : thick;
+                const gx = savedBtn ? savedBtn.left : 50;
+                const gy = savedBtn ? savedBtn.top : startY;
+                
+                draw.goal(gx, gy, goalSize, goalSize, "menu");
+
+                // Obstacle
                 const obsW = thick * 0.6;
-                const obsH = thick * 3.5; 
-                const obsX = w * 0.35; 
-                const obsY = startY - (thick * 1.5); 
-                
-                const obs = document.createElement('div');
-                obs.className = 'obstacle';
-                if(debugMode) obs.classList.add('debug-obs');
-                obs.style.left = obsX + 'px';
-                obs.style.top = obsY + 'px';
-                obs.style.width = obsW + 'px';
-                obs.style.height = obsH + 'px';
-                obs.style.animation = "slicerMove 2s linear infinite"; 
-                game.appendChild(obs);
+                const obsH = thick * 3.5;
+                draw.obstacle((w * 0.35), startY - (thick * 1.5), obsW, obsH, "slicerMove 2s linear infinite");
             }
+        };
 
-            // GRACE PERIOD (50ms)
-            // Allows the DOM to repaint so you don't die instantly on level load.
-            setTimeout(() => { 
-                gameActive = true; 
-                log(`Level ${lvl} Active.`, "info");
-            }, 50);
-        }
+        /**
+         * ENGINE CORE
+         * Handles logic, layers, and input.
+         */
+        const Engine = {
+            container: document.getElementById('game-container'),
+            layers: {
+                gfx: document.getElementById('gfx-layer'),
+                phy: document.getElementById('phy-layer'),
+                ui: document.getElementById('ui-layer')
+            },
+            ui: {
+                menu: document.getElementById('menu-screen'),
+                startBtn: document.getElementById('start-btn'),
+                modeCheck: document.getElementById('mode-check'),
+                modeText: document.getElementById('mode-text'),
+                toggleWrap: document.getElementById('toggle-wrap')
+            },
+            
+            state: {
+                active: false,
+                dragging: false,
+                holdMode: false,
+                debug: false,
+                savedBtnCoords: null,
+                isMobile: /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+            },
 
-        function handleMove(clientX, clientY, multiTouch) {
-            if (!gameActive) return;
-            if (holdMode && !isDraggingFromStart) return;
-            if (multiTouch) { die("Multi-touch detected"); return; }
-
-            const target = document.elementFromPoint(clientX, clientY);
-
-            // WIN
-            if (target && target.classList.contains('goal')) {
-                gameActive = false; // Pause logic immediately
-                const next = target.dataset.nextLevel;
-                log("Goal Hit! Next: " + next, "success");
-                
-                if (next == 2) {
-                    startLevel(2);
-                } else {
-                    alert("You Beat The Game!");
-                    resetToMenu();
+            init: function() {
+                // Mobile setup
+                if (this.state.isMobile) {
+                    this.state.holdMode = true;
+                    this.ui.toggleWrap.style.display = 'none';
+                    console.log("Mobile detected. Hold Mode enforced.");
                 }
-                return;
-            }
 
-            // DEATH
-            const isSafe = target && (
-                target.classList.contains('path') || 
-                target.classList.contains('goal')
-            );
+                // Bind Menu Inputs
+                this.ui.startBtn.onmousedown = (e) => this.startLevel(1);
+                this.ui.startBtn.ontouchstart = (e) => this.startLevel(1);
 
-            if (!isSafe) {
-                // Determine what killed us for logs
-                let killer = "Void/Black";
-                if (target && target.classList.contains('obstacle')) killer = "Obstacle";
-                if (!target) killer = "Out of Bounds";
+                // Bind Global Inputs
+                window.addEventListener('mousemove', e => this.handleInput(e.clientX, e.clientY));
+                window.addEventListener('touchmove', e => {
+                    if (this.state.active) { 
+                        e.preventDefault(); 
+                        this.handleInput(e.touches[0].clientX, e.touches[0].clientY, e.touches.length > 1);
+                    }
+                }, {passive: false});
+
+                window.addEventListener('mouseup', e => this.handleRelease(e));
+                window.addEventListener('touchend', e => this.handleRelease(e));
+                window.addEventListener('mousedown', e => { if(e.button === 2 && this.state.active) this.die("Panic Click"); });
+
+                // Register standard plugins
+                PluginManager.on('death', (reason) => console.log(`💀 Died: ${reason}`));
+                PluginManager.on('win', (lvl) => console.log(`🏆 Beat Level ${lvl}`));
+            },
+
+            toggleMode: function() {
+                if (this.state.isMobile) return;
+                this.state.holdMode = this.ui.modeCheck.checked;
+                this.ui.modeText.innerText = this.state.holdMode ? "Hold Mode" : "Hover Mode";
+                this.ui.modeText.style.color = this.state.holdMode ? "#f2a922" : "#f2ef45";
+            },
+
+            saveButtonCoords: function() {
+                const btn = this.ui.startBtn.getBoundingClientRect();
+                const cont = this.container.getBoundingClientRect();
+                this.state.savedBtnCoords = {
+                    left: btn.left - cont.left,
+                    top: btn.top - cont.top,
+                    height: btn.height,
+                    centerY: (btn.top - cont.top) + (btn.height / 2)
+                };
+            },
+
+            // --- SPAWNING SYSTEM (The Builder) ---
+            builder: {
+                path: (x, y, w, h) => Engine.spawnEntity(x, y, w, h, 'visual-path', 'hitbox path'),
+                goal: (x, y, w, h, next) => {
+                    const el = Engine.spawnEntity(x, y, w, h, 'visual-goal', 'hitbox goal');
+                    el.hitbox.dataset.next = next;
+                },
+                obstacle: (x, y, w, h, anim) => {
+                    const el = Engine.spawnEntity(x, y, w, h, 'visual-obs', 'obstacle'); // Obstacle is NOT a hitbox type safe class
+                    el.gfx.style.animation = anim;
+                    // Note: Obstacles are part of physics but kill you, so we don't give them 'path' class
+                    // We actually make the hitbox identical to graphic.
+                }
+            },
+
+            spawnEntity: function(x, y, w, h, gfxClass, phyClass) {
+                // 1. Create Graphic (Visual)
+                const gfx = document.createElement('div');
+                gfx.className = gfxClass;
+                gfx.style.left = x + 'px'; gfx.style.top = y + 'px';
+                gfx.style.width = Math.ceil(w) + 'px'; gfx.style.height = Math.ceil(h) + 'px';
+                this.layers.gfx.appendChild(gfx);
+
+                // 2. Create Hitbox (Physics)
+                const phy = document.createElement('div');
+                phy.className = phyClass;
+                phy.style.left = x + 'px'; phy.style.top = y + 'px';
+                phy.style.width = Math.ceil(w) + 'px'; phy.style.height = Math.ceil(h) + 'px';
+                this.layers.phy.appendChild(phy);
+
+                return { gfx, hitbox: phy };
+            },
+
+            startLevel: function(lvl) {
+                if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(e=>{});
                 
-                die(killer);
+                // Save coordinates if coming from menu
+                if (lvl === 1 && this.ui.menu.style.display !== 'none') {
+                    this.saveButtonCoords();
+                }
+
+                // Clear Layers
+                this.layers.gfx.innerHTML = '';
+                this.layers.phy.innerHTML = '';
+
+                // UI State
+                this.ui.menu.style.display = 'none';
+                this.state.dragging = true;
+                
+                // Build Level using Plugin/Data
+                const w = this.container.clientWidth;
+                const h = this.container.clientHeight;
+                
+                if (LevelData[lvl]) {
+                    LevelData[lvl](this.builder, w, h, this.state.savedBtnCoords);
+                } else {
+                    console.error("Level not found:", lvl);
+                }
+
+                // Grace Period
+                this.state.active = false;
+                setTimeout(() => { 
+                    this.state.active = true; 
+                    PluginManager.trigger('startLevel', lvl);
+                }, 50);
+            },
+
+            handleInput: function(x, y, multi) {
+                if (!this.state.active) return;
+                if (this.state.holdMode && !this.state.dragging) return;
+                if (multi) { this.die("Multi-touch"); return; }
+
+                // COLLISION CHECK
+                // We check what is under the cursor.
+                const target = document.elementFromPoint(x, y);
+
+                // Win Logic
+                if (target && target.classList.contains('goal')) {
+                    this.state.active = false;
+                    const next = target.dataset.next;
+                    PluginManager.trigger('win', next);
+
+                    if (next === "menu") {
+                        alert("You Beat The Game!");
+                        this.reset();
+                    } else {
+                        this.startLevel(parseInt(next));
+                    }
+                    return;
+                }
+
+                // Death Logic
+                // You are safe if touching: 'path', 'goal', or 'hitbox' (general safe zone)
+                // You die if touching: 'obstacle', 'body', 'game-container' (void)
+                const isSafe = target && (target.classList.contains('path') || target.classList.contains('goal'));
+                
+                if (!isSafe) {
+                    this.die(target ? target.className : "Void");
+                }
+            },
+
+            handleRelease: function(e) {
+                if (e.button === 2) return;
+                if (this.state.active && this.state.holdMode) this.die("Released Button");
+            },
+
+            die: function(reason) {
+                this.state.active = false;
+                PluginManager.trigger('death', reason);
+                this.reset();
+            },
+
+            reset: function() {
+                this.state.active = false;
+                this.state.dragging = false;
+                this.ui.menu.style.display = 'block';
+                this.layers.gfx.innerHTML = '';
+                this.layers.phy.innerHTML = '';
+                if (document.fullscreenElement) document.exitFullscreen();
+            },
+
+            exit: function() {
+                this.reset();
+            },
+
+            toggleDebug: function() {
+                this.state.debug = !this.state.debug;
+                this.container.classList.toggle('debug');
+                console.log("Debug Mode:", this.state.debug);
             }
-        }
+        };
 
-        function die(reason="Unknown") {
-            log(`DIED. Reason: ${reason}`, "death");
-            gameActive = false;
-            resetToMenu();
-        }
+        // Initialize Game
+        Engine.init();
 
-        function createPath(l, t, w, h) {
-            const d = document.createElement('div');
-            d.className = 'path';
-            if(debugMode) d.classList.add('debug-border');
-            d.style.left = l + 'px'; d.style.top = t + 'px';
-            d.style.width = Math.ceil(w) + 'px'; d.style.height = Math.ceil(h) + 'px';
-            game.appendChild(d);
-        }
-
-        function createGoal(l, t, w, h) {
-            const d = document.createElement('div');
-            d.className = 'goal';
-            if(debugMode) d.classList.add('debug-border');
-            d.style.left = l + 'px'; d.style.top = t + 'px';
-            d.style.width = Math.ceil(w) + 'px'; d.style.height = Math.ceil(h) + 'px';
-            game.appendChild(d);
-            return d;
-        }
-
-        function resetToMenu() {
-            log("Resetting to Menu.");
-            gameActive = false;
-            isDraggingFromStart = false;
-            game.style.display = 'none';
-            menu.style.display = 'block'; 
-        }
-
-        function exitGame() {
-            log("Exiting Game.");
-            exitFullscreenMode();
-            resetToMenu();
-        }
-
-        // --- LISTENERS ---
-        window.addEventListener('mousemove', e => gameActive && handleMove(e.clientX, e.clientY));
-        window.addEventListener('touchmove', e => {
-            if(gameActive) { e.preventDefault(); handleMove(e.touches[0].clientX, e.touches[0].clientY, e.touches.length > 1); }
-        }, {passive: false});
+        // Expose to Console (for you!)
+        window.cmd = (c) => {
+            if (c === 'hitbox') Engine.toggleDebug();
+            if (c === 'load menu') Engine.reset();
+            if (c === 'load level1') Engine.startLevel(1);
+            if (c === 'load level2') Engine.startLevel(2);
+        };
         
-        const handleRelease = (e) => { 
-            if (e.button === 2) return; 
-            if (gameActive && holdMode) die("Released Button"); 
+        // Expose Plugin API to Console
+        window.TouchYellow = {
+            on: (e, cb) => PluginManager.on(e, cb),
+            Engine: Engine
         };
-        window.addEventListener('mouseup', handleRelease);
-        window.addEventListener('touchend', handleRelease);
 
-        window.addEventListener('mousedown', (e) => {
-            if (e.button === 2 && gameActive) die("Right Click Panic"); 
-        });
-
-        // Commands
-        window.cmd = (command) => {
-            const c = command.toLowerCase().trim();
-            if (c === 'hitbox') {
-                debugMode = !debugMode;
-                document.querySelectorAll('.path, .goal').forEach(e => e.classList.toggle('debug-border'));
-                document.querySelectorAll('.obstacle').forEach(e => e.classList.toggle('debug-obs'));
-                log(`Hitbox Mode: ${debugMode ? "ON" : "OFF"}`);
-            } 
-            else if (c === 'load menu') resetToMenu();
-            else if (c === 'load level1') startLevel(1);
-            else if (c === 'load level2') startLevel(2);
-        };
     </script>
 </body>
 </html>
