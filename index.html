@@ -93,7 +93,6 @@
             pointer-events: auto;
         }
 
-        /* ANIMATION */
         @keyframes slideVertical {
             0% { transform: translateY(-50%); }
             50% { transform: translateY(50%); }
@@ -124,7 +123,6 @@
                 <div class="label label-large"><-Exit</div>
             </div>
 
-            <!-- MODE SWITCH -->
             <div id="toggle-item">
                 <div class="switch-label" id="mode-text">Hover Mode</div>
                 <label class="switch">
@@ -145,7 +143,6 @@
         const startBtn = document.getElementById('start-btn');
         const modeText = document.getElementById('mode-text');
         
-        // Detect Mobile
         const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
         let isDraggingFromStart = false;
@@ -177,56 +174,70 @@
         function startLevel(lvl) {
             toggleFullscreen();
 
-            // Dimensions
             const w = container.clientWidth;
             const h = container.clientHeight;
             const thick = h * 0.14; 
             
-            // Shared Coordinate Logic
+            // --- ALIGNMENT LOGIC ---
             const btnRect = startBtn.getBoundingClientRect();
             const contRect = container.getBoundingClientRect();
+            
+            // Get precise relative positions
             const relativeBtnTop = btnRect.top - contRect.top;
+            const relativeBtnLeft = btnRect.left - contRect.left;
             const btnCenterY = relativeBtnTop + (btnRect.height / 2);
             
-            const startY = btnCenterY - (thick / 2); 
-            const p2Height = h * 0.25; 
+            // PATH COORDINATES
+            const startY = btnCenterY - (thick / 2); // Centers path on button
+
+            // REDUCED HEIGHTS to fix "too much up" issue
+            const p2Height = h * 0.22; // Reduced from 0.25
+            const p4Height = h * 0.26; // Reduced from 0.30
+
             const p2X = (w * 0.55) - thick;
             const p2Y = startY - p2Height;
             const p3Width = w * 0.35;
-            const p4Height = h * 0.30; 
             const p4X = p2X + p3Width - thick;
             const p4Y = p2Y - p4Height;
             const p5Width = w * 0.45;
             const topPathLeftX = p4X - p5Width + thick;
 
-            // Render Level (Clearing innerHTML resets animations!)
+            // RENDER
             game.innerHTML = ''; 
             isDraggingFromStart = true;
             menu.style.display = 'none';
             game.style.display = 'block';
 
             if (lvl === 1) {
+                // L1 Layout
                 createPath(0, startY, w * 0.55 + 1, thick);
                 createPath(p2X, p2Y, thick, p2Height + thick);
                 createPath(p2X, p2Y, p3Width + 1, thick);
                 createPath(p4X, p4Y, thick, p4Height + thick);
                 createPath(topPathLeftX, p4Y, p5Width, thick);
                 
+                // L1 Goal (Top Left)
                 const g = createGoal(topPathLeftX, p4Y - thick, thick, thick);
                 g.dataset.nextLevel = 2; 
             }
             else if (lvl === 2) {
+                // L2 Layout (Same)
                 createPath(0, startY, w * 0.55 + 1, thick);
                 createPath(p2X, p2Y, thick, p2Height + thick);
                 createPath(p2X, p2Y, p3Width + 1, thick);
                 createPath(p4X, p4Y, thick, p4Height + thick);
                 createPath(topPathLeftX, p4Y, p5Width, thick);
 
-                // Start Zone (Top Left)
+                // L2 Start Zone (Top Left)
+                // Overlap top path slightly
                 createPath(topPathLeftX, p4Y - thick, thick, thick * 2);
 
-                // Goal (Bottom Left)
-                const g = createGoal(thick, startY - thick, thick, thick);
+                // L2 GOAL (Bottom Left)
+                // PLACEMENT: EXACTLY where Start Button is.
+                // We use relativeBtnLeft/Top to place the yellow square.
+                // We force it to be square (btnRect.height)
+                const goalSize = btnRect.height;
+                const g = createGoal(relativeBtnLeft, relativeBtnTop, goalSize, goalSize);
                 g.dataset.nextLevel = "menu";
 
                 // OBSTACLE (Bottom Tunnel)
@@ -242,7 +253,6 @@
                 obs.style.top = obsY + 'px';
                 obs.style.width = obsW + 'px';
                 obs.style.height = obsH + 'px';
-                // Animation resets automatically because element is newly created
                 obs.style.animation = "slideVertical 1.2s linear infinite"; 
                 game.appendChild(obs);
             }
@@ -325,22 +335,15 @@
             if(gameActive) { e.preventDefault(); handleMove(e.touches[0].clientX, e.touches[0].clientY, e.touches.length > 1); }
         }, {passive: false});
         
-        // Handle Mouse Release (Hold Mode Death)
         const handleRelease = (e) => { 
-            // If it's a Right Click (button 2), don't treat it as a "Let go" death, 
-            // the mousedown handler below will catch it.
             if (e.button === 2) return; 
-
             if (gameActive && holdMode) die(); 
         };
         window.addEventListener('mouseup', handleRelease);
         window.addEventListener('touchend', handleRelease);
 
-        // --- RIGHT CLICK PANIC BUTTON ---
         window.addEventListener('mousedown', (e) => {
-            if (e.button === 2 && gameActive) { // Right Click
-                die(); // Send back to menu
-            }
+            if (e.button === 2 && gameActive) die(); 
         });
 
         // Commands
