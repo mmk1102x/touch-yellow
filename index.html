@@ -4,29 +4,54 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Touch Yellow RE</title>
+    
+    <!-- Browser Tab Logo -->
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%23f2a922' stroke='%23333' stroke-width='10'/></svg>">
+    
     <link href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Roboto:wght@700&display=swap" rel="stylesheet">
     <style>
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; font-family: 'Roboto', sans-serif; background-color: #4d4d4d; user-select: none; }
         
         .screen { position: absolute; width: 100%; height: 100%; display: none; }
-        #menu-screen { display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 20; }
-        #game-screen { background-color: black; z-index: 10; }
+        #menu-screen { background-color: #4d4d4d; z-index: 20; }
+        #game-screen { background-color: black; z-index: 10; cursor: default; }
 
-        /* Title & Menu */
-        .title { font-family: 'Luckiest Guy', cursive; color: #f2ef45; font-size: clamp(40px, 8vw, 80px); line-height: 0.8; margin-bottom: 50px; text-transform: uppercase; text-shadow: 3px 3px 0px #000; text-align: center; pointer-events: none; }
-        .options-container { display: flex; flex-direction: column; gap: 30px; width: 300px; }
-        .option { display: flex; align-items: center; cursor: pointer; color: #000; transition: transform 0.1s; }
-        .option:hover { transform: scale(1.05); }
-        .circle { background-color: #f2a922; border-radius: 50%; border: 3px solid #333; margin-right: 15px; flex-shrink: 0; }
-        .start-circle { width: 40px; height: 40px; }
-        .exit-circle { width: 70px; height: 70px; }
-        .label { font-size: 28px; font-weight: 900; white-space: nowrap; }
-        .label-large { font-size: 60px; }
+        /* Title */
+        .title { 
+            position: absolute; width: 100%; top: 10%;
+            font-family: 'Luckiest Guy', cursive; color: #f2ef45; 
+            font-size: clamp(40px, 10vw, 100px); line-height: 0.9; 
+            text-transform: uppercase; text-shadow: 4px 4px 0px #000; text-align: center; 
+        }
 
-        /* Maze Pieces (No Images used) */
-        .path { position: absolute; background-color: #26a9e1; z-index: 11; pointer-events: auto; }
-        .goal { position: absolute; background-color: #f1a92a; z-index: 12; cursor: pointer; }
+        /* Menu Buttons (Positioned to match level start) */
+        .menu-item { position: absolute; display: flex; align-items: center; pointer-events: none; }
+        
+        /* Start button is at the bottom left where Level 1 starts */
+        #start-item { left: 10%; bottom: 25%; }
+        /* Exit button is below it */
+        #exit-item { left: 10%; bottom: 5%; }
+
+        .circle { 
+            background-color: #f2a922; border-radius: 50%; border: 4px solid #333; 
+            flex-shrink: 0; cursor: pointer; pointer-events: auto; 
+            transition: transform 0.1s;
+        }
+        .circle:hover { transform: scale(1.1); }
+        .circle:active { transform: scale(0.9); }
+
+        .start-circle { width: 50px; height: 50px; }
+        .exit-circle { width: 85px; height: 85px; }
+
+        .label { 
+            font-size: 32px; font-weight: 900; color: #000; 
+            margin-left: 20px; white-space: nowrap; 
+        }
+        .label-large { font-size: 70px; }
+
+        /* Maze Pieces */
+        .path { position: absolute; background-color: #26a9e1; z-index: 11; }
+        .goal { position: absolute; background-color: #f1a92a; z-index: 12; }
     </style>
 </head>
 <body oncontextmenu="return false;">
@@ -34,21 +59,23 @@
     <!-- MENU SCREEN -->
     <div id="menu-screen" class="screen" style="display: flex;">
         <h1 class="title">Touch yellow<br>RE</h1>
-        <div class="options-container">
-            <div class="option" onclick="startLevel(1)">
-                <div id="start-anchor" class="circle start-circle"></div>
-                <div class="label"><- Start/Restart</div>
-            </div>
-            <div class="option" onclick="exitGame()">
-                <div class="circle exit-circle"></div>
-                <div class="label label-large"><-Exit</div>
-            </div>
+        
+        <!-- Start Button Item -->
+        <div id="start-item" class="menu-item">
+            <div id="start-anchor" class="circle start-circle" onclick="startLevel(1)"></div>
+            <div class="label"><- Start/Restart</div>
+        </div>
+
+        <!-- Exit Button Item -->
+        <div id="exit-item" class="menu-item">
+            <div class="circle exit-circle" onclick="exitGame()"></div>
+            <div class="label label-large"><-Exit</div>
         </div>
     </div>
 
     <!-- GAME SCREEN -->
-    <div id="game-screen" class="screen" onmousemove="checkDeath(event)">
-        <!-- Maze elements will be injected here -->
+    <div id="game-screen" class="screen" onmousemove="triggerDeath()">
+        <!-- Maze elements will be created here -->
     </div>
 
     <script>
@@ -56,82 +83,76 @@
         const game = document.getElementById('game-screen');
         const startAnchor = document.getElementById('start-anchor');
 
-        let isAlive = false;
+        let gameActive = false;
 
         function startLevel(lvl) {
-            game.innerHTML = ''; // Clear old maze
-            isAlive = false; // Disable death briefly
+            game.innerHTML = ''; 
+            gameActive = false; 
             
             menu.style.display = 'none';
             game.style.display = 'block';
 
-            // Get the Start Circle position
+            // Find where the Start Circle is
             const rect = startAnchor.getBoundingClientRect();
             const startX = rect.left;
             const startY = rect.top;
-            const thick = rect.width; // Use the circle size as path thickness
+            const thick = 80; // Path thickness
 
             if (lvl === 1) {
-                // We create the "S" shape path using DIVs
-                // 1. Horizontal from Left edge to Button
-                createPath(0, startY, startX + thick, thick);
+                // Drawing Level 1 matching your "Real Level 1" screenshot:
                 
-                // 2. Vertical Up from Button
-                createPath(startX, startY - 150, thick, 150);
+                // 1. Long horizontal bar from far left edge through the button position
+                createPath(0, startY - 15, startX + 400, thick);
+
+                // 2. Vertical Up
+                createPath(startX + 300, startY - 200, thick, 200);
 
                 // 3. Horizontal Right
-                createPath(startX, startY - 150, 250, thick);
+                createPath(startX + 300, startY - 200, 350, thick);
 
-                // 4. Vertical Up again
-                createPath(startX + 250 - thick, startY - 350, thick, 200);
+                // 4. Vertical Up
+                createPath(startX + 300 + 350 - thick, startY - 400, thick, 200);
 
-                // 5. Horizontal Left (Top path)
-                createPath(startX + 100, startY - 350, 150, thick);
+                // 5. Horizontal Top
+                createPath(startX + 300 + 100, startY - 400, 250, thick);
 
-                // 6. The Goal (Yellow Box)
-                createGoal(startX + 100, startY - 430, 80, 80);
+                // 6. Yellow Goal
+                createGoal(startX + 300 + 100, startY - 480, 80, 80);
             }
 
-            // Give the player 200ms to register their mouse position before enabling death
-            setTimeout(() => { isAlive = true; }, 200);
+            // Safety delay so mouse is over blue before death checks start
+            setTimeout(() => { gameActive = true; }, 300);
         }
 
         function createPath(x, y, w, h) {
-            const d = document.createElement('div');
-            d.className = 'path';
-            d.style.left = x + 'px';
-            d.style.top = y + 'px';
-            d.style.width = w + 'px';
-            d.style.height = h + 'px';
-            // Stop the move event from reaching the black background
-            d.onmousemove = (e) => { e.stopPropagation(); };
-            game.appendChild(d);
+            const div = document.createElement('div');
+            div.className = 'path';
+            div.style.left = x + 'px'; div.style.top = y + 'px';
+            div.style.width = w + 'px'; div.style.height = h + 'px';
+            div.onmousemove = (e) => { e.stopPropagation(); };
+            game.appendChild(div);
         }
 
         function createGoal(x, y, w, h) {
-            const g = document.createElement('div');
-            g.className = 'goal';
-            g.style.left = x + 'px';
-            g.style.top = y + 'px';
-            g.style.width = w + 'px';
-            g.style.height = h + 'px';
-            g.onmouseenter = () => {
-                isAlive = false;
-                alert("LEVEL COMPLETE!");
-                resetToMenu();
+            const div = document.createElement('div');
+            div.className = 'goal';
+            div.style.left = x + 'px'; div.style.top = y + 'px';
+            div.style.width = w + 'px'; div.style.height = h + 'px';
+            div.onmouseenter = () => {
+                gameActive = false;
+                alert("LEVEL 1 COMPLETE!");
+                backToMenu();
             };
-            g.onmousemove = (e) => { e.stopPropagation(); };
-            game.appendChild(g);
+            div.onmousemove = (e) => { e.stopPropagation(); };
+            game.appendChild(div);
         }
 
-        function checkDeath(e) {
-            if (isAlive) {
-                resetToMenu();
-            }
+        function triggerDeath() {
+            if (gameActive) backToMenu();
         }
 
-        function resetToMenu() {
-            isAlive = false;
+        function backToMenu() {
+            gameActive = false;
             game.style.display = 'none';
             menu.style.display = 'flex';
         }
