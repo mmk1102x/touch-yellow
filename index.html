@@ -24,32 +24,27 @@
             text-transform: uppercase; text-shadow: 4px 4px 0px #000; text-align: center; 
         }
 
-        /* Menu Buttons (Positioned to match level start) */
-        .menu-item { position: absolute; display: flex; align-items: center; pointer-events: none; }
-        
-        /* Start button is at the bottom left where Level 1 starts */
+        /* Menu Items */
+        .menu-item { position: absolute; display: flex; align-items: center; }
         #start-item { left: 10%; bottom: 25%; }
-        /* Exit button is below it */
         #exit-item { left: 10%; bottom: 5%; }
 
         .circle { 
             background-color: #f2a922; border-radius: 50%; border: 4px solid #333; 
-            flex-shrink: 0; cursor: pointer; pointer-events: auto; 
-            transition: transform 0.1s;
+            cursor: pointer; transition: transform 0.1s;
         }
         .circle:hover { transform: scale(1.1); }
-        .circle:active { transform: scale(0.9); }
 
         .start-circle { width: 50px; height: 50px; }
         .exit-circle { width: 85px; height: 85px; }
 
         .label { 
             font-size: 32px; font-weight: 900; color: #000; 
-            margin-left: 20px; white-space: nowrap; 
+            margin-left: 20px; white-space: nowrap; pointer-events: none; /* Text is not clickable */
         }
         .label-large { font-size: 70px; }
 
-        /* Maze Pieces */
+        /* Maze Segments */
         .path { position: absolute; background-color: #26a9e1; z-index: 11; }
         .goal { position: absolute; background-color: #f1a92a; z-index: 12; }
     </style>
@@ -60,13 +55,11 @@
     <div id="menu-screen" class="screen" style="display: flex;">
         <h1 class="title">Touch yellow<br>RE</h1>
         
-        <!-- Start Button Item -->
         <div id="start-item" class="menu-item">
             <div id="start-anchor" class="circle start-circle" onclick="startLevel(1)"></div>
             <div class="label"><- Start/Restart</div>
         </div>
 
-        <!-- Exit Button Item -->
         <div id="exit-item" class="menu-item">
             <div class="circle exit-circle" onclick="exitGame()"></div>
             <div class="label label-large"><-Exit</div>
@@ -74,9 +67,7 @@
     </div>
 
     <!-- GAME SCREEN -->
-    <div id="game-screen" class="screen" onmousemove="triggerDeath()">
-        <!-- Maze elements will be created here -->
-    </div>
+    <div id="game-screen" class="screen" onmousemove="triggerDeath()"></div>
 
     <script>
         const menu = document.getElementById('menu-screen');
@@ -86,41 +77,41 @@
         let gameActive = false;
 
         function startLevel(lvl) {
+            // IMPORTANT: Capture position BEFORE hiding the menu
+            const rect = startAnchor.getBoundingClientRect();
+            const startX = rect.left;
+            const startY = rect.top;
+            const size = rect.width;
+
             game.innerHTML = ''; 
             gameActive = false; 
             
             menu.style.display = 'none';
             game.style.display = 'block';
 
-            // Find where the Start Circle is
-            const rect = startAnchor.getBoundingClientRect();
-            const startX = rect.left;
-            const startY = rect.top;
-            const thick = 80; // Path thickness
-
             if (lvl === 1) {
-                // Drawing Level 1 matching your "Real Level 1" screenshot:
-                
-                // 1. Long horizontal bar from far left edge through the button position
-                createPath(0, startY - 15, startX + 400, thick);
+                const thick = 80; // Thickness of the path
+
+                // 1. Bottom horizontal path (Starts from left edge, passes under the button)
+                createPath(0, startY - 15, startX + 300, thick);
 
                 // 2. Vertical Up
-                createPath(startX + 300, startY - 200, thick, 200);
+                createPath(startX + 220, startY - 200, thick, 200);
 
                 // 3. Horizontal Right
-                createPath(startX + 300, startY - 200, 350, thick);
+                createPath(startX + 220, startY - 200, 300, thick);
 
-                // 4. Vertical Up
-                createPath(startX + 300 + 350 - thick, startY - 400, thick, 200);
+                // 4. Vertical Up again
+                createPath(startX + 440, startY - 400, thick, 200);
 
-                // 5. Horizontal Top
-                createPath(startX + 300 + 100, startY - 400, 250, thick);
+                // 5. Top Horizontal Left
+                createPath(startX + 200, startY - 400, 320, thick);
 
-                // 6. Yellow Goal
-                createGoal(startX + 300 + 100, startY - 480, 80, 80);
+                // 6. The Goal (Yellow Box)
+                createGoal(startX + 200, startY - 480, 100, 80);
             }
 
-            // Safety delay so mouse is over blue before death checks start
+            // Small delay to ensure mouse is "in" the blue before we check for death
             setTimeout(() => { gameActive = true; }, 300);
         }
 
