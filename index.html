@@ -93,10 +93,12 @@
             pointer-events: auto;
         }
 
-        @keyframes slideVertical {
-            0% { transform: translateY(-50%); }
-            50% { transform: translateY(50%); }
-            100% { transform: translateY(-50%); }
+        /* OBSTACLE ANIMATION */
+        /* Start at 0 (Blocking), go down 150% (Clear), come back */
+        @keyframes slideDownDeep {
+            0% { transform: translateY(0%); }
+            50% { transform: translateY(180%); } /* Goes way down into black */
+            100% { transform: translateY(0%); }
         }
 
         /* DEBUG */
@@ -182,17 +184,17 @@
             const btnRect = startBtn.getBoundingClientRect();
             const contRect = container.getBoundingClientRect();
             
-            // Get precise relative positions
+            // Exact Coordinates of Start Button inside Container
             const relativeBtnTop = btnRect.top - contRect.top;
             const relativeBtnLeft = btnRect.left - contRect.left;
             const btnCenterY = relativeBtnTop + (btnRect.height / 2);
             
             // PATH COORDINATES
-            const startY = btnCenterY - (thick / 2); // Centers path on button
+            const startY = btnCenterY - (thick / 2); 
 
-            // REDUCED HEIGHTS to fix "too much up" issue
-            const p2Height = h * 0.22; // Reduced from 0.25
-            const p4Height = h * 0.26; // Reduced from 0.30
+            // REDUCED HEIGHTS to bring Level 2 down from top edge
+            const p2Height = h * 0.20; // Reduced to 20%
+            const p4Height = h * 0.24; // Reduced to 24%
 
             const p2X = (w * 0.55) - thick;
             const p2Y = startY - p2Height;
@@ -229,22 +231,20 @@
                 createPath(topPathLeftX, p4Y, p5Width, thick);
 
                 // L2 Start Zone (Top Left)
-                // Overlap top path slightly
                 createPath(topPathLeftX, p4Y - thick, thick, thick * 2);
 
                 // L2 GOAL (Bottom Left)
-                // PLACEMENT: EXACTLY where Start Button is.
-                // We use relativeBtnLeft/Top to place the yellow square.
-                // We force it to be square (btnRect.height)
+                // PLACEMENT: EXACTLY where Start Button is using relativeBtnLeft
                 const goalSize = btnRect.height;
                 const g = createGoal(relativeBtnLeft, relativeBtnTop, goalSize, goalSize);
                 g.dataset.nextLevel = "menu";
 
                 // OBSTACLE (Bottom Tunnel)
-                const obsW = thick * 0.8;
-                const obsH = thick * 3; 
+                const obsW = thick * 1.0; // Same width as path for clean cut
+                const obsH = thick * 2.5; 
                 const obsX = w * 0.35; 
-                const obsY = startY - thick; 
+                // Start ON THE PATH (Blocking)
+                const obsY = startY - (thick * 0.5); 
                 
                 const obs = document.createElement('div');
                 obs.className = 'obstacle';
@@ -253,7 +253,8 @@
                 obs.style.top = obsY + 'px';
                 obs.style.width = obsW + 'px';
                 obs.style.height = obsH + 'px';
-                obs.style.animation = "slideVertical 1.2s linear infinite"; 
+                // 2s duration, slideDownDeep animation
+                obs.style.animation = "slideDownDeep 2s linear infinite"; 
                 game.appendChild(obs);
             }
 
