@@ -110,6 +110,7 @@
         const container = document.getElementById('game-container');
         const menu = document.getElementById('menu-screen');
         const game = document.getElementById('game-screen');
+        const startBtn = document.getElementById('start-btn');
         
         let isDraggingFromStart = false;
         let gameActive = false;
@@ -127,56 +128,64 @@
         function startLevel(lvl) {
             toggleFullscreen();
 
+            // 1. MEASURE BEFORE HIDING MENU (Crucial Fix)
+            // If we hide menu first, these values become 0 and the path breaks.
+            const w = container.clientWidth;
+            const h = container.clientHeight;
+            const btnRect = startBtn.getBoundingClientRect();
+            const contRect = container.getBoundingClientRect();
+            
+            // Calculate exact vertical center of the Start Button
+            const relativeBtnTop = btnRect.top - contRect.top;
+            const btnCenterY = relativeBtnTop + (btnRect.height / 2);
+
+            // 2. SETUP GAME STATE
             game.innerHTML = ''; 
             isDraggingFromStart = true;
             menu.style.display = 'none';
             game.style.display = 'block';
 
             if (lvl === 1) {
-                const w = container.clientWidth;
-                const h = container.clientHeight;
+                const thick = h * 0.14; // Path thickness
                 
-                // Thickness of the path
-                const thick = h * 0.14;
-                
-                // Start Y Position (Synced to button visual position)
-                const startY = h * 0.69; 
+                // Align path exactly to button center
+                const startY = btnCenterY - (thick / 2); 
 
-                // --- PATH CALCULATIONS ---
-                
-                // 1. PATH 1: Bottom Horizontal
+                // --- PATH DRAWING ---
+
+                // PATH 1: Bottom Horizontal
+                // Starts at 0, goes past the button
                 createPath(0, startY, w * 0.55 + 1, thick);
 
-                // 2. PATH 2: Vertical Up (Shortened to fit screen)
+                // PATH 2: Vertical Up
                 const p2Height = h * 0.25; 
                 const p2X = (w * 0.55) - thick;
                 const p2Y = startY - p2Height;
                 createPath(p2X, p2Y, thick, p2Height + thick); 
 
-                // 3. PATH 3: Horizontal Right
+                // PATH 3: Horizontal Right
                 const p3Width = w * 0.35;
                 createPath(p2X, p2Y, p3Width + 1, thick);
 
-                // 4. PATH 4: Vertical Up (Shortened to fit screen)
+                // PATH 4: Vertical Up
                 const p4Height = h * 0.30; 
                 const p4X = p2X + p3Width - thick;
                 const p4Y = p2Y - p4Height;
                 createPath(p4X, p4Y, thick, p4Height + thick); 
 
-                // 5. PATH 5: Top Horizontal Left
-                // Made slightly longer (45%) to balance the look
+                // PATH 5: Top Horizontal Left
                 const p5Width = w * 0.45;
+                // Left position of this bar is: p4X - p5Width + thick
                 createPath(p4X - p5Width + thick, p4Y, p5Width, thick);
 
-                // 6. GOAL
-                // Positioned EXACTLY at the end of Path 5, sitting ON TOP of it.
-                // X = Left edge of Path 5
-                // Y = Top edge of Path 5 minus the goal height (so it sits on top)
-                createGoal(p4X - p5Width, p4Y - thick, thick, thick);
+                // 6. GOAL (Fixed Position)
+                // It should sit on the very end (left side) of Path 5.
+                // X = (Path 5 Left Edge)
+                createGoal(p4X - p5Width + thick, p4Y - thick, thick, thick);
             }
 
-            // Safety Delay
-            setTimeout(() => { gameActive = true; }, 200);
+            // 3. NO DELAY (Instant Start)
+            gameActive = true; 
         }
 
         function handleMove(clientX, clientY, multiTouch) {
@@ -232,7 +241,6 @@
 
         function exitGame() {
             exitFullscreenMode();
-            alert("Exited.");
             resetToMenu();
         }
 
@@ -255,11 +263,9 @@
             } 
             else if (c === 'load menu') {
                 resetToMenu();
-                console.log("Menu Loaded");
             } 
             else if (c === 'load level1') {
                 startLevel(1);
-                console.log("Level 1 Loaded");
             } 
         };
     </script>
