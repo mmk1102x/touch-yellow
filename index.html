@@ -84,21 +84,13 @@
         /* GAME OBJECTS */
         .path { position: absolute; background-color: #26a9e1; z-index: 11; pointer-events: auto; }
         .goal { position: absolute; background-color: #f1a92a; z-index: 12; pointer-events: auto; cursor: pointer; }
-        
-        /* THE OBSTACLE */
-        .obstacle { 
-            position: absolute; 
-            background-color: black; 
-            z-index: 15; 
-            pointer-events: auto;
-        }
+        .obstacle { position: absolute; background-color: black; z-index: 15; pointer-events: auto; }
 
-        /* OBSTACLE ANIMATION */
-        /* Start HIGH up (-50% relative to self, placed high by JS), slide DOWN past the path */
+        /* ANIMATION */
         @keyframes slicerMove {
-            0% { transform: translateY(0%); }      /* Starts high (hidden above) */
-            50% { transform: translateY(150%); }   /* Slides WAY down (hidden below) */
-            100% { transform: translateY(0%); }    /* Goes back up */
+            0% { transform: translateY(0%); }      
+            50% { transform: translateY(150%); }   
+            100% { transform: translateY(0%); }    
         }
 
         /* DEBUG */
@@ -139,6 +131,17 @@
     </div>
 
     <script>
+        // --- LOGGING UTILITY ---
+        function log(msg, type='info') {
+            const styles = {
+                info: 'color: #26a9e1; font-weight: bold;',
+                success: 'color: #f1a92a; font-weight: bold; font-size: 1.1em;',
+                death: 'color: red; font-weight: bold;',
+                system: 'color: #888;'
+            };
+            console.log(`%c[TouchYellow] ${msg}`, styles[type] || styles.info);
+        }
+
         const container = document.getElementById('game-container');
         const menu = document.getElementById('menu-screen');
         const game = document.getElementById('game-screen');
@@ -151,10 +154,15 @@
         let gameActive = false;
         let debugMode = false;
         let holdMode = false;
+        
+        // We store the start button coordinates here so Level 2 can use them 
+        // even after the menu is hidden.
+        let savedBtnData = null;
 
         if (isMobile) {
             holdMode = true;
             document.getElementById('toggle-item').style.display = 'none'; 
+            log("Mobile detected. Forced Hold Mode.", "system");
         }
 
         function toggleMode() {
@@ -162,6 +170,7 @@
             holdMode = document.getElementById('mode-check').checked;
             modeText.innerText = holdMode ? "Hold Mode" : "Hover Mode";
             modeText.style.color = holdMode ? "#f2a922" : "#f2ef45";
+            log(`Mode switched to: ${holdMode ? "HOLD" : "HOVER"}`, "system");
         }
 
         function toggleFullscreen() {
@@ -173,28 +182,52 @@
             if (document.fullscreenElement) document.exitFullscreen();
         }
 
+        function saveButtonCoords() {
+            // This must run while menu is VISIBLE
+            const btnRect = startBtn.getBoundingClientRect();
+            const contRect = container.getBoundingClientRect();
+            
+            savedBtnData = {
+                relativeTop: btnRect.top - contRect.top,
+                relativeLeft: btnRect.left - contRect.left,
+                height: btnRect.height,
+                centerY: (btnRect.top - contRect.top) + (btnRect.height / 2)
+            };
+            log("Coordinates Saved: " + JSON.stringify(savedBtnData), "system");
+        }
+
         function startLevel(lvl) {
+            log(`Loading Level ${lvl}...`);
             toggleFullscreen();
+
+            // Save coordinates if starting from menu
+            if (lvl === 1 && menu.style.display !== 'none') {
+                saveButtonCoords();
+            }
+            
+            // Safety check: if coords missing, try to recapture or use defaults (fallback)
+            if (!savedBtnData) {
+                log("Error: Missing button coordinates! Attempting rescue.", "death");
+                if (menu.style.display === 'none') {
+                    // Temporarily show menu to measure, then hide? 
+                    // Better to just fail safely or use defaults.
+                    savedBtnData = { relativeTop: 100, relativeLeft: 50, height: 50, centerY: 125 };
+                } else {
+                    saveButtonCoords();
+                }
+            }
 
             const w = container.clientWidth;
             const h = container.clientHeight;
             const thick = h * 0.14; 
             
-            // --- ALIGNMENT LOGIC ---
-            const btnRect = startBtn.getBoundingClientRect();
-            const contRect = container.getBoundingClientRect();
-            
-            const relativeBtnTop = btnRect.top - contRect.top;
-            const relativeBtnLeft = btnRect.left - contRect.left;
-            const btnCenterY = relativeBtnTop + (btnRect.height / 2);
-            
-            // PATH COORDINATES
+            // USE SAVED COORDS
+            const btnCenterY = savedBtnData.centerY;
             const startY = btnCenterY - (thick / 2); 
 
-            // PATH GEOMETRY
+            // GEOMETRY
             const p2Height = h * 0.20; 
             const p4Height = h * 0.24; 
-
             const p2X = (w * 0.55) - thick;
             const p2Y = startY - p2Height;
             const p3Width = w * 0.35;
@@ -208,42 +241,37 @@
             isDraggingFromStart = true;
             menu.style.display = 'none';
             game.style.display = 'block';
+            gameActive = false; // Grace period start
 
             if (lvl === 1) {
-                // L1 Layout
                 createPath(0, startY, w * 0.55 + 1, thick);
                 createPath(p2X, p2Y, thick, p2Height + thick);
                 createPath(p2X, p2Y, p3Width + 1, thick);
                 createPath(p4X, p4Y, thick, p4Height + thick);
                 createPath(topPathLeftX, p4Y, p5Width, thick);
                 
-                // L1 Goal
                 const g = createGoal(topPathLeftX, p4Y - thick, thick, thick);
                 g.dataset.nextLevel = 2; 
             }
             else if (lvl === 2) {
-                // L2 Layout (Same)
                 createPath(0, startY, w * 0.55 + 1, thick);
                 createPath(p2X, p2Y, thick, p2Height + thick);
                 createPath(p2X, p2Y, p3Width + 1, thick);
                 createPath(p4X, p4Y, thick, p4Height + thick);
                 createPath(topPathLeftX, p4Y, p5Width, thick);
 
-                // L2 Start Zone
+                // Start Zone
                 createPath(topPathLeftX, p4Y - thick, thick, thick * 2);
 
-                // L2 GOAL (Bottom Left)
-                const goalSize = btnRect.height;
-                const g = createGoal(relativeBtnLeft, relativeBtnTop, goalSize, goalSize);
+                // GOAL (Bottom Left)
+                // Use saved coordinates so it spawns EXACTLY where the button was
+                const g = createGoal(savedBtnData.relativeLeft, savedBtnData.relativeTop, savedBtnData.height, savedBtnData.height);
                 g.dataset.nextLevel = "menu";
 
-                // OBSTACLE (The Slicer)
-                // Width: 0.6x Thickness (Thinner block)
+                // OBSTACLE
                 const obsW = thick * 0.6;
-                const obsH = thick * 3.5; // Tall enough to cover gap
+                const obsH = thick * 3.5; 
                 const obsX = w * 0.35; 
-                
-                // Start Position: WAY UP (Hidden in black above)
                 const obsY = startY - (thick * 1.5); 
                 
                 const obs = document.createElement('div');
@@ -253,25 +281,30 @@
                 obs.style.top = obsY + 'px';
                 obs.style.width = obsW + 'px';
                 obs.style.height = obsH + 'px';
-                // 2.0s Duration, as requested
                 obs.style.animation = "slicerMove 2s linear infinite"; 
                 game.appendChild(obs);
             }
 
-            gameActive = true; 
+            // GRACE PERIOD (50ms)
+            // Allows the DOM to repaint so you don't die instantly on level load.
+            setTimeout(() => { 
+                gameActive = true; 
+                log(`Level ${lvl} Active.`, "info");
+            }, 50);
         }
 
         function handleMove(clientX, clientY, multiTouch) {
             if (!gameActive) return;
             if (holdMode && !isDraggingFromStart) return;
-            if (multiTouch) { die(); return; }
+            if (multiTouch) { die("Multi-touch detected"); return; }
 
             const target = document.elementFromPoint(clientX, clientY);
 
-            // Win
+            // WIN
             if (target && target.classList.contains('goal')) {
-                gameActive = false;
+                gameActive = false; // Pause logic immediately
                 const next = target.dataset.nextLevel;
+                log("Goal Hit! Next: " + next, "success");
                 
                 if (next == 2) {
                     startLevel(2);
@@ -282,19 +315,24 @@
                 return;
             }
 
-            // Death Check
+            // DEATH
             const isSafe = target && (
                 target.classList.contains('path') || 
                 target.classList.contains('goal')
             );
 
             if (!isSafe) {
-                if(debugMode) console.log("Died on:", target);
-                die();
+                // Determine what killed us for logs
+                let killer = "Void/Black";
+                if (target && target.classList.contains('obstacle')) killer = "Obstacle";
+                if (!target) killer = "Out of Bounds";
+                
+                die(killer);
             }
         }
 
-        function die() {
+        function die(reason="Unknown") {
+            log(`DIED. Reason: ${reason}`, "death");
             gameActive = false;
             resetToMenu();
         }
@@ -319,6 +357,7 @@
         }
 
         function resetToMenu() {
+            log("Resetting to Menu.");
             gameActive = false;
             isDraggingFromStart = false;
             game.style.display = 'none';
@@ -326,11 +365,12 @@
         }
 
         function exitGame() {
+            log("Exiting Game.");
             exitFullscreenMode();
             resetToMenu();
         }
 
-        // Listeners
+        // --- LISTENERS ---
         window.addEventListener('mousemove', e => gameActive && handleMove(e.clientX, e.clientY));
         window.addEventListener('touchmove', e => {
             if(gameActive) { e.preventDefault(); handleMove(e.touches[0].clientX, e.touches[0].clientY, e.touches.length > 1); }
@@ -338,13 +378,13 @@
         
         const handleRelease = (e) => { 
             if (e.button === 2) return; 
-            if (gameActive && holdMode) die(); 
+            if (gameActive && holdMode) die("Released Button"); 
         };
         window.addEventListener('mouseup', handleRelease);
         window.addEventListener('touchend', handleRelease);
 
         window.addEventListener('mousedown', (e) => {
-            if (e.button === 2 && gameActive) die(); 
+            if (e.button === 2 && gameActive) die("Right Click Panic"); 
         });
 
         // Commands
@@ -354,7 +394,7 @@
                 debugMode = !debugMode;
                 document.querySelectorAll('.path, .goal').forEach(e => e.classList.toggle('debug-border'));
                 document.querySelectorAll('.obstacle').forEach(e => e.classList.toggle('debug-obs'));
-                console.log(`Hitbox Mode: ${debugMode ? "ON" : "OFF"}`);
+                log(`Hitbox Mode: ${debugMode ? "ON" : "OFF"}`);
             } 
             else if (c === 'load menu') resetToMenu();
             else if (c === 'load level1') startLevel(1);
