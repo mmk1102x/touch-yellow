@@ -10,7 +10,7 @@
     
     <link href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Roboto:wght@700&display=swap" rel="stylesheet">
     <style>
-        /* RESET & BLACK LINES FRAME */
+        /* RESET */
         * { box-sizing: border-box; }
         body, html { 
             margin: 0; padding: 0; width: 100%; height: 100%; 
@@ -24,10 +24,10 @@
             align-items: center;
         }
 
-        /* 16:9 CINEMA CONTAINER */
+        /* 16:9 CONTAINER */
         #game-container {
             width: 100%;
-            max-width: 177.78vh; /* Force 16:9 ratio */
+            max-width: 177.78vh; 
             aspect-ratio: 16/9;
             position: relative;
             background-color: #4d4d4d; 
@@ -53,7 +53,6 @@
         /* MENU ITEMS */
         .menu-item { position: absolute; display: flex; align-items: center; }
         
-        /* Start Button locked to bottom-left area */
         #start-item { left: 5%; bottom: 25%; height: 12%; }
         #exit-item { left: 5%; bottom: 8%; height: 12%; }
 
@@ -111,7 +110,6 @@
         const container = document.getElementById('game-container');
         const menu = document.getElementById('menu-screen');
         const game = document.getElementById('game-screen');
-        const startBtn = document.getElementById('start-btn');
         
         let isDraggingFromStart = false;
         let gameActive = false;
@@ -135,54 +133,46 @@
             game.style.display = 'block';
 
             if (lvl === 1) {
-                // Dimensions relative to the 16:9 container
                 const w = container.clientWidth;
                 const h = container.clientHeight;
                 
-                // --- 1. DYNAMIC START POSITION ---
-                // We find exactly where the start button is, even if CSS changes.
-                const btnRect = startBtn.getBoundingClientRect();
-                const contRect = container.getBoundingClientRect();
+                // Thickness of the path
+                const thick = h * 0.14;
                 
-                // Calculate center Y of the button relative to the container
-                // (Button Top - Container Top) + (Button Height / 2)
-                const relativeBtnTop = btnRect.top - contRect.top;
-                const centerY = relativeBtnTop + (btnRect.height / 2);
+                // Start Y Position (Synced to button visual position)
+                const startY = h * 0.69; 
 
-                const thick = h * 0.14; // 14% Thickness
-                const startY = centerY - (thick / 2); // Center path on button
-
-                // --- 2. THE PATHS ---
-
-                // PATH 1: Bottom Horizontal
-                // Overlap (+1px) prevents sub-pixel death gaps
+                // --- PATH CALCULATIONS ---
+                
+                // 1. PATH 1: Bottom Horizontal
                 createPath(0, startY, w * 0.55 + 1, thick);
 
-                // PATH 2: Vertical Up
+                // 2. PATH 2: Vertical Up (Shortened to fit screen)
                 const p2Height = h * 0.25; 
                 const p2X = (w * 0.55) - thick;
                 const p2Y = startY - p2Height;
                 createPath(p2X, p2Y, thick, p2Height + thick); 
 
-                // PATH 3: Horizontal Right
+                // 3. PATH 3: Horizontal Right
                 const p3Width = w * 0.35;
                 createPath(p2X, p2Y, p3Width + 1, thick);
 
-                // PATH 4: Vertical Up (Final)
+                // 4. PATH 4: Vertical Up (Shortened to fit screen)
                 const p4Height = h * 0.30; 
                 const p4X = p2X + p3Width - thick;
                 const p4Y = p2Y - p4Height;
-                createPath(p4X, p4Y, thick, p4Height + thick);
+                createPath(p4X, p4Y, thick, p4Height + thick); 
 
-                // PATH 5: Top Horizontal Left
-                // EXTENDED: Made this longer (45%) to look more balanced
+                // 5. PATH 5: Top Horizontal Left
+                // Made slightly longer (45%) to balance the look
                 const p5Width = w * 0.45;
                 createPath(p4X - p5Width + thick, p4Y, p5Width, thick);
 
-                // GOAL
-                // Positioned on top of the left end of Path 5
-                // Overlaps 2px downwards to ensure connectivity
-                createGoal(p4X - p5Width, p4Y - thick + 2, thick, thick);
+                // 6. GOAL
+                // Positioned EXACTLY at the end of Path 5, sitting ON TOP of it.
+                // X = Left edge of Path 5
+                // Y = Top edge of Path 5 minus the goal height (so it sits on top)
+                createGoal(p4X - p5Width, p4Y - thick, thick, thick);
             }
 
             // Safety Delay
@@ -220,7 +210,6 @@
             d.className = 'path';
             if(debugMode) d.classList.add('debug-border');
             d.style.left = l + 'px'; d.style.top = t + 'px';
-            // Math.ceil ensures we don't get 0.5px gaps
             d.style.width = Math.ceil(w) + 'px'; d.style.height = Math.ceil(h) + 'px';
             game.appendChild(d);
         }
@@ -243,7 +232,7 @@
 
         function exitGame() {
             exitFullscreenMode();
-            // Just return to menu UI
+            alert("Exited.");
             resetToMenu();
         }
 
