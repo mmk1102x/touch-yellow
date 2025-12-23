@@ -52,7 +52,6 @@
 
         /* MENU ITEMS */
         .menu-item { position: absolute; display: flex; align-items: center; }
-        
         #start-item { left: 5%; bottom: 25%; height: 12%; }
         #exit-item { left: 5%; bottom: 8%; height: 12%; }
 
@@ -64,64 +63,46 @@
             cursor: pointer; 
             transition: transform 0.1s;
         }
-
         .label { 
             font-size: 4cqi; font-weight: 900; color: #000; 
             margin-left: 2cqi; white-space: nowrap; pointer-events: none;
         }
         .label-large { font-size: 6cqi; }
-
         .circle:hover { transform: scale(1.1); filter: brightness(1.1); }
         .circle:active { transform: scale(0.95); }
 
-        /* TOGGLE SWITCH (New Feature) */
-        #toggle-item { 
-            position: absolute; right: 8%; bottom: 15%; 
-            display: flex; flex-direction: column; align-items: center; 
-        }
-        
-        .switch-label {
-            font-family: 'Luckiest Guy', cursive; color: #f2ef45; 
-            font-size: 3cqi; text-transform: uppercase; margin-bottom: 1cqi;
-            text-shadow: 0.1cqi 0.1cqi 0 #000;
-        }
-
-        .switch {
-            position: relative;
-            display: inline-block;
-            width: 8cqi;
-            height: 4cqi;
-        }
-
+        /* TOGGLE SWITCH */
+        #toggle-item { position: absolute; right: 8%; bottom: 15%; display: flex; flex-direction: column; align-items: center; }
+        .switch-label { font-family: 'Luckiest Guy', cursive; color: #f2ef45; font-size: 3cqi; text-transform: uppercase; margin-bottom: 1cqi; text-shadow: 0.1cqi 0.1cqi 0 #000; }
+        .switch { position: relative; display: inline-block; width: 8cqi; height: 4cqi; }
         .switch input { opacity: 0; width: 0; height: 0; }
-
-        .slider {
-            position: absolute; cursor: pointer;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background-color: #333;
-            transition: .4s;
-            border-radius: 4cqi;
-            border: 0.3cqi solid #000;
-        }
-
-        .slider:before {
-            position: absolute; content: "";
-            height: 2.6cqi; width: 2.6cqi;
-            left: 0.4cqi; bottom: 0.4cqi;
-            background-color: white;
-            transition: .4s;
-            border-radius: 50%;
-        }
-
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #333; transition: .4s; border-radius: 4cqi; border: 0.3cqi solid #000; }
+        .slider:before { position: absolute; content: ""; height: 2.6cqi; width: 2.6cqi; left: 0.4cqi; bottom: 0.4cqi; background-color: white; transition: .4s; border-radius: 50%; }
         input:checked + .slider { background-color: #f2a922; }
         input:checked + .slider:before { transform: translateX(4cqi); }
 
         /* GAME OBJECTS */
         .path { position: absolute; background-color: #26a9e1; z-index: 11; pointer-events: auto; }
-        .goal { position: absolute; background-color: #f1a92a; z-index: 12; pointer-events: auto; }
+        .goal { position: absolute; background-color: #f1a92a; z-index: 12; pointer-events: auto; cursor: pointer; }
+        
+        /* THE OBSTACLE */
+        .obstacle { 
+            position: absolute; 
+            background-color: black; 
+            z-index: 15; 
+            pointer-events: auto;
+        }
+
+        /* ANIMATION */
+        @keyframes slideVertical {
+            0% { transform: translateY(-50%); }
+            50% { transform: translateY(50%); }
+            100% { transform: translateY(-50%); }
+        }
 
         /* DEBUG */
         .debug-border { border: 2px solid red !important; opacity: 0.8; }
+        .debug-obs { border: 2px solid purple !important; background-color: rgba(128,0,128,0.5) !important; }
     </style>
 </head>
 <body oncontextmenu="return false;">
@@ -164,14 +145,21 @@
         const startBtn = document.getElementById('start-btn');
         const modeText = document.getElementById('mode-text');
         
+        // Detect Mobile
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
         let isDraggingFromStart = false;
         let gameActive = false;
         let debugMode = false;
-        
-        // Settings
-        let holdMode = false; // Default: false (Just move)
+        let holdMode = false;
+
+        if (isMobile) {
+            holdMode = true;
+            document.getElementById('toggle-item').style.display = 'none'; 
+        }
 
         function toggleMode() {
+            if (isMobile) return; 
             holdMode = document.getElementById('mode-check').checked;
             modeText.innerText = holdMode ? "Hold Mode" : "Hover Mode";
             modeText.style.color = holdMode ? "#f2a922" : "#f2ef45";
@@ -189,71 +177,101 @@
         function startLevel(lvl) {
             toggleFullscreen();
 
-            // Measure logic
+            // Dimensions
             const w = container.clientWidth;
             const h = container.clientHeight;
+            const thick = h * 0.14; 
+            
+            // Shared Coordinate Logic
             const btnRect = startBtn.getBoundingClientRect();
             const contRect = container.getBoundingClientRect();
             const relativeBtnTop = btnRect.top - contRect.top;
             const btnCenterY = relativeBtnTop + (btnRect.height / 2);
+            
+            const startY = btnCenterY - (thick / 2); 
+            const p2Height = h * 0.25; 
+            const p2X = (w * 0.55) - thick;
+            const p2Y = startY - p2Height;
+            const p3Width = w * 0.35;
+            const p4Height = h * 0.30; 
+            const p4X = p2X + p3Width - thick;
+            const p4Y = p2Y - p4Height;
+            const p5Width = w * 0.45;
+            const topPathLeftX = p4X - p5Width + thick;
 
+            // Render Level (Clearing innerHTML resets animations!)
             game.innerHTML = ''; 
-            
-            // In Hold Mode, we set this true immediately.
-            // In Hover Mode, we set it true, but we don't care about mouseup events.
             isDraggingFromStart = true;
-            
             menu.style.display = 'none';
             game.style.display = 'block';
 
             if (lvl === 1) {
-                const thick = h * 0.14; 
-                const startY = btnCenterY - (thick / 2); 
-
                 createPath(0, startY, w * 0.55 + 1, thick);
-
-                const p2Height = h * 0.25; 
-                const p2X = (w * 0.55) - thick;
-                const p2Y = startY - p2Height;
-                createPath(p2X, p2Y, thick, p2Height + thick); 
-
-                const p3Width = w * 0.35;
+                createPath(p2X, p2Y, thick, p2Height + thick);
                 createPath(p2X, p2Y, p3Width + 1, thick);
+                createPath(p4X, p4Y, thick, p4Height + thick);
+                createPath(topPathLeftX, p4Y, p5Width, thick);
+                
+                const g = createGoal(topPathLeftX, p4Y - thick, thick, thick);
+                g.dataset.nextLevel = 2; 
+            }
+            else if (lvl === 2) {
+                createPath(0, startY, w * 0.55 + 1, thick);
+                createPath(p2X, p2Y, thick, p2Height + thick);
+                createPath(p2X, p2Y, p3Width + 1, thick);
+                createPath(p4X, p4Y, thick, p4Height + thick);
+                createPath(topPathLeftX, p4Y, p5Width, thick);
 
-                const p4Height = h * 0.30; 
-                const p4X = p2X + p3Width - thick;
-                const p4Y = p2Y - p4Height;
-                createPath(p4X, p4Y, thick, p4Height + thick); 
+                // Start Zone (Top Left)
+                createPath(topPathLeftX, p4Y - thick, thick, thick * 2);
 
-                const p5Width = w * 0.45;
-                createPath(p4X - p5Width + thick, p4Y, p5Width, thick);
+                // Goal (Bottom Left)
+                const g = createGoal(thick, startY - thick, thick, thick);
+                g.dataset.nextLevel = "menu";
 
-                createGoal(p4X - p5Width + thick, p4Y - thick, thick, thick);
+                // OBSTACLE (Bottom Tunnel)
+                const obsW = thick * 0.8;
+                const obsH = thick * 3; 
+                const obsX = w * 0.35; 
+                const obsY = startY - thick; 
+                
+                const obs = document.createElement('div');
+                obs.className = 'obstacle';
+                if(debugMode) obs.classList.add('debug-obs');
+                obs.style.left = obsX + 'px';
+                obs.style.top = obsY + 'px';
+                obs.style.width = obsW + 'px';
+                obs.style.height = obsH + 'px';
+                // Animation resets automatically because element is newly created
+                obs.style.animation = "slideVertical 1.2s linear infinite"; 
+                game.appendChild(obs);
             }
 
-            // In Hover Mode, game activates instantly.
             gameActive = true; 
         }
 
         function handleMove(clientX, clientY, multiTouch) {
             if (!gameActive) return;
-            
-            // Only enforce dragging logic if Hold Mode is ON
             if (holdMode && !isDraggingFromStart) return;
-
-            if (multiTouch) { resetToMenu(); return; }
+            if (multiTouch) { die(); return; }
 
             const target = document.elementFromPoint(clientX, clientY);
 
             // Win
             if (target && target.classList.contains('goal')) {
                 gameActive = false;
-                alert("Level 1 Clear!");
-                resetToMenu();
+                const next = target.dataset.nextLevel;
+                
+                if (next == 2) {
+                    startLevel(2);
+                } else {
+                    alert("You Beat The Game!");
+                    resetToMenu();
+                }
                 return;
             }
 
-            // Death Logic
+            // Death Check
             const isSafe = target && (
                 target.classList.contains('path') || 
                 target.classList.contains('goal')
@@ -261,8 +279,13 @@
 
             if (!isSafe) {
                 if(debugMode) console.log("Died on:", target);
-                resetToMenu();
+                die();
             }
+        }
+
+        function die() {
+            gameActive = false;
+            resetToMenu();
         }
 
         function createPath(l, t, w, h) {
@@ -281,6 +304,7 @@
             d.style.left = l + 'px'; d.style.top = t + 'px';
             d.style.width = Math.ceil(w) + 'px'; d.style.height = Math.ceil(h) + 'px';
             game.appendChild(d);
+            return d;
         }
 
         function resetToMenu() {
@@ -295,37 +319,42 @@
             resetToMenu();
         }
 
-        // --- INPUT LISTENERS ---
-
-        // Mouse Move
+        // Listeners
         window.addEventListener('mousemove', e => gameActive && handleMove(e.clientX, e.clientY));
-        
-        // Touch Move
         window.addEventListener('touchmove', e => {
             if(gameActive) { e.preventDefault(); handleMove(e.touches[0].clientX, e.touches[0].clientY, e.touches.length > 1); }
         }, {passive: false});
         
-        // Mouse Up / Touch End
-        // Only trigger death/reset IF Hold Mode is enabled.
-        const handleRelease = () => {
-            if (gameActive && holdMode) {
-                resetToMenu();
-            }
-        };
+        // Handle Mouse Release (Hold Mode Death)
+        const handleRelease = (e) => { 
+            // If it's a Right Click (button 2), don't treat it as a "Let go" death, 
+            // the mousedown handler below will catch it.
+            if (e.button === 2) return; 
 
+            if (gameActive && holdMode) die(); 
+        };
         window.addEventListener('mouseup', handleRelease);
         window.addEventListener('touchend', handleRelease);
-        
+
+        // --- RIGHT CLICK PANIC BUTTON ---
+        window.addEventListener('mousedown', (e) => {
+            if (e.button === 2 && gameActive) { // Right Click
+                die(); // Send back to menu
+            }
+        });
+
         // Commands
         window.cmd = (command) => {
             const c = command.toLowerCase().trim();
             if (c === 'hitbox') {
                 debugMode = !debugMode;
                 document.querySelectorAll('.path, .goal').forEach(e => e.classList.toggle('debug-border'));
+                document.querySelectorAll('.obstacle').forEach(e => e.classList.toggle('debug-obs'));
                 console.log(`Hitbox Mode: ${debugMode ? "ON" : "OFF"}`);
             } 
             else if (c === 'load menu') resetToMenu();
             else if (c === 'load level1') startLevel(1);
+            else if (c === 'load level2') startLevel(2);
         };
     </script>
 </body>
