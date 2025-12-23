@@ -74,6 +74,48 @@
         .circle:hover { transform: scale(1.1); filter: brightness(1.1); }
         .circle:active { transform: scale(0.95); }
 
+        /* TOGGLE SWITCH (New Feature) */
+        #toggle-item { 
+            position: absolute; right: 8%; bottom: 15%; 
+            display: flex; flex-direction: column; align-items: center; 
+        }
+        
+        .switch-label {
+            font-family: 'Luckiest Guy', cursive; color: #f2ef45; 
+            font-size: 3cqi; text-transform: uppercase; margin-bottom: 1cqi;
+            text-shadow: 0.1cqi 0.1cqi 0 #000;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 8cqi;
+            height: 4cqi;
+        }
+
+        .switch input { opacity: 0; width: 0; height: 0; }
+
+        .slider {
+            position: absolute; cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #333;
+            transition: .4s;
+            border-radius: 4cqi;
+            border: 0.3cqi solid #000;
+        }
+
+        .slider:before {
+            position: absolute; content: "";
+            height: 2.6cqi; width: 2.6cqi;
+            left: 0.4cqi; bottom: 0.4cqi;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider { background-color: #f2a922; }
+        input:checked + .slider:before { transform: translateX(4cqi); }
+
         /* GAME OBJECTS */
         .path { position: absolute; background-color: #26a9e1; z-index: 11; pointer-events: auto; }
         .goal { position: absolute; background-color: #f1a92a; z-index: 12; pointer-events: auto; }
@@ -100,6 +142,15 @@
                 <div class="circle" onclick="exitGame()"></div>
                 <div class="label label-large"><-Exit</div>
             </div>
+
+            <!-- MODE SWITCH -->
+            <div id="toggle-item">
+                <div class="switch-label" id="mode-text">Hover Mode</div>
+                <label class="switch">
+                    <input type="checkbox" id="mode-check" onchange="toggleMode()">
+                    <span class="slider"></span>
+                </label>
+            </div>
         </div>
 
         <!-- GAME -->
@@ -111,10 +162,20 @@
         const menu = document.getElementById('menu-screen');
         const game = document.getElementById('game-screen');
         const startBtn = document.getElementById('start-btn');
+        const modeText = document.getElementById('mode-text');
         
         let isDraggingFromStart = false;
         let gameActive = false;
         let debugMode = false;
+        
+        // Settings
+        let holdMode = false; // Default: false (Just move)
+
+        function toggleMode() {
+            holdMode = document.getElementById('mode-check').checked;
+            modeText.innerText = holdMode ? "Hold Mode" : "Hover Mode";
+            modeText.style.color = holdMode ? "#f2a922" : "#f2ef45";
+        }
 
         function toggleFullscreen() {
             if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
@@ -128,68 +189,58 @@
         function startLevel(lvl) {
             toggleFullscreen();
 
-            // 1. MEASURE BEFORE HIDING MENU (Crucial Fix)
-            // If we hide menu first, these values become 0 and the path breaks.
+            // Measure logic
             const w = container.clientWidth;
             const h = container.clientHeight;
             const btnRect = startBtn.getBoundingClientRect();
             const contRect = container.getBoundingClientRect();
-            
-            // Calculate exact vertical center of the Start Button
             const relativeBtnTop = btnRect.top - contRect.top;
             const btnCenterY = relativeBtnTop + (btnRect.height / 2);
 
-            // 2. SETUP GAME STATE
             game.innerHTML = ''; 
+            
+            // In Hold Mode, we set this true immediately.
+            // In Hover Mode, we set it true, but we don't care about mouseup events.
             isDraggingFromStart = true;
+            
             menu.style.display = 'none';
             game.style.display = 'block';
 
             if (lvl === 1) {
-                const thick = h * 0.14; // Path thickness
-                
-                // Align path exactly to button center
+                const thick = h * 0.14; 
                 const startY = btnCenterY - (thick / 2); 
 
-                // --- PATH DRAWING ---
-
-                // PATH 1: Bottom Horizontal
-                // Starts at 0, goes past the button
                 createPath(0, startY, w * 0.55 + 1, thick);
 
-                // PATH 2: Vertical Up
                 const p2Height = h * 0.25; 
                 const p2X = (w * 0.55) - thick;
                 const p2Y = startY - p2Height;
                 createPath(p2X, p2Y, thick, p2Height + thick); 
 
-                // PATH 3: Horizontal Right
                 const p3Width = w * 0.35;
                 createPath(p2X, p2Y, p3Width + 1, thick);
 
-                // PATH 4: Vertical Up
                 const p4Height = h * 0.30; 
                 const p4X = p2X + p3Width - thick;
                 const p4Y = p2Y - p4Height;
                 createPath(p4X, p4Y, thick, p4Height + thick); 
 
-                // PATH 5: Top Horizontal Left
                 const p5Width = w * 0.45;
-                // Left position of this bar is: p4X - p5Width + thick
                 createPath(p4X - p5Width + thick, p4Y, p5Width, thick);
 
-                // 6. GOAL (Fixed Position)
-                // It should sit on the very end (left side) of Path 5.
-                // X = (Path 5 Left Edge)
                 createGoal(p4X - p5Width + thick, p4Y - thick, thick, thick);
             }
 
-            // 3. NO DELAY (Instant Start)
+            // In Hover Mode, game activates instantly.
             gameActive = true; 
         }
 
         function handleMove(clientX, clientY, multiTouch) {
-            if (!gameActive || !isDraggingFromStart) return;
+            if (!gameActive) return;
+            
+            // Only enforce dragging logic if Hold Mode is ON
+            if (holdMode && !isDraggingFromStart) return;
+
             if (multiTouch) { resetToMenu(); return; }
 
             const target = document.elementFromPoint(clientX, clientY);
@@ -244,14 +295,26 @@
             resetToMenu();
         }
 
-        // Listeners
+        // --- INPUT LISTENERS ---
+
+        // Mouse Move
         window.addEventListener('mousemove', e => gameActive && handleMove(e.clientX, e.clientY));
+        
+        // Touch Move
         window.addEventListener('touchmove', e => {
             if(gameActive) { e.preventDefault(); handleMove(e.touches[0].clientX, e.touches[0].clientY, e.touches.length > 1); }
         }, {passive: false});
         
-        window.addEventListener('mouseup', () => gameActive && resetToMenu());
-        window.addEventListener('touchend', () => gameActive && resetToMenu());
+        // Mouse Up / Touch End
+        // Only trigger death/reset IF Hold Mode is enabled.
+        const handleRelease = () => {
+            if (gameActive && holdMode) {
+                resetToMenu();
+            }
+        };
+
+        window.addEventListener('mouseup', handleRelease);
+        window.addEventListener('touchend', handleRelease);
         
         // Commands
         window.cmd = (command) => {
@@ -261,12 +324,8 @@
                 document.querySelectorAll('.path, .goal').forEach(e => e.classList.toggle('debug-border'));
                 console.log(`Hitbox Mode: ${debugMode ? "ON" : "OFF"}`);
             } 
-            else if (c === 'load menu') {
-                resetToMenu();
-            } 
-            else if (c === 'load level1') {
-                startLevel(1);
-            } 
+            else if (c === 'load menu') resetToMenu();
+            else if (c === 'load level1') startLevel(1);
         };
     </script>
 </body>
