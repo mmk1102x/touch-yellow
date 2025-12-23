@@ -10,10 +10,11 @@
     
     <link href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Roboto:wght@700&display=swap" rel="stylesheet">
     <style>
-        /* 1. RESET & BLACK BACKGROUND */
+        /* RESET */
+        * { box-sizing: border-box; }
         body, html { 
             margin: 0; padding: 0; width: 100%; height: 100%; 
-            background-color: black; /* The "Black Lines" for other resolutions */
+            background-color: black; 
             overflow: hidden; 
             font-family: 'Roboto', sans-serif; 
             user-select: none;
@@ -23,14 +24,13 @@
             align-items: center;
         }
 
-        /* 2. THE 16:9 GAME CONTAINER */
-        /* This div is the "Game Console". It always keeps 16:9 ratio */
+        /* 16:9 CONTAINER */
         #game-container {
             width: 100%;
-            max-width: 177.78vh; /* Limit width based on height (16/9 = 1.7778) */
+            max-width: 177.78vh; /* Force 16:9 ratio */
             aspect-ratio: 16/9;
             position: relative;
-            background-color: #4d4d4d; /* Menu Background */
+            background-color: #4d4d4d; 
             overflow: hidden;
             box-shadow: 0 0 50px rgba(0,0,0,0.5);
         }
@@ -41,24 +41,23 @@
 
         /* TITLE */
         .title { 
-            position: absolute; width: 100%; top: 12%;
+            position: absolute; width: 100%; top: 10%;
             font-family: 'Luckiest Guy', cursive; color: #f2ef45; 
-            font-size: clamp(40px, 10cqi, 120px); /* Responsive font size based on container */
+            font-size: 10cqi; 
             line-height: 0.9; 
             text-transform: uppercase; 
-            text-shadow: 0.3cqi 0.3cqi 0 #000;
+            text-shadow: 0.4cqi 0.4cqi 0 #000;
             text-align: center; 
         }
 
         /* MENU ITEMS */
         .menu-item { position: absolute; display: flex; align-items: center; }
         
-        /* Start Button - Restored to Circle, positioned inside the 16:9 box */
-        #start-item { left: 5%; bottom: 30%; }
-        #exit-item { left: 5%; bottom: 10%; }
+        #start-item { left: 5%; bottom: 25%; height: 12%; }
+        #exit-item { left: 5%; bottom: 8%; height: 12%; }
 
         .circle { 
-            width: 8cqi; height: 8cqi; /* cqi = Container Query Inline (scales with width) */
+            height: 100%; aspect-ratio: 1/1; 
             background-color: #f2a922; 
             border-radius: 50%; 
             border: 0.5cqi solid #333; 
@@ -76,7 +75,6 @@
         .circle:active { transform: scale(0.95); }
 
         /* GAME OBJECTS */
-        /* pointer-events: auto is CRITICAL for detection */
         .path { position: absolute; background-color: #26a9e1; z-index: 11; pointer-events: auto; }
         .goal { position: absolute; background-color: #f1a92a; z-index: 12; pointer-events: auto; }
 
@@ -86,15 +84,13 @@
 </head>
 <body oncontextmenu="return false;">
 
-    <!-- THE 16:9 CONTAINER -->
     <div id="game-container">
-        
         <!-- MENU -->
         <div id="menu-screen" class="screen">
             <h1 class="title">Touch Yellow</h1>
             
             <div id="start-item" class="menu-item">
-                <div id="start-anchor" class="circle" 
+                <div id="start-btn" class="circle" 
                      onmousedown="startLevel(1)" 
                      ontouchstart="startLevel(1)"></div>
                 <div class="label"><- Start/Restart</div>
@@ -114,42 +110,22 @@
         const container = document.getElementById('game-container');
         const menu = document.getElementById('menu-screen');
         const game = document.getElementById('game-screen');
-        const startAnchor = document.getElementById('start-anchor');
-
+        
         let isDraggingFromStart = false;
         let gameActive = false;
         let debugMode = false;
 
-        // --- FULLSCREEN LOGIC ---
         function toggleFullscreen() {
-            if (!document.fullscreenElement) {
-                document.documentElement.requestFullscreen().catch(err => {
-                    console.log(`Error attempting to enable fullscreen: ${err.message}`);
-                });
+            if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
+                document.documentElement.requestFullscreen().catch(e => console.log(e));
             }
         }
-
         function exitFullscreenMode() {
-            if (document.fullscreenElement) {
-                document.exitFullscreen();
-            }
+            if (document.fullscreenElement) document.exitFullscreen();
         }
 
-        // --- GAME ENGINE ---
         function startLevel(lvl) {
-            // Force Fullscreen on interaction
             toggleFullscreen();
-
-            // Get coordinates relative to the 16:9 container, not the window
-            const containerRect = container.getBoundingClientRect();
-            const btnRect = startAnchor.getBoundingClientRect();
-            
-            // Calculate button position as percentages of the container
-            // This ensures the level lines up perfect even if window resizes
-            const startTop = btnRect.top - containerRect.top;
-            const startLeft = btnRect.left - containerRect.left;
-            const btnHeight = btnRect.height;
-            const btnCenterY = startTop + (btnHeight / 2);
 
             game.innerHTML = ''; 
             isDraggingFromStart = true;
@@ -157,44 +133,36 @@
             game.style.display = 'block';
 
             if (lvl === 1) {
-                // Everything is calculated in percentages (%) or relative units 
-                // to match the 16:9 container size.
-                
-                const w = containerRect.width;
-                const h = containerRect.height;
-                const thick = h * 0.15; // Path thickness is 15% of screen height (Chunky!)
+                const w = container.clientWidth;
+                const h = container.clientHeight;
+                const thick = h * 0.14;
+                const startY = h * 0.68; 
 
-                // 1. SAFE ZONE (Behind the button)
-                // Starts at x=0, goes to button center. Height is slightly taller than thickness for safety.
-                createPath(0, btnCenterY - (thick/2) - 10, startLeft + btnRect.width, thick + 20);
+                // 1. PATH 1: Bottom Horizontal
+                createPath(0, startY, w * 0.55, thick);
 
-                // 2. PATH 1: Bottom Horizontal (Left to Middle)
-                // y = aligned with button center
-                createPath(0, btnCenterY - (thick/2), w * 0.55, thick);
+                // 2. PATH 2: Vertical Up
+                const p2Height = h * 0.40;
+                const p2X = (w * 0.55) - thick;
+                const p2Y = startY - p2Height;
+                createPath(p2X, p2Y, thick, p2Height + thick);
 
-                // 3. PATH 2: Vertical Up
-                // x = end of path 1. y = goes up.
-                const path2X = (w * 0.55) - thick;
-                const path2Height = h * 0.35;
-                createPath(path2X, btnCenterY - (thick/2) - path2Height, thick, path2Height + thick);
+                // 3. PATH 3: Horizontal Right
+                const p3Width = w * 0.35;
+                createPath(p2X, p2Y, p3Width, thick);
 
-                // 4. PATH 3: Horizontal Right
-                const path3Y = btnCenterY - (thick/2) - path2Height;
-                createPath(path2X, path3Y, w * 0.35, thick);
+                // 4. PATH 4: Vertical Up (Final)
+                const p4Height = h * 0.35;
+                const p4X = p2X + p3Width - thick;
+                const p4Y = p2Y - p4Height;
+                createPath(p4X, p4Y, thick, p4Height + thick);
 
-                // 5. PATH 4: Vertical Up (Final)
-                const path4X = path2X + (w * 0.35) - thick;
-                const path4Height = h * 0.3;
-                createPath(path4X, path3Y - path4Height, thick, path4Height + thick);
+                // 5. PATH 5: Top Horizontal Left
+                const p5Width = w * 0.40;
+                createPath(p4X - p5Width + thick, p4Y, p5Width, thick);
 
-                // 6. PATH 5: Top Horizontal Left
-                const path5Y = path3Y - path4Height;
-                const path5Width = w * 0.4;
-                createPath(path4X - path5Width + thick, path5Y, path5Width, thick);
-
-                // 7. GOAL
-                const goalSize = thick;
-                createGoal(path4X - path5Width, path5Y - goalSize, goalSize, goalSize);
+                // 6. GOAL
+                createGoal(p4X - p5Width, p4Y - thick, thick, thick);
             }
 
             // Safety Delay
@@ -215,26 +183,18 @@
                 return;
             }
 
-            // Death - Check if touching path, goal, or start button
+            // Death Logic
             const isSafe = target && (
                 target.classList.contains('path') || 
-                target.classList.contains('goal') || 
-                target.id === 'start-anchor'
+                target.classList.contains('goal')
             );
 
             if (!isSafe) {
-                if(debugMode) {
-                    // Visual debug
-                    const dot = document.createElement('div');
-                    dot.style.position = 'fixed'; dot.style.left = clientX+'px'; dot.style.top = clientY+'px';
-                    dot.style.width = '5px'; dot.style.height = '5px'; dot.style.background = 'red'; dot.style.zIndex = 9999;
-                    document.body.appendChild(dot);
-                }
+                if(debugMode) console.log("Died on:", target);
                 resetToMenu();
             }
         }
 
-        // --- HELPERS ---
         function createPath(l, t, w, h) {
             const d = document.createElement('div');
             d.className = 'path';
@@ -247,6 +207,7 @@
         function createGoal(l, t, w, h) {
             const d = document.createElement('div');
             d.className = 'goal';
+            if(debugMode) d.classList.add('debug-border');
             d.style.left = l + 'px'; d.style.top = t + 'px';
             d.style.width = w + 'px'; d.style.height = h + 'px';
             game.appendChild(d);
@@ -256,25 +217,43 @@
             gameActive = false;
             isDraggingFromStart = false;
             game.style.display = 'none';
-            menu.style.display = 'block'; // Use block to restore flex layout via CSS
+            menu.style.display = 'block'; 
         }
 
         function exitGame() {
             exitFullscreenMode();
-            // Optional: redirect to google or github
             window.location.href = "https://github.com/mmk1102x/touch-yellow";
         }
 
-        // LISTENERS
+        // Listeners
         window.addEventListener('mousemove', e => gameActive && handleMove(e.clientX, e.clientY));
         window.addEventListener('touchmove', e => {
             if(gameActive) { e.preventDefault(); handleMove(e.touches[0].clientX, e.touches[0].clientY, e.touches.length > 1); }
         }, {passive: false});
+        
         window.addEventListener('mouseup', () => gameActive && resetToMenu());
         window.addEventListener('touchend', () => gameActive && resetToMenu());
         
-        // Debug
-        window.cmd = (c) => { if(c==='hitbox') { debugMode=!debugMode; document.querySelectorAll('.path').forEach(e=>e.classList.toggle('debug-border')); }};
+        // --- COMMAND CONSOLE ---
+        window.cmd = (command) => {
+            const c = command.toLowerCase().trim();
+            if (c === 'hitbox') {
+                debugMode = !debugMode;
+                document.querySelectorAll('.path, .goal').forEach(e => e.classList.toggle('debug-border'));
+                console.log(`Hitbox Mode: ${debugMode ? "ON" : "OFF"}`);
+            } 
+            else if (c === 'load menu') {
+                resetToMenu();
+                console.log("Scene Loaded: Menu");
+            } 
+            else if (c === 'load level1') {
+                startLevel(1);
+                console.log("Scene Loaded: Level 1");
+            } 
+            else {
+                console.warn("Unknown command. Try: cmd('load menu'), cmd('load level1'), cmd('hitbox')");
+            }
+        };
     </script>
 </body>
 </html>
