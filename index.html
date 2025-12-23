@@ -10,7 +10,7 @@
     
     <link href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Roboto:wght@700&display=swap" rel="stylesheet">
     <style>
-        /* RESET */
+        /* RESET & BLACK LINES FRAME */
         * { box-sizing: border-box; }
         body, html { 
             margin: 0; padding: 0; width: 100%; height: 100%; 
@@ -24,7 +24,7 @@
             align-items: center;
         }
 
-        /* 16:9 CONTAINER */
+        /* 16:9 CINEMA CONTAINER */
         #game-container {
             width: 100%;
             max-width: 177.78vh; /* Force 16:9 ratio */
@@ -53,6 +53,7 @@
         /* MENU ITEMS */
         .menu-item { position: absolute; display: flex; align-items: center; }
         
+        /* Start Button locked to bottom-left area */
         #start-item { left: 5%; bottom: 25%; height: 12%; }
         #exit-item { left: 5%; bottom: 8%; height: 12%; }
 
@@ -110,6 +111,7 @@
         const container = document.getElementById('game-container');
         const menu = document.getElementById('menu-screen');
         const game = document.getElementById('game-screen');
+        const startBtn = document.getElementById('start-btn');
         
         let isDraggingFromStart = false;
         let gameActive = false;
@@ -133,45 +135,54 @@
             game.style.display = 'block';
 
             if (lvl === 1) {
+                // Dimensions relative to the 16:9 container
                 const w = container.clientWidth;
                 const h = container.clientHeight;
                 
-                // Thickness of the path
-                const thick = h * 0.14;
+                // --- 1. DYNAMIC START POSITION ---
+                // We find exactly where the start button is, even if CSS changes.
+                const btnRect = startBtn.getBoundingClientRect();
+                const contRect = container.getBoundingClientRect();
                 
-                // Start Y Position (Matches button position: bottom 25% + half height)
-                const startY = h * 0.69; 
+                // Calculate center Y of the button relative to the container
+                // (Button Top - Container Top) + (Button Height / 2)
+                const relativeBtnTop = btnRect.top - contRect.top;
+                const centerY = relativeBtnTop + (btnRect.height / 2);
 
-                // --- FIXED MATH: KEEPS PATH ON SCREEN ---
-                
-                // 1. PATH 1: Bottom Horizontal
+                const thick = h * 0.14; // 14% Thickness
+                const startY = centerY - (thick / 2); // Center path on button
+
+                // --- 2. THE PATHS ---
+
+                // PATH 1: Bottom Horizontal
                 // Overlap (+1px) prevents sub-pixel death gaps
                 createPath(0, startY, w * 0.55 + 1, thick);
 
-                // 2. PATH 2: Vertical Up (Reduced height so it fits)
+                // PATH 2: Vertical Up
                 const p2Height = h * 0.25; 
                 const p2X = (w * 0.55) - thick;
                 const p2Y = startY - p2Height;
-                createPath(p2X, p2Y, thick, p2Height + thick); // Overlap bottom joint
+                createPath(p2X, p2Y, thick, p2Height + thick); 
 
-                // 3. PATH 3: Horizontal Right
+                // PATH 3: Horizontal Right
                 const p3Width = w * 0.35;
                 createPath(p2X, p2Y, p3Width + 1, thick);
 
-                // 4. PATH 4: Vertical Up (Reduced height so it fits)
+                // PATH 4: Vertical Up (Final)
                 const p4Height = h * 0.30; 
                 const p4X = p2X + p3Width - thick;
                 const p4Y = p2Y - p4Height;
-                createPath(p4X, p4Y, thick, p4Height + thick); // Overlap bottom joint
+                createPath(p4X, p4Y, thick, p4Height + thick);
 
-                // 5. PATH 5: Top Horizontal Left
-                const p5Width = w * 0.40;
-                // p4Y is now safely inside the screen (approx 14% from top)
+                // PATH 5: Top Horizontal Left
+                // EXTENDED: Made this longer (45%) to look more balanced
+                const p5Width = w * 0.45;
                 createPath(p4X - p5Width + thick, p4Y, p5Width, thick);
 
-                // 6. GOAL (Sitting on top of the left end)
-                // Positioned slightly above the path
-                createGoal(p4X - p5Width, p4Y - thick + 5, thick, thick);
+                // GOAL
+                // Positioned on top of the left end of Path 5
+                // Overlaps 2px downwards to ensure connectivity
+                createGoal(p4X - p5Width, p4Y - thick + 2, thick, thick);
             }
 
             // Safety Delay
@@ -209,6 +220,7 @@
             d.className = 'path';
             if(debugMode) d.classList.add('debug-border');
             d.style.left = l + 'px'; d.style.top = t + 'px';
+            // Math.ceil ensures we don't get 0.5px gaps
             d.style.width = Math.ceil(w) + 'px'; d.style.height = Math.ceil(h) + 'px';
             game.appendChild(d);
         }
@@ -231,8 +243,7 @@
 
         function exitGame() {
             exitFullscreenMode();
-            // Just return to menu, don't leave site
-            alert("Exited.");
+            // Just return to menu UI
             resetToMenu();
         }
 
@@ -245,7 +256,7 @@
         window.addEventListener('mouseup', () => gameActive && resetToMenu());
         window.addEventListener('touchend', () => gameActive && resetToMenu());
         
-        // --- COMMAND CONSOLE ---
+        // Commands
         window.cmd = (command) => {
             const c = command.toLowerCase().trim();
             if (c === 'hitbox') {
@@ -255,15 +266,12 @@
             } 
             else if (c === 'load menu') {
                 resetToMenu();
-                console.log("Scene Loaded: Menu");
+                console.log("Menu Loaded");
             } 
             else if (c === 'load level1') {
                 startLevel(1);
-                console.log("Scene Loaded: Level 1");
+                console.log("Level 1 Loaded");
             } 
-            else {
-                console.warn("Unknown command. Try: cmd('load menu'), cmd('load level1'), cmd('hitbox')");
-            }
         };
     </script>
 </body>
