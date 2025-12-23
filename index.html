@@ -135,34 +135,43 @@
             if (lvl === 1) {
                 const w = container.clientWidth;
                 const h = container.clientHeight;
+                
+                // Thickness of the path
                 const thick = h * 0.14;
-                const startY = h * 0.68; 
+                
+                // Start Y Position (Matches button position: bottom 25% + half height)
+                const startY = h * 0.69; 
 
+                // --- FIXED MATH: KEEPS PATH ON SCREEN ---
+                
                 // 1. PATH 1: Bottom Horizontal
-                createPath(0, startY, w * 0.55, thick);
+                // Overlap (+1px) prevents sub-pixel death gaps
+                createPath(0, startY, w * 0.55 + 1, thick);
 
-                // 2. PATH 2: Vertical Up
-                const p2Height = h * 0.40;
+                // 2. PATH 2: Vertical Up (Reduced height so it fits)
+                const p2Height = h * 0.25; 
                 const p2X = (w * 0.55) - thick;
                 const p2Y = startY - p2Height;
-                createPath(p2X, p2Y, thick, p2Height + thick);
+                createPath(p2X, p2Y, thick, p2Height + thick); // Overlap bottom joint
 
                 // 3. PATH 3: Horizontal Right
                 const p3Width = w * 0.35;
-                createPath(p2X, p2Y, p3Width, thick);
+                createPath(p2X, p2Y, p3Width + 1, thick);
 
-                // 4. PATH 4: Vertical Up (Final)
-                const p4Height = h * 0.35;
+                // 4. PATH 4: Vertical Up (Reduced height so it fits)
+                const p4Height = h * 0.30; 
                 const p4X = p2X + p3Width - thick;
                 const p4Y = p2Y - p4Height;
-                createPath(p4X, p4Y, thick, p4Height + thick);
+                createPath(p4X, p4Y, thick, p4Height + thick); // Overlap bottom joint
 
                 // 5. PATH 5: Top Horizontal Left
                 const p5Width = w * 0.40;
+                // p4Y is now safely inside the screen (approx 14% from top)
                 createPath(p4X - p5Width + thick, p4Y, p5Width, thick);
 
-                // 6. GOAL
-                createGoal(p4X - p5Width, p4Y - thick, thick, thick);
+                // 6. GOAL (Sitting on top of the left end)
+                // Positioned slightly above the path
+                createGoal(p4X - p5Width, p4Y - thick + 5, thick, thick);
             }
 
             // Safety Delay
@@ -200,7 +209,7 @@
             d.className = 'path';
             if(debugMode) d.classList.add('debug-border');
             d.style.left = l + 'px'; d.style.top = t + 'px';
-            d.style.width = w + 'px'; d.style.height = h + 'px';
+            d.style.width = Math.ceil(w) + 'px'; d.style.height = Math.ceil(h) + 'px';
             game.appendChild(d);
         }
 
@@ -209,7 +218,7 @@
             d.className = 'goal';
             if(debugMode) d.classList.add('debug-border');
             d.style.left = l + 'px'; d.style.top = t + 'px';
-            d.style.width = w + 'px'; d.style.height = h + 'px';
+            d.style.width = Math.ceil(w) + 'px'; d.style.height = Math.ceil(h) + 'px';
             game.appendChild(d);
         }
 
@@ -222,7 +231,9 @@
 
         function exitGame() {
             exitFullscreenMode();
-            window.location.href = "https://github.com/mmk1102x/touch-yellow";
+            // Just return to menu, don't leave site
+            alert("Exited.");
+            resetToMenu();
         }
 
         // Listeners
