@@ -75,20 +75,13 @@
             100% { transform: translateY(250%); }
         }
         
-        /* Level 4 Safe Room Movement */
-        /* Moves RELATIVE to its starting position (Left: 10%, Top: 65%) */
-        /* Room is ~85% wide. Goal is ~7%. Safe travel distance X = ~78% of container */
-        /* 78 / 7 = ~11.1 (1100% translateX) */
-        /* Room is ~30% high. Goal is 14%. Safe travel distance Y = ~16% of container */
-        /* 16 / 14 = ~1.1 (110% translateY) */
-        @keyframes safeCrazyMove {
+        @keyframes crazyMove {
             0%   { transform: translate(0, 0); }
-            20%  { transform: translate(1000%, 0); }    /* Far Right */
-            35%  { transform: translate(1000%, 100%); } /* Far Right Bottom */
-            50%  { transform: translate(500%, 100%); }  /* Middle Bottom */
-            65%  { transform: translate(500%, 0); }     /* Middle Top */
-            80%  { transform: translate(0, 100%); }     /* Left Bottom */
-            100% { transform: translate(0, 0); }        /* Start */
+            20%  { transform: translate(250%, -350%); } 
+            40%  { transform: translate(250%, 0%); }    
+            60%  { transform: translate(120%, -150%); } 
+            80%  { transform: translate(0, -350%); }    
+            100% { transform: translate(0, 0); }
         }
     </style>
 </head>
@@ -129,6 +122,14 @@
             }
         };
 
+        // SPEEDRUN STATE
+        window.gameState = { level: 0, status: 'menu', deaths: 0 };
+        const updateSpeedrunStatus = (lvl, status) => {
+            window.gameState.level = lvl;
+            window.gameState.status = status;
+            if(status === 'dead') window.gameState.deaths++;
+        };
+
         const PluginManager = {
             hooks: {},
             on: function(e, cb) { (this.hooks[e] = this.hooks[e] || []).push(cb); },
@@ -167,44 +168,33 @@
                 draw.goal(g.topPathLeftX, g.p4Y - g.THICK_H, g.THICK_W, g.THICK_H, 4, 0); 
                 
                 const obsW = g.THICK_W * 0.6; const obsH = g.THICK_H * 1.5; 
+                draw.obstacle(32, g.startY - (g.THICK_H * 1.5), obsW, obsH, "slicerMove 2s linear infinite");
+                draw.obstacle(55, g.midY - (g.THICK_H * 1.5), obsW, obsH, "slicerMove 3s linear infinite");
                 
-                // 1. Bottom
-                draw.obstacle(35, g.startY - (g.THICK_H * 1.5), obsW, obsH, "slicerMove 2s linear infinite");
-                
-                // 2. Middle (60%)
-                draw.obstacle(60, g.midY - (g.THICK_H * 1.5), obsW, obsH, "slicerMove 3s linear infinite");
-                
-                // 3. Waterfall (Better Spacing: 1.5x Height blocks, 4s total loop)
                 const waterX = g.p4X - 15; 
-                const waterH = g.THICK_H * 1.5; // Shorter blocks
-                const waterAnim = "waterfallDrop 4s linear infinite";
+                const waterH = g.THICK_H * 1.2;
+                // Slower Waterfall (3.5s) for fairness
+                const waterAnim = "waterfallDrop 3.5s linear infinite";
                 draw.obstacle(waterX, g.p4Y, obsW, waterH, waterAnim);
-                draw.obstacle(waterX, g.p4Y, obsW, waterH, waterAnim + " -1.33s");
-                draw.obstacle(waterX, g.p4Y, obsW, waterH, waterAnim + " -2.66s");
+                draw.obstacle(waterX, g.p4Y, obsW, waterH, waterAnim + " -1.16s");
+                draw.obstacle(waterX, g.p4Y, obsW, waterH, waterAnim + " -2.32s");
             },
             4: (draw) => {
                 const H_THICK = 14; const W_THICK = 7.875; const TOP_Y = 10;
                 
-                // Layout
                 draw.path(15, TOP_Y, 75, H_THICK); 
                 draw.path(90 - W_THICK, TOP_Y, W_THICK, 60);
-                // Big Room (Bottom)
                 draw.path(5, 60, 85, 30);
                 
-                // Trigger (at 25% X)
                 draw.trigger(25, 60, 2, 30, (goalObj) => {
                     if (!goalObj.hitbox.classList.contains('moving')) {
                         goalObj.hitbox.classList.add('moving');
-                        // Use the SAFE movement animation (2.5s loop, fast but safe)
-                        const anim = "safeCrazyMove 2.5s linear infinite";
-                        goalObj.gfx.style.animation = anim;
-                        goalObj.hitbox.style.animation = anim;
-                        Logger.log("TRIGGERED! Goal is fleeing!");
+                        goalObj.gfx.style.animation = "crazyMove 0.8s linear infinite";
+                        goalObj.hitbox.style.animation = "crazyMove 0.8s linear infinite";
+                        Logger.log("TRIGGERED! FAST GOAL!");
                     }
                 });
 
-                // Goal (Starts Left side of room)
-                // 500ms Hold required
                 draw.goal(10, 65, W_THICK, H_THICK, "menu", 500);
             }
         };
@@ -299,8 +289,10 @@
 
                 if (LevelData[lvl]) LevelData[lvl](builderProxy);
                 
-                this.state.active = false;
-                setTimeout(() => { this.state.active = true; PluginManager.trigger('startLevel', lvl); }, 50);
+                // NO I-FRAMES! INSTANT START
+                this.state.active = true;
+                updateSpeedrunStatus(lvl, 'playing');
+                PluginManager.trigger('startLevel', lvl);
             },
 
             gameLoop: function() {
@@ -327,7 +319,9 @@
                     if (requiredHold === 0) {
                         this.win(target.dataset.next);
                     } else {
+                        // Hold Win
                         this.state.hoverGoalTime += 16.6;
+                        
                         this.ui.catchMeter.style.display = 'block';
                         this.ui.catchMeter.style.left = this.state.mouseX + 'px';
                         this.ui.catchMeter.style.top = (this.state.mouseY - 20) + 'px';
@@ -362,8 +356,14 @@
             win: function(next) {
                 this.state.active = false;
                 Logger.log("Goal Captured!", "success");
-                if (next === "menu") { alert("You Beat The Game!"); this.reset(); } 
-                else { this.startLevel(parseInt(next)); }
+                if (next === "menu") { 
+                    alert("You Beat The Game!"); 
+                    updateSpeedrunStatus(4, 'completed'); 
+                    this.reset(); 
+                } 
+                else { 
+                    this.startLevel(parseInt(next)); 
+                }
             },
 
             handleRelease: function(e) {
@@ -373,18 +373,26 @@
 
             die: function(reason) {
                 Logger.log(`Died: ${reason}`, "death");
-                this.state.active = false; PluginManager.trigger('death', reason); this.reset();
+                this.state.active = false; 
+                updateSpeedrunStatus(window.gameState.level, 'dead');
+                PluginManager.trigger('death', reason); 
+                this.reset();
             },
 
             reset: function() {
                 Logger.log("Resetting to Menu");
                 this.state.active = false; this.state.dragging = false;
+                updateSpeedrunStatus(0, 'menu');
                 this.ui.menu.style.display = 'block';
                 this.layers.gfx.innerHTML = ''; this.layers.phy.innerHTML = '';
                 this.ui.catchMeter.style.display = 'none';
-                if (document.fullscreenElement) document.exitFullscreen();
             },
-            exit: function() { this.reset(); },
+
+            exit: function() { 
+                if (document.fullscreenElement) document.exitFullscreen();
+                this.reset(); 
+            },
+            
             toggleDebug: function() { 
                 this.state.debug = !this.state.debug; 
                 this.container.classList.toggle('debug'); 
