@@ -30,12 +30,18 @@
 
         .hitbox { position: absolute; opacity: 0; cursor: crosshair; }
         
-        /* DEBUG STYLES */
+        /* --- DEBUG STYLES --- */
         #game-container.debug { background-color: #330000; } 
+        
+        /* Game Objects */
         .debug .path-box { border: none; background: transparent; }
         .debug .goal-box { opacity: 0.8; border: 3px solid #00ff00; background: rgba(0, 255, 0, 0.3); z-index: 100; }
         .debug .obstacle-box { opacity: 0.8; border: 3px solid #ff0000; background: rgba(255, 0, 0, 0.5); z-index: 100; }
         .debug .trigger-box { opacity: 0.8; border: 3px solid #b0f; background: rgba(150, 0, 255, 0.4); z-index: 100; }
+        
+        /* Menu Hitboxes (Purple for Action) */
+        .debug .circle-btn { border: 3px solid #b0f !important; background-color: rgba(150, 0, 255, 0.4) !important; }
+        .debug .switch { border: 3px solid #b0f !important; background-color: rgba(150, 0, 255, 0.4) !important; }
 
         /* UI Elements */
         .menu-content { pointer-events: auto; text-align: center; width: 100%; height: 100%; position: relative; background-color: #4d4d4d; }
@@ -62,7 +68,7 @@
             background: #333; border: 1px solid white; border-radius: 3px;
             pointer-events: none; z-index: 9999; transform: translate(-50%, -20px);
         }
-        #catch-fill { width: 0%; height: 100%; background: #00ff00; transition: width 0.1s linear; }
+        #catch-fill { width: 0%; height: 100%; background: #00ff00; transition: width 0.05s linear; }
 
         /* ANIMATIONS */
         @keyframes slicerMove {
@@ -74,19 +80,13 @@
             0% { transform: translateY(-250%); }
             100% { transform: translateY(250%); }
         }
-        
-        /* Level 4: The Safe Room Patrol */
-        /* Start is (10%, 65%). Room Width ~85%. Room Height ~30% */
-        /* We move RELATIVE to the start position */
-        /* 100% translation = 1x width of the goal (which is ~6.75% of screen width) */
-        /* We need to move about 70% of screen width to the right. That is ~1000% translation */
-        @keyframes arenaPatrol {
-            0%   { transform: translate(0, 0); } /* Start Left-Mid */
-            25%  { transform: translate(1000%, -100%); } /* Top Right Corner */
-            50%  { transform: translate(500%, 100%); }   /* Bottom Middle */
-            75%  { transform: translate(1000%, 100%); }  /* Bottom Right */
-            90%  { transform: translate(500%, -100%); }  /* Top Middle */
-            100% { transform: translate(0, 0); }         /* Return Start */
+        @keyframes crazyMove {
+            0%   { transform: translate(0, 0); }
+            20%  { transform: translate(250%, -350%); } 
+            40%  { transform: translate(250%, 0%); }    
+            60%  { transform: translate(120%, -150%); } 
+            80%  { transform: translate(0, -350%); }    
+            100% { transform: translate(0, 0); }
         }
     </style>
 </head>
@@ -165,17 +165,11 @@
                 draw.goal(g.topPathLeftX, g.p4Y - g.THICK_H, g.THICK_W, g.THICK_H, 4, 0); 
                 
                 const obsW = g.THICK_W * 0.6; const obsH = g.THICK_H * 1.5; 
-                
-                // 1. Bottom
                 draw.obstacle(32, g.startY - (g.THICK_H * 1.5), obsW, obsH, "slicerMove 2s linear infinite");
-                
-                // 2. Middle (MOVED LEFT TO 42%)
-                // This gives space before the waterfall
                 draw.obstacle(42, g.midY - (g.THICK_H * 1.5), obsW, obsH, "slicerMove 3s linear infinite");
                 
-                // 3. THE WATERFALL (MOVED RIGHT TO 75%)
                 const waterX = 75; 
-                const waterH = g.THICK_H * 1.2;
+                const waterH = g.THICK_H * 1.5; 
                 const waterAnim = "waterfallDrop 4s linear infinite";
                 draw.obstacle(waterX, g.p4Y, obsW, waterH, waterAnim);
                 draw.obstacle(waterX, g.p4Y, obsW, waterH, waterAnim + " -1.33s");
@@ -183,24 +177,19 @@
             },
             4: (draw) => {
                 const H_THICK = 14; const W_THICK = 7.875; const TOP_Y = 10;
-                
                 draw.path(15, TOP_Y, 75, H_THICK); 
                 draw.path(90 - W_THICK, TOP_Y, W_THICK, 60);
-                draw.path(5, 60, 85, 30); // The Arena Room
+                draw.path(5, 60, 85, 30);
                 
-                // Trigger Line
                 draw.trigger(25, 60, 2, 30, (goalObj) => {
                     if (!goalObj.hitbox.classList.contains('moving')) {
                         goalObj.hitbox.classList.add('moving');
-                        // Use arenaPatrol (Keeps it inside the blue room)
-                        const anim = "arenaPatrol 4s linear infinite";
-                        goalObj.gfx.style.animation = anim;
-                        goalObj.hitbox.style.animation = anim;
-                        Logger.log("TRIGGERED! Goal is moving!");
+                        goalObj.gfx.style.animation = "crazyMove 0.8s linear infinite";
+                        goalObj.hitbox.style.animation = "crazyMove 0.8s linear infinite";
+                        Logger.log("TRIGGERED! FAST GOAL!");
                     }
                 });
 
-                // Goal Start
                 draw.goal(10, 65, W_THICK, H_THICK, "menu", 500);
             }
         };
@@ -240,6 +229,7 @@
                 this.state.holdMode = this.ui.modeCheck.checked;
                 this.ui.modeText.innerText = this.state.holdMode ? "Hold Mode" : "Hover Mode";
                 this.ui.modeText.style.color = this.state.holdMode ? "#f2a922" : "#f2ef45";
+                Logger.log(`Mode Switched: ${this.state.holdMode ? "HOLD" : "HOVER"}`, "system");
             },
 
             builder: {
@@ -281,6 +271,7 @@
                 this.ui.menu.style.display = 'none'; this.state.dragging = true;
                 this.state.hoverGoalTime = 0;
                 this.ui.catchMeter.style.display = 'none';
+                this.ui.catchFill.style.width = '0%';
                 
                 let goalRef = null;
                 const builderProxy = Object.assign({}, this.builder, {
@@ -321,15 +312,20 @@
                     if (requiredHold === 0) {
                         this.win(target.dataset.next);
                     } else {
+                        // Hold Win Logic
                         this.state.hoverGoalTime += 16.6;
                         this.ui.catchMeter.style.display = 'block';
                         this.ui.catchMeter.style.left = this.state.mouseX + 'px';
                         this.ui.catchMeter.style.top = (this.state.mouseY - 20) + 'px';
-                        const pct = Math.min(100, (this.state.hoverGoalTime / requiredHold) * 100);
-                        this.ui.catchFill.style.width = pct + '%';
+                        
+                        const pct = (this.state.hoverGoalTime / requiredHold) * 100;
+                        this.ui.catchFill.style.width = Math.min(100, pct) + '%';
 
                         if (this.state.hoverGoalTime >= requiredHold) {
-                            this.win(target.dataset.next);
+                            // Delay win slightly to show full bar
+                            setTimeout(() => {
+                                if (this.state.active) this.win(target.dataset.next);
+                            }, 50);
                         }
                     }
                     return; 
