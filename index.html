@@ -71,11 +71,10 @@
             100% { transform: translateY(0%); }    
         }
         @keyframes waterfallDrop {
-            0% { transform: translateY(-250%); }
-            100% { transform: translateY(250%); }
+            0% { transform: translateY(-300%); }
+            100% { transform: translateY(300%); }
         }
         
-        /* Level 4 Crazy Goal Movement */
         @keyframes crazyMove {
             0%   { transform: translate(0, 0); }
             20%  { transform: translate(250%, -350%); } 
@@ -152,29 +151,29 @@
             2: (draw) => {
                 const g = DrawLevel1Layout(draw);
                 draw.path(g.topPathLeftX, g.p4Y - g.THICK_H, g.THICK_W, g.THICK_H * 2);
-                
-                // GOAL (Moved to 20% to be safer for Level 3 Start)
                 draw.goal(20, 63, 6.75, 12, 3, 0); 
-                
                 draw.obstacle(35, g.startY - (g.THICK_H * 1.5), g.THICK_W * 0.6, g.THICK_H * 1.5, "slicerMove 2s linear infinite");
             },
             3: (draw) => {
                 const g = DrawLevel1Layout(draw);
-                // Start Zone (Matches L2 Goal at 20%)
                 draw.path(0, g.startY, 30, g.THICK_H); 
                 draw.goal(g.topPathLeftX, g.p4Y - g.THICK_H, g.THICK_W, g.THICK_H, 4, 0); 
                 
                 const obsW = g.THICK_W * 0.6; const obsH = g.THICK_H * 1.5; 
-                // 1. Bottom (Shifted right to avoid insta-kill)
-                draw.obstacle(35, g.startY - (g.THICK_H * 1.5), obsW, obsH, "slicerMove 2s linear infinite");
-                // 2. Middle
-                draw.obstacle(55, g.midY - (g.THICK_H * 1.5), obsW, obsH, "slicerMove 1.5s linear infinite");
-                // 3. Waterfall
+                
+                // 1. Bottom
+                draw.obstacle(28, g.startY - (g.THICK_H * 1.5), obsW, obsH, "slicerMove 2s linear infinite");
+                
+                // 2. Middle (Moved to 60%, 3s speed)
+                draw.obstacle(60, g.midY - (g.THICK_H * 1.5), obsW, obsH, "slicerMove 3s linear infinite");
+                
+                // 3. Waterfall (Taller blocks, 4s speed)
                 const waterX = g.p4X - 15; 
-                const waterAnim = "waterfallDrop 2.5s linear infinite";
-                draw.obstacle(waterX, g.topY, obsW, obsH, waterAnim);
-                draw.obstacle(waterX, g.topY, obsW, obsH, waterAnim + " -0.83s");
-                draw.obstacle(waterX, g.topY, obsW, obsH, waterAnim + " -1.66s");
+                const waterH = g.THICK_H * 2.5; // Taller
+                const waterAnim = "waterfallDrop 4s linear infinite";
+                draw.obstacle(waterX, g.p4Y, obsW, waterH, waterAnim);
+                draw.obstacle(waterX, g.p4Y, obsW, waterH, waterAnim + " -1.33s");
+                draw.obstacle(waterX, g.p4Y, obsW, waterH, waterAnim + " -2.66s");
             },
             4: (draw) => {
                 const H_THICK = 14; const W_THICK = 7.875; const TOP_Y = 10;
@@ -183,19 +182,18 @@
                 draw.path(90 - W_THICK, TOP_Y, W_THICK, 60);
                 draw.path(5, 60, 85, 30);
                 
-                // TRIGGER FIX: Use 'goalObj' instead of assuming it's a DOM element
                 draw.trigger(25, 60, 2, 30, (goalObj) => {
-                    // Check the HITBOX for the class
                     if (!goalObj.hitbox.classList.contains('moving')) {
                         goalObj.hitbox.classList.add('moving');
-                        // Animate both parts
-                        goalObj.gfx.style.animation = "crazyMove 3s linear infinite";
-                        goalObj.hitbox.style.animation = "crazyMove 3s linear infinite";
-                        Logger.log("TRIGGERED! Goal is moving!");
+                        // Faster: 0.8s loop
+                        goalObj.gfx.style.animation = "crazyMove 0.8s linear infinite";
+                        goalObj.hitbox.style.animation = "crazyMove 0.8s linear infinite";
+                        Logger.log("TRIGGERED! FAST GOAL!");
                     }
                 });
 
-                draw.goal(10, 65, W_THICK, H_THICK, "menu", 100);
+                // Goal with 500ms Hold Time
+                draw.goal(10, 65, W_THICK, H_THICK, "menu", 500);
             }
         };
 
