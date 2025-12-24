@@ -42,12 +42,24 @@
         /* UI Elements */
         .menu-content { pointer-events: auto; text-align: center; width: 100%; height: 100%; position: relative; background-color: #4d4d4d; }
         .title { position: absolute; width: 100%; top: 10%; font-family: 'Luckiest Guy', cursive; color: #f2ef45; font-size: 10cqi; line-height: 0.9; text-transform: uppercase; text-shadow: 0.4cqi 0.4cqi 0 #000; }
+        
         .menu-btn-wrapper { position: absolute; display: flex; align-items: center; pointer-events: auto; }
         
-        /* Adjusted Button Positions to fit "Saves" */
-        #btn-start-wrap { left: 5%; bottom: 42%; height: 12%; }
-        #btn-save-wrap { left: 5%; bottom: 25%; height: 12%; } /* SAVES BUTTON */
+        /* START BUTTON: Restored to 25% Bottom (Aligns with Level 1 Path) */
+        #btn-start-wrap { left: 5%; bottom: 25%; height: 12%; }
+        
+        /* EXIT BUTTON */
         #btn-exit-wrap { left: 5%; bottom: 8%; height: 12%; }
+
+        /* SAVES BUTTON: Moved to Top Right */
+        #btn-save-wrap { 
+            left: auto; right: 5%; /* Right side */
+            top: 5%; bottom: auto; /* Top */
+            height: 10%; 
+            flex-direction: row-reverse; /* Flip circle and text */
+        }
+        /* Adjust margin for the flipped save button label */
+        #btn-save-wrap .label { margin-left: 0; margin-right: 2cqi; font-size: 3.5cqi; }
 
         .circle-btn { height: 100%; aspect-ratio: 1/1; background-color: #f2a922; border-radius: 50%; border: 0.5cqi solid #333; cursor: pointer; transition: transform 0.1s; }
         .circle-btn:hover { transform: scale(1.1); filter: brightness(1.1); }
@@ -62,7 +74,12 @@
         input:checked + .slider { background-color: #f2a922; }
         input:checked + .slider:before { transform: translateX(4cqi); }
 
-        #catch-meter { position: fixed; display: none; width: 40px; height: 6px; background: #333; border: 1px solid white; border-radius: 3px; pointer-events: none; z-index: 9999; transform: translate(-50%, -20px); }
+        /* CURSOR CATCH METER */
+        #catch-meter {
+            position: fixed; display: none; width: 40px; height: 6px; 
+            background: #333; border: 1px solid white; border-radius: 3px;
+            pointer-events: none; z-index: 9999; transform: translate(-50%, -20px);
+        }
         #catch-fill { width: 0%; height: 100%; background: #00ff00; transition: width 0.05s linear; }
 
         /* ANIMATIONS */
@@ -70,21 +87,7 @@
         @keyframes waterfallDrop { 0% { transform: translateY(-250%); } 100% { transform: translateY(250%); } }
         @keyframes crazyMove { 0% { transform: translate(0, 0); } 20% { transform: translate(250%, -350%); } 40% { transform: translate(250%, 0%); } 60% { transform: translate(120%, -150%); } 80% { transform: translate(0, -350%); } 100% { transform: translate(0, 0); } }
         @keyframes safeRoomPatrol { 0% { transform: translate(0, 0); } 25% { transform: translate(1000%, -20%); } 50% { transform: translate(500%, 20%); } 75% { transform: translate(1000%, 20%); } 90% { transform: translate(500%, -20%); } 100% { transform: translate(0, 0); } }
-        
-        /* Level 5 Super Crazy (More keyframes) */
-        @keyframes superCrazyMove {
-            0% { transform: translate(0,0); }
-            10% { transform: translate(800%, 200%); }
-            20% { transform: translate(200%, 400%); }
-            30% { transform: translate(600%, 0%); }
-            40% { transform: translate(0%, 300%); }
-            50% { transform: translate(900%, 300%); }
-            60% { transform: translate(400%, 100%); }
-            70% { transform: translate(100%, 0%); }
-            80% { transform: translate(700%, 400%); }
-            90% { transform: translate(300%, 100%); }
-            100% { transform: translate(0,0); }
-        }
+        @keyframes superCrazyMove { 0% { transform: translate(0,0); } 10% { transform: translate(800%, 200%); } 20% { transform: translate(200%, 400%); } 30% { transform: translate(600%, 0%); } 40% { transform: translate(0%, 300%); } 50% { transform: translate(900%, 300%); } 60% { transform: translate(400%, 100%); } 70% { transform: translate(100%, 0%); } 80% { transform: translate(700%, 400%); } 90% { transform: translate(300%, 100%); } 100% { transform: translate(0,0); } }
     </style>
 </head>
 <body oncontextmenu="return false;">
@@ -103,15 +106,15 @@
                     <div class="label"><- Start/Restart</div>
                 </div>
 
-                <!-- SAVES BUTTON -->
-                <div id="btn-save-wrap" class="menu-btn-wrapper">
-                    <div class="circle-btn" onclick="Engine.openSave()"></div>
-                    <div class="label"><- Saves</div>
-                </div>
-
                 <div id="btn-exit-wrap" class="menu-btn-wrapper">
                     <div class="circle-btn" onclick="Engine.exit()"></div>
                     <div class="label" style="font-size: 6cqi;"><-Exit</div>
+                </div>
+
+                <!-- SAVES BUTTON (Top Right) -->
+                <div id="btn-save-wrap" class="menu-btn-wrapper">
+                    <div class="label">Saves -></div>
+                    <div id="save-btn-menu" class="circle-btn" onclick="Engine.openSave()"></div>
                 </div>
 
                 <div id="toggle-wrap">
@@ -137,6 +140,11 @@
             hooks: {},
             on: function(e, cb) { (this.hooks[e] = this.hooks[e] || []).push(cb); },
             trigger: function(e, d) { if(this.hooks[e]) this.hooks[e].forEach(cb=>cb(d)); }
+        };
+
+        const Storage = {
+            save: (level) => localStorage.setItem('touchYellow_save1', 'true'),
+            hasSave: () => localStorage.getItem('touchYellow_save1') === 'true'
         };
 
         const DrawLevel1Layout = (draw) => {
@@ -182,19 +190,15 @@
                 draw.trigger(25, 60, 2, 30, (goalObj) => {
                     if (!goalObj.hitbox.classList.contains('moving')) {
                         goalObj.hitbox.classList.add('moving');
-                        const anim = "safeRoomPatrol 3s linear infinite";
-                        goalObj.gfx.style.animation = anim;
-                        goalObj.hitbox.style.animation = anim;
+                        goalObj.gfx.style.animation = "safeRoomPatrol 3s linear infinite";
+                        goalObj.hitbox.style.animation = "safeRoomPatrol 3s linear infinite";
                     }
                 });
                 draw.goal(10, 65, W_THICK, H_THICK, 5, 500); 
             },
             5: (draw) => {
-                // LEVEL 5: Checkpoint Room
-                // Giant Safe Zone
+                const H_THICK = 14; const W_THICK = 7.875;
                 draw.path(5, 5, 90, 90); 
-                
-                // Trigger for movement
                 draw.trigger(5, 5, 90, 90, (goalObj) => {
                     if (!goalObj.hitbox.classList.contains('moving')) {
                         goalObj.hitbox.classList.add('moving');
@@ -203,9 +207,7 @@
                         goalObj.hitbox.style.animation = anim;
                     }
                 });
-
-                // Goal (Starts Top Left) -> REDIRECTS TO SAVE FILE
-                draw.goal(10, 10, 7.875, 14, "redirect_save1", 500);
+                draw.goal(10, 10, W_THICK, H_THICK, "redirect_save1", 500);
             }
         };
 
@@ -219,25 +221,17 @@
                 const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
                 if (isMobile) { this.state.holdMode = true; this.ui.toggleWrap.style.display = 'none'; }
                 
-                // Check URL params for "Continue"
                 const urlParams = new URLSearchParams(window.location.search);
                 const loadCheckpoint = urlParams.get('loadCheckpoint');
-                
-                if (loadCheckpoint) {
-                    // Auto-start at checkpoint
-                    setTimeout(() => this.startLevel(parseInt(loadCheckpoint)), 500);
-                }
+                if (loadCheckpoint) setTimeout(() => this.startLevel(parseInt(loadCheckpoint)), 500);
 
                 this.ui.startBtn.onmousedown = () => this.startLevel(1);
                 this.ui.startBtn.ontouchstart = () => this.startLevel(1);
-                
                 window.addEventListener('mousemove', e => { this.state.mouseX = e.clientX; this.state.mouseY = e.clientY; });
                 window.addEventListener('touchmove', e => { if (this.state.active) { e.preventDefault(); this.state.mouseX = e.touches[0].clientX; this.state.mouseY = e.touches[0].clientY; } }, {passive: false});
                 window.addEventListener('mouseup', e => this.handleRelease(e));
                 window.addEventListener('touchend', e => this.handleRelease(e));
                 window.addEventListener('mousedown', e => { if(e.button === 2 && this.state.active) this.die("Panic Click"); });
-                
-                requestAnimationFrame(this.gameLoop.bind(this));
                 Logger.log("Engine Initialized");
             },
 
@@ -248,10 +242,8 @@
                 Logger.log(`Mode Switched: ${this.state.holdMode ? "HOLD" : "HOVER"}`, "system");
             },
 
-            // --- SAVE SYSTEM ---
             openSave: function() {
-                if (localStorage.getItem('touchYellow_save1') === 'true') {
-                    // Redirect to save file
+                if (Storage.hasSave()) {
                     window.location.href = "save/save1.html";
                 } else {
                     alert("No Saves Found!");
@@ -289,7 +281,6 @@
             startLevel: function(lvl) {
                 Logger.log(`Starting Level ${lvl}`);
                 if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(e=>{});
-                
                 this.layers.gfx.innerHTML = ''; this.layers.phy.innerHTML = '';
                 this.ui.menu.style.display = 'none'; this.state.dragging = true;
                 this.state.hoverGoalTime = 0;
@@ -309,10 +300,7 @@
                 setTimeout(() => { this.state.active = true; PluginManager.trigger('startLevel', lvl); }, 50);
             },
 
-            gameLoop: function() {
-                if (this.state.active) this.checkCollision();
-                requestAnimationFrame(this.gameLoop.bind(this));
-            },
+            gameLoop: function() { if (this.state.active) this.checkCollision(); requestAnimationFrame(this.gameLoop.bind(this)); },
 
             checkCollision: function() {
                 if (this.state.holdMode && !this.state.dragging) return;
@@ -351,32 +339,17 @@
             win: function(next) {
                 this.state.active = false;
                 Logger.log("Goal Captured!", "success");
-                
-                if (next === "redirect_save1") {
-                    window.location.href = "save/save1.html"; // Go to save file
-                } else if (next === "menu") { 
-                    alert("You Beat The Game!"); 
-                    this.reset(); 
-                } else { 
-                    this.startLevel(parseInt(next)); 
-                }
+                if (next === "redirect_save1") { window.location.href = "save/save1.html"; } 
+                else if (next === "menu") { alert("You Beat The Game!"); this.reset(); } 
+                else { this.startLevel(parseInt(next)); }
             },
 
-            handleRelease: function(e) {
-                if (e.button === 2) return;
-                if (this.state.active && this.state.holdMode) this.die("Released Button");
-            },
+            handleRelease: function(e) { if (e.button === 2) return; if (this.state.active && this.state.holdMode) this.die("Released Button"); },
 
             die: function(reason) {
                 Logger.log(`Died: ${reason}`, "death");
                 this.state.active = false; PluginManager.trigger('death', reason);
-                
-                // CHECKPOINT LOGIC: If level >= 5, redirect to save file on death
-                if (this.state.currentLevel >= 5) {
-                    window.location.href = "save/save1.html";
-                } else {
-                    this.reset();
-                }
+                if (this.state.currentLevel >= 5) { window.location.href = "save/save1.html"; } else { this.reset(); }
             },
 
             reset: function() {
@@ -387,21 +360,14 @@
                 this.ui.catchMeter.style.display = 'none';
             },
             exit: function() { if (document.fullscreenElement) document.exitFullscreen(); this.reset(); },
-            toggleDebug: function() { 
-                this.state.debug = !this.state.debug; 
-                this.container.classList.toggle('debug'); 
-                Logger.log(`Hitbox Mode: ${this.state.debug}`);
-            }
+            toggleDebug: function() { this.state.debug = !this.state.debug; this.container.classList.toggle('debug'); Logger.log(`Hitbox Mode: ${this.state.debug}`); }
         };
 
         Engine.init();
         window.cmd = (c) => {
             if (c === 'hitbox') Engine.toggleDebug();
             if (c === 'load menu') Engine.reset();
-            if (c.startsWith('load level')) {
-                const num = parseInt(c.split('level')[1]);
-                if (!isNaN(num)) Engine.startLevel(num);
-            }
+            if (c.startsWith('load level')) { const num = parseInt(c.split('level')[1]); if (!isNaN(num)) Engine.startLevel(num); }
         };
     </script>
 </body>
