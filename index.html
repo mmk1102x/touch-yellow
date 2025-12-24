@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Touch Yellow</title>
-    <!-- Tab Logo -->
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%23f2a922' stroke='%23333' stroke-width='10'/></svg>">
     <link href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Roboto:wght@700&display=swap" rel="stylesheet">
     
@@ -14,6 +13,7 @@
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; overflow: hidden; user-select: none; touch-action: none; font-family: 'Roboto', sans-serif; display: flex; justify-content: center; align-items: center; }
         
         /* 16:9 CONTAINER */
+        /* Everything inside here uses % relative to this box */
         #game-container {
             width: 100%; max-width: 177.78vh; aspect-ratio: 16/9;
             position: relative; background: #4d4d4d; overflow: hidden;
@@ -22,27 +22,21 @@
 
         /* LAYERS */
         .layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
-        
-        /* Graphics Layer: Visuals only. No mouse interaction. */
         #gfx-layer { z-index: 10; }
-        
-        /* Physics Layer: Invisible Hitboxes. Handles mouse interaction. */
         #phy-layer { z-index: 20; pointer-events: auto; }
-        
-        /* UI Layer: Menus and HUD */
-        #ui-layer { z-index: 30; pointer-events: none; display: flex; justify-content: center; align-items: center; }
+        #ui-layer { z-index: 30; pointer-events: none; }
 
-        /* --- VISUALS (Graphics) --- */
+        /* --- VISUALS --- */
         .visual-path { position: absolute; background-color: #26a9e1; }
         .visual-goal { position: absolute; background-color: #f1a92a; }
-        .visual-obs { position: absolute; background-color: black; }
+        /* PURE BLACK OBSTACLE */
+        .visual-obs { position: absolute; background-color: #000000; } 
         
-        /* --- PHYSICS (Hitboxes) --- */
-        /* By default, hitboxes are invisible but interactable */
+        /* --- PHYSICS --- */
         .hitbox { position: absolute; opacity: 0; cursor: crosshair; }
-        /* Debug mode makes them visible */
         .debug .hitbox { opacity: 0.5; border: 2px solid red; background: rgba(255, 0, 0, 0.2); }
         .debug .hitbox.goal-box { border-color: lime; background: rgba(0, 255, 0, 0.2); }
+        .debug .obstacle { border: 2px solid purple; opacity: 0.5; }
 
         /* --- MENU UI --- */
         .menu-content { pointer-events: auto; text-align: center; width: 100%; height: 100%; position: relative; }
@@ -54,9 +48,13 @@
         }
         
         .menu-btn-wrapper { position: absolute; display: flex; align-items: center; pointer-events: auto; }
+        
+        /* IMPORTANT: These % values are used in the Engine Math */
         #btn-start-wrap { left: 5%; bottom: 25%; height: 12%; }
         #btn-exit-wrap { left: 5%; bottom: 8%; height: 12%; }
 
+        /* Button Aspect Ratio 1:1 means Width = Height. 
+           Since Height is 12% of container Height, Width is 6.75% of container Width (12 * 9/16) */
         .circle-btn {
             height: 100%; aspect-ratio: 1/1; background-color: #f2a922; 
             border-radius: 50%; border: 0.5cqi solid #333; cursor: pointer; transition: transform 0.1s;
@@ -64,13 +62,13 @@
         .circle-btn:hover { transform: scale(1.1); filter: brightness(1.1); }
         .label { font-size: 4cqi; font-weight: 900; color: #000; margin-left: 2cqi; white-space: nowrap; }
 
-        /* TOGGLE SWITCH */
+        /* SWITCH */
         #toggle-wrap { position: absolute; right: 8%; bottom: 15%; display: flex; flex-direction: column; align-items: center; pointer-events: auto; }
         .switch-label { font-family: 'Luckiest Guy', cursive; color: #f2ef45; font-size: 3cqi; margin-bottom: 1cqi; text-shadow: 0.1cqi 0.1cqi 0 #000; }
         .switch { position: relative; display: inline-block; width: 8cqi; height: 4cqi; }
-        .switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #333; transition: .4s; border-radius: 4cqi; border: 0.3cqi solid #000; }
-        .slider:before { position: absolute; content: ""; height: 2.6cqi; width: 2.6cqi; left: 0.4cqi; bottom: 0.4cqi; background-color: white; transition: .4s; border-radius: 50%; }
+        .switch input { opacity: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #333; border-radius: 4cqi; border: 0.3cqi solid #000; transition: .4s; }
+        .slider:before { position: absolute; content: ""; height: 2.6cqi; width: 2.6cqi; left: 0.4cqi; bottom: 0.4cqi; background-color: white; border-radius: 50%; transition: .4s; }
         input:checked + .slider { background-color: #f2a922; }
         input:checked + .slider:before { transform: translateX(4cqi); }
 
@@ -85,13 +83,8 @@
 <body oncontextmenu="return false;">
 
     <div id="game-container">
-        <!-- Layer 1: Graphics (Pretty things) -->
         <div id="gfx-layer" class="layer"></div>
-
-        <!-- Layer 2: Physics (Invisible Hitboxes) -->
         <div id="phy-layer" class="layer"></div>
-
-        <!-- Layer 3: UI (Menu, HUD) -->
         <div id="ui-layer" class="layer">
             <div id="menu-screen" class="menu-content">
                 <h1 class="title">Touch Yellow</h1>
@@ -120,7 +113,6 @@
     <script>
         /**
          * PLUGIN SYSTEM
-         * Allows community to hook into the game without editing core code.
          */
         const PluginManager = {
             hooks: {},
@@ -129,79 +121,93 @@
                 this.hooks[event].push(callback);
             },
             trigger: function(event, data) {
-                if (this.hooks[event]) {
-                    this.hooks[event].forEach(cb => cb(data));
-                }
+                if (this.hooks[event]) this.hooks[event].forEach(cb => cb(data));
             }
         };
 
         /**
-         * LEVEL DATABASE
-         * Easily add new levels here.
+         * LEVEL DATABASE (PERCENTAGE BASED)
+         * All numbers are percentages (0-100).
+         * H% = Percent of Container Height
+         * W% = Percent of Container Width
+         * NOTE: To make a Vertical Line look as thick as a Horizontal Line of 14% Height:
+         *       Width% = 14 * (9/16) = 7.875
          */
         const LevelData = {
-            1: (draw, w, h, savedBtn) => {
-                const thick = h * 0.14; 
-                // Determine Start Y based on button position (or default center if null)
-                const centerY = savedBtn ? savedBtn.centerY : h * 0.75;
-                const startY = centerY - (thick / 2);
-
-                // Calculations
-                const p2X = (w * 0.55) - thick;
-                const p2Y = startY - (h * 0.20);
-                const p4X = p2X + (w * 0.35) - thick;
-                const p4Y = p2Y - (h * 0.24);
-                const topPathLeftX = p4X - (w * 0.45) + thick;
-
-                // Draw World
-                draw.path(0, startY, w * 0.55 + 1, thick);
-                draw.path(p2X, p2Y, thick, (h * 0.20) + thick);
-                draw.path(p2X, p2Y, (w * 0.35) + 1, thick);
-                draw.path(p4X, p4Y, thick, (h * 0.24) + thick);
-                draw.path(topPathLeftX, p4Y, (w * 0.45), thick);
+            1: (draw) => {
+                // CONSTANTS
+                const THICK_H = 14;          // 14% Height
+                const THICK_W = 7.875;       // 14 * (9/16) - Visual thickness width
                 
-                // Draw Goal (triggers level 2)
-                draw.goal(topPathLeftX, p4Y - thick, thick, thick, 2);
+                // MATH: Center the path on the Start Button
+                // Button is Bottom: 25%, Height: 12%. 
+                // Center Y (from top) = 100 - 25 - (12/2) = 69%
+                // Path Top Y = 69 - (14/2) = 62%
+                const startY = 62; 
+
+                // COORDINATES (Percentages)
+                const p2X = 55 - THICK_W;     // 55% from left - thickness
+                const p2Height = 20;          // Go up 20%
+                const p2Y = startY - p2Height;
+                
+                const p3Width = 35;
+                const p4X = p2X + p3Width - THICK_W;
+                const p4Height = 24;
+                const p4Y = p2Y - p4Height;
+                
+                const p5Width = 45;
+                const topPathLeftX = p4X - p5Width + THICK_W;
+
+                // DRAW PATHS
+                draw.path(0, startY, 55 + 0.5, THICK_H);             // Bottom
+                draw.path(p2X, p2Y, THICK_W, p2Height + THICK_H);    // Up 1
+                draw.path(p2X, p2Y, p3Width + 0.5, THICK_H);         // Right
+                draw.path(p4X, p4Y, THICK_W, p4Height + THICK_H);    // Up 2
+                draw.path(topPathLeftX, p4Y, p5Width, THICK_H);      // Top Left
+                
+                // GOAL (Top Left)
+                draw.goal(topPathLeftX, p4Y - THICK_H, THICK_W, THICK_H, 2);
             },
             
-            2: (draw, w, h, savedBtn) => {
-                // Re-draw Level 1 Layout
-                LevelData[1](draw, w, h, savedBtn); 
+            2: (draw) => {
+                // RE-DRAW LEVEL 1 LAYOUT
+                LevelData[1](draw); 
 
-                // Overwrite Goal to be Start Zone (Safe)
-                const thick = h * 0.14;
-                const centerY = savedBtn ? savedBtn.centerY : h * 0.75;
-                const startY = centerY - (thick / 2);
-                const p2X = (w * 0.55) - thick;
-                const p2Y = startY - (h * 0.20);
-                const p4X = p2X + (w * 0.35) - thick;
-                const p4Y = p2Y - (h * 0.24);
-                const topPathLeftX = p4X - (w * 0.45) + thick;
+                // CONSTANTS
+                const THICK_H = 14;
+                const THICK_W = 7.875;
+                const startY = 62;
 
-                // Safe Start Zone (Top Left)
-                draw.path(topPathLeftX, p4Y - thick, thick, thick * 2);
+                const p2X = 55 - THICK_W;
+                const p2Height = 20;
+                const p2Y = startY - p2Height;
+                const p4X = p2X + 35 - THICK_W;
+                const p4Height = 24;
+                const p4Y = p2Y - p4Height;
+                const topPathLeftX = p4X - 45 + THICK_W;
 
-                // New Goal (Bottom Left - Start Button location)
-                // Note: The previous call to LevelData[1] drew a goal at the top. 
-                // Since this draws later, it's fine, but technically we have 2 goals. 
-                // Ideally we'd separate geometry, but for this simple game, overlapping is fine.
-                // Actually, let's just draw the new goal ON TOP.
-                const goalSize = savedBtn ? savedBtn.height : thick;
-                const gx = savedBtn ? savedBtn.left : 50;
-                const gy = savedBtn ? savedBtn.top : startY;
+                // SAFE START ZONE (Top Left)
+                draw.path(topPathLeftX, p4Y - THICK_H, THICK_W, THICK_H * 2);
+
+                // NEW GOAL (Bottom Left - EXACTLY at Menu Button Position)
+                // Button Left = 5%. Button Height = 12%H.
+                // Button Width in %W = 12 * (9/16) = 6.75%
+                // Button Top = 100 - 25 - 12 = 63%
+                draw.goal(5, 63, 6.75, 12, "menu");
+
+                // OBSTACLE (The Slicer)
+                // Width = 0.6x thickness
+                const obsW = THICK_W * 0.6;
+                const obsH = THICK_H * 3.5;
+                // Start High Up (-50% relative handled by animation, so place slightly above path)
+                const obsStartY = startY - (THICK_H * 1.5);
                 
-                draw.goal(gx, gy, goalSize, goalSize, "menu");
-
-                // Obstacle
-                const obsW = thick * 0.6;
-                const obsH = thick * 3.5;
-                draw.obstacle((w * 0.35), startY - (thick * 1.5), obsW, obsH, "slicerMove 2s linear infinite");
+                draw.obstacle(35, obsStartY, obsW, obsH, "slicerMove 2s linear infinite");
             }
         };
 
         /**
          * ENGINE CORE
-         * Handles logic, layers, and input.
          */
         const Engine = {
             container: document.getElementById('game-container'),
@@ -217,29 +223,24 @@
                 modeText: document.getElementById('mode-text'),
                 toggleWrap: document.getElementById('toggle-wrap')
             },
-            
             state: {
                 active: false,
                 dragging: false,
                 holdMode: false,
                 debug: false,
-                savedBtnCoords: null,
                 isMobile: /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
             },
 
             init: function() {
-                // Mobile setup
                 if (this.state.isMobile) {
                     this.state.holdMode = true;
                     this.ui.toggleWrap.style.display = 'none';
-                    console.log("Mobile detected. Hold Mode enforced.");
                 }
 
-                // Bind Menu Inputs
+                // Inputs
                 this.ui.startBtn.onmousedown = (e) => this.startLevel(1);
                 this.ui.startBtn.ontouchstart = (e) => this.startLevel(1);
 
-                // Bind Global Inputs
                 window.addEventListener('mousemove', e => this.handleInput(e.clientX, e.clientY));
                 window.addEventListener('touchmove', e => {
                     if (this.state.active) { 
@@ -251,10 +252,6 @@
                 window.addEventListener('mouseup', e => this.handleRelease(e));
                 window.addEventListener('touchend', e => this.handleRelease(e));
                 window.addEventListener('mousedown', e => { if(e.button === 2 && this.state.active) this.die("Panic Click"); });
-
-                // Register standard plugins
-                PluginManager.on('death', (reason) => console.log(`💀 Died: ${reason}`));
-                PluginManager.on('win', (lvl) => console.log(`🏆 Beat Level ${lvl}`));
             },
 
             toggleMode: function() {
@@ -264,18 +261,6 @@
                 this.ui.modeText.style.color = this.state.holdMode ? "#f2a922" : "#f2ef45";
             },
 
-            saveButtonCoords: function() {
-                const btn = this.ui.startBtn.getBoundingClientRect();
-                const cont = this.container.getBoundingClientRect();
-                this.state.savedBtnCoords = {
-                    left: btn.left - cont.left,
-                    top: btn.top - cont.top,
-                    height: btn.height,
-                    centerY: (btn.top - cont.top) + (btn.height / 2)
-                };
-            },
-
-            // --- SPAWNING SYSTEM (The Builder) ---
             builder: {
                 path: (x, y, w, h) => Engine.spawnEntity(x, y, w, h, 'visual-path', 'hitbox path'),
                 goal: (x, y, w, h, next) => {
@@ -283,26 +268,31 @@
                     el.hitbox.dataset.next = next;
                 },
                 obstacle: (x, y, w, h, anim) => {
-                    const el = Engine.spawnEntity(x, y, w, h, 'visual-obs', 'obstacle'); // Obstacle is NOT a hitbox type safe class
+                    const el = Engine.spawnEntity(x, y, w, h, 'visual-obs', 'obstacle'); 
                     el.gfx.style.animation = anim;
-                    // Note: Obstacles are part of physics but kill you, so we don't give them 'path' class
-                    // We actually make the hitbox identical to graphic.
+                    // Physics object for obstacle must move too? 
+                    // No, usually CSS animation moves visual. 
+                    // FIX: We apply animation to BOTH or wrapper.
+                    // For simplicity in this engine: Obstacle Hitbox IS the visual element's bounding box?
+                    // No, we need to animate the hitbox too.
+                    el.hitbox.style.animation = anim;
+                    // Add debug class to hitbox for obstacle
+                    el.hitbox.classList.add('obstacle-phy');
                 }
             },
 
             spawnEntity: function(x, y, w, h, gfxClass, phyClass) {
-                // 1. Create Graphic (Visual)
+                // Creates elements using Percentages
                 const gfx = document.createElement('div');
                 gfx.className = gfxClass;
-                gfx.style.left = x + 'px'; gfx.style.top = y + 'px';
-                gfx.style.width = Math.ceil(w) + 'px'; gfx.style.height = Math.ceil(h) + 'px';
+                gfx.style.left = x + '%'; gfx.style.top = y + '%';
+                gfx.style.width = w + '%'; gfx.style.height = h + '%';
                 this.layers.gfx.appendChild(gfx);
 
-                // 2. Create Hitbox (Physics)
                 const phy = document.createElement('div');
                 phy.className = phyClass;
-                phy.style.left = x + 'px'; phy.style.top = y + 'px';
-                phy.style.width = Math.ceil(w) + 'px'; phy.style.height = Math.ceil(h) + 'px';
+                phy.style.left = x + '%'; phy.style.top = y + '%';
+                phy.style.width = w + '%'; phy.style.height = h + '%';
                 this.layers.phy.appendChild(phy);
 
                 return { gfx, hitbox: phy };
@@ -311,27 +301,13 @@
             startLevel: function(lvl) {
                 if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(e=>{});
                 
-                // Save coordinates if coming from menu
-                if (lvl === 1 && this.ui.menu.style.display !== 'none') {
-                    this.saveButtonCoords();
-                }
-
-                // Clear Layers
                 this.layers.gfx.innerHTML = '';
                 this.layers.phy.innerHTML = '';
-
-                // UI State
                 this.ui.menu.style.display = 'none';
                 this.state.dragging = true;
                 
-                // Build Level using Plugin/Data
-                const w = this.container.clientWidth;
-                const h = this.container.clientHeight;
-                
                 if (LevelData[lvl]) {
-                    LevelData[lvl](this.builder, w, h, this.state.savedBtnCoords);
-                } else {
-                    console.error("Level not found:", lvl);
+                    LevelData[lvl](this.builder);
                 }
 
                 // Grace Period
@@ -347,16 +323,15 @@
                 if (this.state.holdMode && !this.state.dragging) return;
                 if (multi) { this.die("Multi-touch"); return; }
 
-                // COLLISION CHECK
-                // We check what is under the cursor.
+                // Check collision using elementFromPoint
+                // Since hitbox layer is z-index 20 and has pointer-events:auto, it catches the point
                 const target = document.elementFromPoint(x, y);
 
-                // Win Logic
+                // Win
                 if (target && target.classList.contains('goal')) {
                     this.state.active = false;
                     const next = target.dataset.next;
-                    PluginManager.trigger('win', next);
-
+                    
                     if (next === "menu") {
                         alert("You Beat The Game!");
                         this.reset();
@@ -366,13 +341,13 @@
                     return;
                 }
 
-                // Death Logic
-                // You are safe if touching: 'path', 'goal', or 'hitbox' (general safe zone)
-                // You die if touching: 'obstacle', 'body', 'game-container' (void)
+                // Death Check (Safe = path or goal)
+                // Note: Obstacles have class 'obstacle' which is NOT 'path', so they trigger death.
+                // Note: The Black Background (game-container) is behind everything.
                 const isSafe = target && (target.classList.contains('path') || target.classList.contains('goal'));
                 
                 if (!isSafe) {
-                    this.die(target ? target.className : "Void");
+                    this.die("Void or Obstacle");
                 }
             },
 
@@ -407,23 +382,14 @@
             }
         };
 
-        // Initialize Game
         Engine.init();
 
-        // Expose to Console (for you!)
         window.cmd = (c) => {
             if (c === 'hitbox') Engine.toggleDebug();
             if (c === 'load menu') Engine.reset();
             if (c === 'load level1') Engine.startLevel(1);
             if (c === 'load level2') Engine.startLevel(2);
         };
-        
-        // Expose Plugin API to Console
-        window.TouchYellow = {
-            on: (e, cb) => PluginManager.on(e, cb),
-            Engine: Engine
-        };
-
     </script>
 </body>
 </html>
