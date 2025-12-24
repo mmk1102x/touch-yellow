@@ -16,6 +16,7 @@
             width: 100%; max-width: 177.78vh; aspect-ratio: 16/9;
             position: relative; background: #000000; overflow: hidden;
             box-shadow: 0 0 50px rgba(0,0,0,0.5);
+            transition: background-color 0.3s; /* Smooth transition for debug */
         }
 
         /* LAYERS */
@@ -29,14 +30,34 @@
         .visual-goal { position: absolute; background-color: #f1a92a; }
         .visual-obs { position: absolute; background-color: #000000; } 
         
-        /* PHYSICS & DEBUG */
+        /* PHYSICS (Hitboxes) */
         .hitbox { position: absolute; opacity: 0; cursor: crosshair; }
         
-        /* Debug Styles */
-        .debug .hitbox.path-box { border: 2px solid red; background: rgba(255, 0, 0, 0.2); opacity: 0.5; }
-        .debug .hitbox.goal-box { border: 2px solid lime; background: rgba(0, 255, 0, 0.2); opacity: 0.8; }
-        /* The Obstacle Hitbox (Death Box) */
-        .debug .obstacle-box { border: 2px solid #a0f; background: rgba(100, 0, 200, 0.4); opacity: 0.8; }
+        /* --- DEBUG MODE STYLES --- */
+        
+        /* 1. The Void (Background) turns Dark Red to signify Death */
+        #game-container.debug {
+            background-color: #330000; 
+        }
+
+        /* 2. Path is invisible (Safe Zone) */
+        .debug .path-box { border: none; background: transparent; }
+        
+        /* 3. Goal is GREEN */
+        .debug .goal-box { 
+            opacity: 0.8; 
+            border: 3px solid #00ff00; 
+            background: rgba(0, 255, 0, 0.3); 
+            z-index: 100;
+        }
+        
+        /* 4. Obstacle (Death) is RED */
+        .debug .obstacle-box { 
+            opacity: 0.8; 
+            border: 3px solid #ff0000; 
+            background: rgba(255, 0, 0, 0.5); 
+            z-index: 100;
+        }
 
         /* MENU UI */
         .menu-content { 
@@ -53,7 +74,6 @@
         
         .menu-btn-wrapper { position: absolute; display: flex; align-items: center; pointer-events: auto; }
         
-        /* IMPORTANT: These percentages are referenced in Level 2 logic */
         #btn-start-wrap { left: 5%; bottom: 25%; height: 12%; }
         #btn-exit-wrap { left: 5%; bottom: 8%; height: 12%; }
 
@@ -90,17 +110,14 @@
         <div id="ui-layer" class="layer">
             <div id="menu-screen" class="menu-content">
                 <h1 class="title">Touch Yellow</h1>
-                
                 <div id="btn-start-wrap" class="menu-btn-wrapper">
                     <div id="start-btn" class="circle-btn"></div>
                     <div class="label"><- Start/Restart</div>
                 </div>
-
                 <div id="btn-exit-wrap" class="menu-btn-wrapper">
                     <div class="circle-btn" onclick="Engine.exit()"></div>
                     <div class="label" style="font-size: 6cqi;"><-Exit</div>
                 </div>
-
                 <div id="toggle-wrap">
                     <div class="switch-label" id="mode-text">Hover Mode</div>
                     <label class="switch">
@@ -113,15 +130,9 @@
     </div>
 
     <script>
-        // --- LOGGING ---
         const Logger = {
             log: (msg, type='info') => {
-                const styles = {
-                    info: 'color: #26a9e1',
-                    success: 'color: #f1a92a; font-weight: bold',
-                    death: 'color: #ff4444; font-weight: bold',
-                    system: 'color: #888'
-                };
+                const styles = { info: 'color: #26a9e1', success: 'color: #f1a92a; font-weight: bold', death: 'color: #ff4444; font-weight: bold', system: 'color: #888' };
                 console.log(`%c[Game] ${msg}`, styles[type] || styles.info);
             }
         };
@@ -136,26 +147,19 @@
             1: (draw) => {
                 const THICK_H = 14;          
                 const THICK_W = 7.875;       
-                
-                // Math based on Start Button CSS (Bottom: 25%, Height: 12%)
-                // Center Y = 100 - 25 - (12/2) = 69%.
-                const startY = 69 - (THICK_H / 2); // 62%
-                
-                const OVERLAP = 0.5; // Ensure joints are sealed
+                const startY = 62; 
+                const OVERLAP = 0.5;
 
                 const p2X = 55 - THICK_W;     
                 const p2Height = 20;          
                 const p2Y = startY - p2Height;
-                
                 const p3Width = 35;
                 const p4X = p2X + p3Width - THICK_W;
                 const p4Height = 24;
                 const p4Y = p2Y - p4Height;
-                
                 const p5Width = 45;
                 const topPathLeftX = p4X - p5Width + THICK_W;
 
-                // DRAW PATHS
                 draw.path(0, startY, 55 + OVERLAP, THICK_H); 
                 draw.path(p2X, p2Y, THICK_W, p2Height + THICK_H + OVERLAP);    
                 draw.path(p2X, p2Y, p3Width + OVERLAP, THICK_H);         
@@ -166,31 +170,17 @@
             },
             
             2: (draw) => {
-                // Re-draw L1 geometry
                 LevelData[1](draw); 
+                const THICK_H = 14; const THICK_W = 7.875; const startY = 62;
+                const p2X = 55 - THICK_W; const p2Y = startY - 20; const p4X = p2X + 35 - THICK_W; const p4Y = p2Y - 24; const topPathLeftX = p4X - 45 + THICK_W;
 
-                const THICK_H = 14;
-                const THICK_W = 7.875;
-                const startY = 62;
-                const p2X = 55 - THICK_W;
-                const p2Y = startY - 20;
-                const p4X = p2X + 35 - THICK_W;
-                const p4Y = p2Y - 24;
-                const topPathLeftX = p4X - 45 + THICK_W;
-
-                // Start Zone (Safe area where L1 Goal was)
                 draw.path(topPathLeftX, p4Y - THICK_H, THICK_W, THICK_H * 2);
-
-                // GOAL (Bottom Left) - Replaced pixel math with exact CSS percentages
-                // Button CSS: Left 5%. Bottom 25% (Top ~63%). Height 12%. Width ~6.75%
                 draw.goal(5, 63, 6.75, 12, "menu");
 
-                // OBSTACLE (The Slicer)
-                const obsW = THICK_W * 0.6;
+                const obsW = THICK_W * 0.6; 
                 const obsH = THICK_H * 1.5; 
                 const obsStartY = startY - (THICK_H * 1.5);
                 
-                // Note: The Hitbox (Purple in debug) and Visual (Black) are synced by the engine
                 draw.obstacle(35, obsStartY, obsW, obsH, "slicerMove 2s linear infinite");
             }
         };
@@ -206,7 +196,6 @@
                 this.ui.startBtn.onmousedown = () => this.startLevel(1);
                 this.ui.startBtn.ontouchstart = () => this.startLevel(1);
                 
-                // Global Inputs
                 window.addEventListener('mousemove', e => this.handleInput(e.clientX, e.clientY));
                 window.addEventListener('touchmove', e => { if (this.state.active) { e.preventDefault(); this.handleInput(e.touches[0].clientX, e.touches[0].clientY, e.touches.length > 1); } }, {passive: false});
                 window.addEventListener('mouseup', e => this.handleRelease(e));
@@ -231,10 +220,9 @@
                     el.hitbox.dataset.next = next;
                 },
                 obstacle: (x, y, w, h, anim) => {
-                    const el = Engine.spawnEntity(x, y, w, h, 'visual-obs', 'obstacle-box'); 
+                    const el = Engine.spawnEntity(x, y, w, h, 'visual-obs', 'hitbox obstacle-box'); 
                     el.gfx.style.animation = anim;
-                    el.hitbox.style.animation = anim; // Sync animation!
-                    // Note: 'obstacle-box' does not contain 'path' or 'goal', so it acts as death zone.
+                    el.hitbox.style.animation = anim; 
                 }
             },
 
@@ -244,6 +232,8 @@
                 this.layers.gfx.appendChild(gfx);
                 
                 const phy = document.createElement('div'); phy.className = phyClass;
+                // Force absolute to prevent layout bugs
+                phy.style.position = 'absolute';
                 phy.style.left = x + '%'; phy.style.top = y + '%'; phy.style.width = w + '%'; phy.style.height = h + '%';
                 this.layers.phy.appendChild(phy);
                 return { gfx, hitbox: phy };
@@ -252,7 +242,6 @@
             startLevel: function(lvl) {
                 Logger.log(`Starting Level ${lvl}`);
                 if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(e=>{});
-                
                 this.layers.gfx.innerHTML = ''; this.layers.phy.innerHTML = '';
                 this.ui.menu.style.display = 'none'; this.state.dragging = true;
                 
@@ -269,7 +258,6 @@
                 
                 const target = document.elementFromPoint(x, y);
 
-                // WIN
                 if (target && target.classList.contains('goal-box')) {
                     this.state.active = false;
                     const next = target.dataset.next;
@@ -279,13 +267,12 @@
                     return;
                 }
 
-                // DEATH CHECK
-                // Safe if touching path-box or goal-box
+                // Safety Logic: Must touch 'path-box' or 'goal-box'.
                 const isSafe = target && (target.classList.contains('path-box') || target.classList.contains('goal-box'));
                 
                 if (!isSafe) {
                     let reason = "Void";
-                    if(target && target.classList.contains('obstacle-box')) reason = "Obstacle";
+                    if(target && target.classList.contains('obstacle-box')) reason = "Obstacle Hit";
                     this.die(reason);
                 }
             },
@@ -297,9 +284,7 @@
 
             die: function(reason) {
                 Logger.log(`Died: ${reason}`, "death");
-                this.state.active = false; 
-                PluginManager.trigger('death', reason); 
-                this.reset();
+                this.state.active = false; PluginManager.trigger('death', reason); this.reset();
             },
 
             reset: function() {
@@ -309,9 +294,7 @@
                 this.layers.gfx.innerHTML = ''; this.layers.phy.innerHTML = '';
                 if (document.fullscreenElement) document.exitFullscreen();
             },
-
             exit: function() { this.reset(); },
-            
             toggleDebug: function() { 
                 this.state.debug = !this.state.debug; 
                 this.container.classList.toggle('debug'); 
@@ -320,7 +303,6 @@
         };
 
         Engine.init();
-
         window.cmd = (c) => {
             if (c === 'hitbox') Engine.toggleDebug();
             if (c === 'load menu') Engine.reset();
