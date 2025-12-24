@@ -8,6 +8,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Roboto:wght@700&display=swap" rel="stylesheet">
     
     <style>
+        /* --- CORE STYLES --- */
         * { box-sizing: border-box; }
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; overflow: hidden; user-select: none; touch-action: none; font-family: 'Roboto', sans-serif; display: flex; justify-content: center; align-items: center; }
         
@@ -30,7 +31,7 @@
         .hitbox { position: absolute; opacity: 0; cursor: crosshair; }
         
         /* DEBUG STYLES */
-        #game-container.debug { background-color: #330000; } /* Red background implies death zone */
+        #game-container.debug { background-color: #330000; } 
         .debug .path-box { border: none; background: transparent; }
         .debug .goal-box { opacity: 0.8; border: 3px solid #00ff00; background: rgba(0, 255, 0, 0.3); z-index: 100; }
         .debug .obstacle-box { opacity: 0.8; border: 3px solid #ff0000; background: rgba(255, 0, 0, 0.5); z-index: 100; }
@@ -53,10 +54,19 @@
         input:checked + .slider { background-color: #f2a922; }
         input:checked + .slider:before { transform: translateX(4cqi); }
 
+        /* --- ANIMATIONS --- */
+        
+        /* Standard Up/Down Slicer */
         @keyframes slicerMove {
             0% { transform: translateY(0%); }      
             50% { transform: translateY(200%); }   
             100% { transform: translateY(0%); }    
+        }
+
+        /* Waterfall: Drops from top (-250%) to bottom (250%) linearly */
+        @keyframes waterfallDrop {
+            0% { transform: translateY(-250%); }
+            100% { transform: translateY(250%); }
         }
     </style>
 </head>
@@ -101,24 +111,12 @@
             trigger: function(e, d) { if(this.hooks[e]) this.hooks[e].forEach(cb=>cb(d)); }
         };
 
-        // SHARED GEOMETRY (The Walls)
+        // SHARED GEOMETRY
         const DrawLevel1Layout = (draw) => {
-            const THICK_H = 14;          
-            const THICK_W = 7.875;       
-            const startY = 62; 
-            const OVERLAP = 0.5;
-
-            const p2X = 55 - THICK_W;     
-            const p2Height = 20;          
-            const p2Y = startY - p2Height;
-            
-            const p3Width = 35;
-            const p4X = p2X + p3Width - THICK_W;
-            const p4Height = 24;
-            const p4Y = p2Y - p4Height;
-            
-            const p5Width = 45;
-            const topPathLeftX = p4X - p5Width + THICK_W;
+            const THICK_H = 14; const THICK_W = 7.875; const startY = 62; const OVERLAP = 0.5;
+            const p2X = 55 - THICK_W; const p2Height = 20; const p2Y = startY - p2Height;
+            const p3Width = 35; const p4X = p2X + p3Width - THICK_W; const p4Height = 24; const p4Y = p2Y - p4Height;
+            const p5Width = 45; const topPathLeftX = p4X - p5Width + THICK_W;
 
             draw.path(0, startY, 55 + OVERLAP, THICK_H); 
             draw.path(p2X, p2Y, THICK_W, p2Height + THICK_H + OVERLAP);    
@@ -126,36 +124,59 @@
             draw.path(p4X, p4Y, THICK_W, p4Height + THICK_H + OVERLAP);    
             draw.path(topPathLeftX, p4Y, p5Width + OVERLAP, THICK_H);
             
-            // Return key points for goals to use
-            return { topPathLeftX, p4Y, THICK_W, THICK_H, startY };
+            return { topPathLeftX, p4Y, THICK_W, THICK_H, startY, p2X, p4X, p2Y };
         };
 
         const LevelData = {
             1: (draw) => {
-                // Draw Walls
                 const geom = DrawLevel1Layout(draw);
-                
-                // Draw L1 Goal ONLY (Top Left)
                 draw.goal(geom.topPathLeftX, geom.p4Y - geom.THICK_H, geom.THICK_W, geom.THICK_H, 2);
             },
             
             2: (draw) => {
-                // Draw Walls
                 const geom = DrawLevel1Layout(draw);
-
-                // L2 Start Zone (Safe area where L1 Goal was)
-                // Overlaps the top path slightly to ensure connection
+                // Safe Start (Top)
                 draw.path(geom.topPathLeftX, geom.p4Y - geom.THICK_H, geom.THICK_W, geom.THICK_H * 2);
+                // Goal (Bottom)
+                draw.goal(5, 63, 6.75, 12, 3); // Leads to Level 3
 
-                // L2 GOAL ONLY (Bottom Left)
-                draw.goal(5, 63, 6.75, 12, "menu");
-
-                // OBSTACLE
-                const obsW = geom.THICK_W * 0.6; 
-                const obsH = geom.THICK_H * 1.5; 
-                const obsStartY = geom.startY - (geom.THICK_H * 1.5);
-                
+                // Obstacle (Bottom Path)
+                const obsW = geom.THICK_W * 0.6; const obsH = geom.THICK_H * 1.5; const obsStartY = geom.startY - (geom.THICK_H * 1.5);
                 draw.obstacle(35, obsStartY, obsW, obsH, "slicerMove 2s linear infinite");
+            },
+
+            3: (draw) => {
+                const geom = DrawLevel1Layout(draw);
+                
+                // Safe Start (Bottom - using L2 Goal position)
+                // Overlap bottom path slightly to prevent insta-death
+                draw.path(0, geom.startY, 20, geom.THICK_H); 
+
+                // Goal (Top Left)
+                draw.goal(geom.topPathLeftX, geom.p4Y - geom.THICK_H, geom.THICK_W, geom.THICK_H, "menu");
+
+                // --- OBSTACLES ---
+                
+                // 1. Bottom Path Slicer
+                const obsW = geom.THICK_W * 0.6; const obsH = geom.THICK_H * 1.5; 
+                draw.obstacle(25, geom.startY - (geom.THICK_H * 1.5), obsW, obsH, "slicerMove 2s linear infinite");
+
+                // 2. Middle Path Slicer
+                draw.obstacle(65, geom.p2Y - (geom.THICK_H * 1.5), obsW, obsH, "slicerMove 1.5s linear infinite");
+
+                // 3. THE WATERFALL (Top Path)
+                // We create 3 blocks falling in sequence to make an "Infinite" rain
+                // X position: On the top horizontal path
+                const waterX = geom.p4X - 15; 
+                // Y position: Start centered on the path, animation moves them up/down
+                const waterY = geom.p4Y;
+                
+                // Block 1 (Starts immediately)
+                draw.obstacle(waterX, waterY, obsW, obsH, "waterfallDrop 1.5s linear infinite");
+                // Block 2 (Starts 0.5s later)
+                draw.obstacle(waterX, waterY, obsW, obsH, "waterfallDrop 1.5s linear infinite -0.5s");
+                // Block 3 (Starts 1.0s later)
+                draw.obstacle(waterX, waterY, obsW, obsH, "waterfallDrop 1.5s linear infinite -1.0s");
             }
         };
 
@@ -182,7 +203,6 @@
                 this.state.holdMode = this.ui.modeCheck.checked;
                 this.ui.modeText.innerText = this.state.holdMode ? "Hold Mode" : "Hover Mode";
                 this.ui.modeText.style.color = this.state.holdMode ? "#f2a922" : "#f2ef45";
-                Logger.log(`Mode: ${this.state.holdMode ? "HOLD" : "HOVER"}`);
             },
 
             builder: {
@@ -278,6 +298,7 @@
             if (c === 'load menu') Engine.reset();
             if (c === 'load level1') Engine.startLevel(1);
             if (c === 'load level2') Engine.startLevel(2);
+            if (c === 'load level3') Engine.startLevel(3);
         };
     </script>
 </body>
