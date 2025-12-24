@@ -56,14 +56,12 @@
 
         /* --- ANIMATIONS --- */
         
-        /* Standard Up/Down Slicer */
         @keyframes slicerMove {
             0% { transform: translateY(0%); }      
             50% { transform: translateY(200%); }   
             100% { transform: translateY(0%); }    
         }
 
-        /* Waterfall: Drops from top (-250%) to bottom (250%) linearly */
         @keyframes waterfallDrop {
             0% { transform: translateY(-250%); }
             100% { transform: translateY(250%); }
@@ -135,12 +133,9 @@
             
             2: (draw) => {
                 const geom = DrawLevel1Layout(draw);
-                // Safe Start (Top)
                 draw.path(geom.topPathLeftX, geom.p4Y - geom.THICK_H, geom.THICK_W, geom.THICK_H * 2);
-                // Goal (Bottom)
-                draw.goal(5, 63, 6.75, 12, 3); // Leads to Level 3
-
-                // Obstacle (Bottom Path)
+                draw.goal(5, 63, 6.75, 12, 3);
+                
                 const obsW = geom.THICK_W * 0.6; const obsH = geom.THICK_H * 1.5; const obsStartY = geom.startY - (geom.THICK_H * 1.5);
                 draw.obstacle(35, obsStartY, obsW, obsH, "slicerMove 2s linear infinite");
             },
@@ -148,34 +143,27 @@
             3: (draw) => {
                 const geom = DrawLevel1Layout(draw);
                 
-                // Safe Start (Bottom - using L2 Goal position)
-                // Overlap bottom path slightly to prevent insta-death
+                // Safe Start (Bottom)
                 draw.path(0, geom.startY, 20, geom.THICK_H); 
 
                 // Goal (Top Left)
                 draw.goal(geom.topPathLeftX, geom.p4Y - geom.THICK_H, geom.THICK_W, geom.THICK_H, "menu");
 
                 // --- OBSTACLES ---
+                const obsW = geom.THICK_W * 0.6; 
+                const obsH = geom.THICK_H * 1.5; 
                 
                 // 1. Bottom Path Slicer
-                const obsW = geom.THICK_W * 0.6; const obsH = geom.THICK_H * 1.5; 
                 draw.obstacle(25, geom.startY - (geom.THICK_H * 1.5), obsW, obsH, "slicerMove 2s linear infinite");
 
-                // 2. Middle Path Slicer
-                draw.obstacle(65, geom.p2Y - (geom.THICK_H * 1.5), obsW, obsH, "slicerMove 1.5s linear infinite");
+                // 2. Middle Path Slicer (MOVED LEFT to 55%)
+                draw.obstacle(55, geom.p2Y - (geom.THICK_H * 1.5), obsW, obsH, "slicerMove 1.5s linear infinite");
 
                 // 3. THE WATERFALL (Top Path)
-                // We create 3 blocks falling in sequence to make an "Infinite" rain
-                // X position: On the top horizontal path
                 const waterX = geom.p4X - 15; 
-                // Y position: Start centered on the path, animation moves them up/down
                 const waterY = geom.p4Y;
-                
-                // Block 1 (Starts immediately)
                 draw.obstacle(waterX, waterY, obsW, obsH, "waterfallDrop 1.5s linear infinite");
-                // Block 2 (Starts 0.5s later)
                 draw.obstacle(waterX, waterY, obsW, obsH, "waterfallDrop 1.5s linear infinite -0.5s");
-                // Block 3 (Starts 1.0s later)
                 draw.obstacle(waterX, waterY, obsW, obsH, "waterfallDrop 1.5s linear infinite -1.0s");
             }
         };
@@ -185,16 +173,19 @@
             layers: { gfx: document.getElementById('gfx-layer'), phy: document.getElementById('phy-layer'), ui: document.getElementById('ui-layer') },
             ui: { menu: document.getElementById('menu-screen'), startBtn: document.getElementById('start-btn'), modeCheck: document.getElementById('mode-check'), modeText: document.getElementById('mode-text'), toggleWrap: document.getElementById('toggle-wrap') },
             state: { active: false, dragging: false, holdMode: false, debug: false, isMobile: /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) },
+            savedBtnData: null,
 
             init: function() {
                 if (this.state.isMobile) { this.state.holdMode = true; this.ui.toggleWrap.style.display = 'none'; }
                 this.ui.startBtn.onmousedown = () => this.startLevel(1);
                 this.ui.startBtn.ontouchstart = () => this.startLevel(1);
+                
                 window.addEventListener('mousemove', e => this.handleInput(e.clientX, e.clientY));
                 window.addEventListener('touchmove', e => { if (this.state.active) { e.preventDefault(); this.handleInput(e.touches[0].clientX, e.touches[0].clientY, e.touches.length > 1); } }, {passive: false});
                 window.addEventListener('mouseup', e => this.handleRelease(e));
                 window.addEventListener('touchend', e => this.handleRelease(e));
                 window.addEventListener('mousedown', e => { if(e.button === 2 && this.state.active) this.die("Panic Click"); });
+                
                 Logger.log("Engine Initialized");
             },
 
@@ -203,6 +194,17 @@
                 this.state.holdMode = this.ui.modeCheck.checked;
                 this.ui.modeText.innerText = this.state.holdMode ? "Hold Mode" : "Hover Mode";
                 this.ui.modeText.style.color = this.state.holdMode ? "#f2a922" : "#f2ef45";
+            },
+
+            saveButtonCoords: function() {
+                const btnRect = this.ui.startBtn.getBoundingClientRect();
+                const contRect = this.container.getBoundingClientRect();
+                this.savedBtnData = {
+                    relativeTop: btnRect.top - contRect.top,
+                    relativeLeft: btnRect.left - contRect.left,
+                    height: btnRect.height,
+                    centerY: (btnRect.top - contRect.top) + (btnRect.height / 2)
+                };
             },
 
             builder: {
@@ -233,6 +235,11 @@
             startLevel: function(lvl) {
                 Logger.log(`Starting Level ${lvl}`);
                 if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(e=>{});
+                
+                if (lvl === 1 && this.ui.menu.style.display !== 'none') {
+                    this.saveButtonCoords();
+                }
+
                 this.layers.gfx.innerHTML = ''; this.layers.phy.innerHTML = '';
                 this.ui.menu.style.display = 'none'; this.state.dragging = true;
                 
