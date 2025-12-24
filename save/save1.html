@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Touch Yellow - Save 1</title>
+    <!-- Same Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Roboto:wght@700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0; padding: 0; width: 100%; height: 100vh;
+            background-color: #00b0f0; /* The Blue Save Background */
+            overflow: hidden;
+            font-family: 'Roboto', sans-serif;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            user-select: none;
+        }
+
+        .title {
+            font-family: 'Roboto', sans-serif; 
+            font-weight: bold; 
+            color: black; 
+            font-size: 80px; 
+            margin-bottom: 50px;
+            text-transform: capitalize;
+        }
+
+        .menu-btn-wrapper {
+            display: flex;
+            align-items: center;
+            margin-bottom: 30px;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+
+        .menu-btn-wrapper:hover { transform: scale(1.1); }
+
+        .circle-btn {
+            width: 60px; height: 60px;
+            background-color: #f2a922;
+            border-radius: 50%;
+            border: 4px solid #b37a15;
+            margin-right: 20px;
+        }
+
+        .label {
+            font-size: 40px;
+            font-weight: 900;
+            color: black;
+        }
+        
+        /* Specific sizing to match your screenshot */
+        .large-circle { width: 80px; height: 80px; }
+        .large-label { font-size: 60px; }
+
+    </style>
+</head>
+<body>
+
+    <div class="title">Got Save!</div>
+
+    <!-- Continue Button (Goes back to Game at Level 5/6) -->
+    <div class="menu-btn-wrapper" onclick="goBackToGame()">
+        <div class="circle-btn"></div>
+        <div class="label"><-Continue</div>
+    </div>
+
+    <!-- Menu Button (Goes back to Main Menu) -->
+    <div class="menu-btn-wrapper" onclick="goToMenu()">
+        <div class="circle-btn large-circle"></div>
+        <div class="label"><-Menu</div>
+    </div>
+
+    <!-- Exit Button -->
+    <div class="menu-btn-wrapper" onclick="exitGame()">
+        <div class="circle-btn large-circle"></div>
+        <div class="label large-label"><-Exit</div>
+    </div>
+
+    <script>
+        // ON LOAD: Save to Cookies / LocalStorage
+        window.onload = function() {
+            localStorage.setItem('touchYellow_save1', 'true');
+            console.log("Game Saved: Save 1 Unlocked");
+        };
+
+        function goBackToGame() {
+            // Returns to index.html with a special flag to start at the checkpoint
+            window.location.href = "../index.html?loadCheckpoint=5";
+        }
+
+        function goToMenu() {
+            window.location.href = "../index.html";
+        }
+
+        function exitGame() {
+            if (document.fullscreenElement) {
+                document.exitFullscreen();
+            }
+            window.close(); // Tries to close tab
+            // Fallback if script can't close tab:
+            window.location.href = "https://google.com";
+        }
+    </script>
+</body>
+</html>
