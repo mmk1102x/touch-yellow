@@ -75,13 +75,18 @@
             100% { transform: translateY(250%); }
         }
         
-        @keyframes crazyMove {
-            0%   { transform: translate(0, 0); }
-            20%  { transform: translate(250%, -350%); } 
-            40%  { transform: translate(250%, 0%); }    
-            60%  { transform: translate(120%, -150%); } 
-            80%  { transform: translate(0, -350%); }    
-            100% { transform: translate(0, 0); }
+        /* Level 4: The Safe Room Patrol */
+        /* Start is (10%, 65%). Room Width ~85%. Room Height ~30% */
+        /* We move RELATIVE to the start position */
+        /* 100% translation = 1x width of the goal (which is ~6.75% of screen width) */
+        /* We need to move about 70% of screen width to the right. That is ~1000% translation */
+        @keyframes arenaPatrol {
+            0%   { transform: translate(0, 0); } /* Start Left-Mid */
+            25%  { transform: translate(1000%, -100%); } /* Top Right Corner */
+            50%  { transform: translate(500%, 100%); }   /* Bottom Middle */
+            75%  { transform: translate(1000%, 100%); }  /* Bottom Right */
+            90%  { transform: translate(500%, -100%); }  /* Top Middle */
+            100% { transform: translate(0, 0); }         /* Return Start */
         }
     </style>
 </head>
@@ -122,14 +127,6 @@
             }
         };
 
-        // SPEEDRUN STATE
-        window.gameState = { level: 0, status: 'menu', deaths: 0 };
-        const updateSpeedrunStatus = (lvl, status) => {
-            window.gameState.level = lvl;
-            window.gameState.status = status;
-            if(status === 'dead') window.gameState.deaths++;
-        };
-
         const PluginManager = {
             hooks: {},
             on: function(e, cb) { (this.hooks[e] = this.hooks[e] || []).push(cb); },
@@ -168,33 +165,42 @@
                 draw.goal(g.topPathLeftX, g.p4Y - g.THICK_H, g.THICK_W, g.THICK_H, 4, 0); 
                 
                 const obsW = g.THICK_W * 0.6; const obsH = g.THICK_H * 1.5; 
-                draw.obstacle(32, g.startY - (g.THICK_H * 1.5), obsW, obsH, "slicerMove 2s linear infinite");
-                draw.obstacle(55, g.midY - (g.THICK_H * 1.5), obsW, obsH, "slicerMove 3s linear infinite");
                 
-                const waterX = g.p4X - 15; 
+                // 1. Bottom
+                draw.obstacle(32, g.startY - (g.THICK_H * 1.5), obsW, obsH, "slicerMove 2s linear infinite");
+                
+                // 2. Middle (MOVED LEFT TO 42%)
+                // This gives space before the waterfall
+                draw.obstacle(42, g.midY - (g.THICK_H * 1.5), obsW, obsH, "slicerMove 3s linear infinite");
+                
+                // 3. THE WATERFALL (MOVED RIGHT TO 75%)
+                const waterX = 75; 
                 const waterH = g.THICK_H * 1.2;
-                // Slower Waterfall (3.5s) for fairness
-                const waterAnim = "waterfallDrop 3.5s linear infinite";
+                const waterAnim = "waterfallDrop 4s linear infinite";
                 draw.obstacle(waterX, g.p4Y, obsW, waterH, waterAnim);
-                draw.obstacle(waterX, g.p4Y, obsW, waterH, waterAnim + " -1.16s");
-                draw.obstacle(waterX, g.p4Y, obsW, waterH, waterAnim + " -2.32s");
+                draw.obstacle(waterX, g.p4Y, obsW, waterH, waterAnim + " -1.33s");
+                draw.obstacle(waterX, g.p4Y, obsW, waterH, waterAnim + " -2.66s");
             },
             4: (draw) => {
                 const H_THICK = 14; const W_THICK = 7.875; const TOP_Y = 10;
                 
                 draw.path(15, TOP_Y, 75, H_THICK); 
                 draw.path(90 - W_THICK, TOP_Y, W_THICK, 60);
-                draw.path(5, 60, 85, 30);
+                draw.path(5, 60, 85, 30); // The Arena Room
                 
+                // Trigger Line
                 draw.trigger(25, 60, 2, 30, (goalObj) => {
                     if (!goalObj.hitbox.classList.contains('moving')) {
                         goalObj.hitbox.classList.add('moving');
-                        goalObj.gfx.style.animation = "crazyMove 0.8s linear infinite";
-                        goalObj.hitbox.style.animation = "crazyMove 0.8s linear infinite";
-                        Logger.log("TRIGGERED! FAST GOAL!");
+                        // Use arenaPatrol (Keeps it inside the blue room)
+                        const anim = "arenaPatrol 4s linear infinite";
+                        goalObj.gfx.style.animation = anim;
+                        goalObj.hitbox.style.animation = anim;
+                        Logger.log("TRIGGERED! Goal is moving!");
                     }
                 });
 
+                // Goal Start
                 draw.goal(10, 65, W_THICK, H_THICK, "menu", 500);
             }
         };
@@ -289,10 +295,8 @@
 
                 if (LevelData[lvl]) LevelData[lvl](builderProxy);
                 
-                // NO I-FRAMES! INSTANT START
-                this.state.active = true;
-                updateSpeedrunStatus(lvl, 'playing');
-                PluginManager.trigger('startLevel', lvl);
+                this.state.active = false;
+                setTimeout(() => { this.state.active = true; PluginManager.trigger('startLevel', lvl); }, 50);
             },
 
             gameLoop: function() {
@@ -307,21 +311,17 @@
                 
                 const target = document.elementFromPoint(this.state.mouseX, this.state.mouseY);
 
-                // TRIGGER
                 if (target && target.classList.contains('trigger-box')) {
                     if (target.onTouch) target.onTouch();
                 }
 
-                // GOAL
                 if (target && target.classList.contains('goal-box')) {
                     const requiredHold = parseInt(target.dataset.holdTime) || 0;
 
                     if (requiredHold === 0) {
                         this.win(target.dataset.next);
                     } else {
-                        // Hold Win
                         this.state.hoverGoalTime += 16.6;
-                        
                         this.ui.catchMeter.style.display = 'block';
                         this.ui.catchMeter.style.left = this.state.mouseX + 'px';
                         this.ui.catchMeter.style.top = (this.state.mouseY - 20) + 'px';
@@ -339,7 +339,6 @@
                     this.ui.catchFill.style.width = '0%';
                 }
 
-                // DEATH
                 const isSafe = target && (
                     target.classList.contains('path-box') || 
                     target.classList.contains('goal-box') || 
@@ -356,14 +355,8 @@
             win: function(next) {
                 this.state.active = false;
                 Logger.log("Goal Captured!", "success");
-                if (next === "menu") { 
-                    alert("You Beat The Game!"); 
-                    updateSpeedrunStatus(4, 'completed'); 
-                    this.reset(); 
-                } 
-                else { 
-                    this.startLevel(parseInt(next)); 
-                }
+                if (next === "menu") { alert("You Beat The Game!"); this.reset(); } 
+                else { this.startLevel(parseInt(next)); }
             },
 
             handleRelease: function(e) {
@@ -373,26 +366,18 @@
 
             die: function(reason) {
                 Logger.log(`Died: ${reason}`, "death");
-                this.state.active = false; 
-                updateSpeedrunStatus(window.gameState.level, 'dead');
-                PluginManager.trigger('death', reason); 
-                this.reset();
+                this.state.active = false; PluginManager.trigger('death', reason); this.reset();
             },
 
             reset: function() {
                 Logger.log("Resetting to Menu");
                 this.state.active = false; this.state.dragging = false;
-                updateSpeedrunStatus(0, 'menu');
                 this.ui.menu.style.display = 'block';
                 this.layers.gfx.innerHTML = ''; this.layers.phy.innerHTML = '';
                 this.ui.catchMeter.style.display = 'none';
-            },
-
-            exit: function() { 
                 if (document.fullscreenElement) document.exitFullscreen();
-                this.reset(); 
             },
-            
+            exit: function() { this.reset(); },
             toggleDebug: function() { 
                 this.state.debug = !this.state.debug; 
                 this.container.classList.toggle('debug'); 
