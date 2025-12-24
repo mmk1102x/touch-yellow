@@ -8,7 +8,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Roboto:wght@700&display=swap" rel="stylesheet">
     
     <style>
-        /* --- CORE STYLES --- */
         * { box-sizing: border-box; }
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; overflow: hidden; user-select: none; touch-action: none; font-family: 'Roboto', sans-serif; display: flex; justify-content: center; align-items: center; }
         
@@ -16,75 +15,35 @@
             width: 100%; max-width: 177.78vh; aspect-ratio: 16/9;
             position: relative; background: #000000; overflow: hidden;
             box-shadow: 0 0 50px rgba(0,0,0,0.5);
-            transition: background-color 0.3s; /* Smooth transition for debug */
+            transition: background-color 0.3s;
         }
 
-        /* LAYERS */
         .layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
         #gfx-layer { z-index: 10; }
         #phy-layer { z-index: 20; pointer-events: auto; }
         #ui-layer { z-index: 30; pointer-events: none; }
 
-        /* VISUALS */
         .visual-path { position: absolute; background-color: #26a9e1; }
         .visual-goal { position: absolute; background-color: #f1a92a; }
         .visual-obs { position: absolute; background-color: #000000; } 
         
-        /* PHYSICS (Hitboxes) */
         .hitbox { position: absolute; opacity: 0; cursor: crosshair; }
         
-        /* --- DEBUG MODE STYLES --- */
-        
-        /* 1. The Void (Background) turns Dark Red to signify Death */
-        #game-container.debug {
-            background-color: #330000; 
-        }
-
-        /* 2. Path is invisible (Safe Zone) */
+        /* DEBUG STYLES */
+        #game-container.debug { background-color: #330000; } /* Red background implies death zone */
         .debug .path-box { border: none; background: transparent; }
-        
-        /* 3. Goal is GREEN */
-        .debug .goal-box { 
-            opacity: 0.8; 
-            border: 3px solid #00ff00; 
-            background: rgba(0, 255, 0, 0.3); 
-            z-index: 100;
-        }
-        
-        /* 4. Obstacle (Death) is RED */
-        .debug .obstacle-box { 
-            opacity: 0.8; 
-            border: 3px solid #ff0000; 
-            background: rgba(255, 0, 0, 0.5); 
-            z-index: 100;
-        }
+        .debug .goal-box { opacity: 0.8; border: 3px solid #00ff00; background: rgba(0, 255, 0, 0.3); z-index: 100; }
+        .debug .obstacle-box { opacity: 0.8; border: 3px solid #ff0000; background: rgba(255, 0, 0, 0.5); z-index: 100; }
 
-        /* MENU UI */
-        .menu-content { 
-            pointer-events: auto; text-align: center; width: 100%; height: 100%; position: relative; 
-            background-color: #4d4d4d;
-        }
-
-        .title { 
-            position: absolute; width: 100%; top: 10%;
-            font-family: 'Luckiest Guy', cursive; color: #f2ef45; font-size: 10cqi; 
-            line-height: 0.9; text-transform: uppercase; 
-            text-shadow: 0.4cqi 0.4cqi 0 #000;
-        }
-        
+        .menu-content { pointer-events: auto; text-align: center; width: 100%; height: 100%; position: relative; background-color: #4d4d4d; }
+        .title { position: absolute; width: 100%; top: 10%; font-family: 'Luckiest Guy', cursive; color: #f2ef45; font-size: 10cqi; line-height: 0.9; text-transform: uppercase; text-shadow: 0.4cqi 0.4cqi 0 #000; }
         .menu-btn-wrapper { position: absolute; display: flex; align-items: center; pointer-events: auto; }
-        
         #btn-start-wrap { left: 5%; bottom: 25%; height: 12%; }
         #btn-exit-wrap { left: 5%; bottom: 8%; height: 12%; }
-
-        .circle-btn {
-            height: 100%; aspect-ratio: 1/1; background-color: #f2a922; 
-            border-radius: 50%; border: 0.5cqi solid #333; cursor: pointer; transition: transform 0.1s;
-        }
+        .circle-btn { height: 100%; aspect-ratio: 1/1; background-color: #f2a922; border-radius: 50%; border: 0.5cqi solid #333; cursor: pointer; transition: transform 0.1s; }
         .circle-btn:hover { transform: scale(1.1); filter: brightness(1.1); }
         .label { font-size: 4cqi; font-weight: 900; color: #000; margin-left: 2cqi; white-space: nowrap; }
 
-        /* SWITCH */
         #toggle-wrap { position: absolute; right: 8%; bottom: 15%; display: flex; flex-direction: column; align-items: center; pointer-events: auto; }
         .switch-label { font-family: 'Luckiest Guy', cursive; color: #f2ef45; font-size: 3cqi; margin-bottom: 1cqi; text-shadow: 0.1cqi 0.1cqi 0 #000; }
         .switch { position: relative; display: inline-block; width: 8cqi; height: 4cqi; }
@@ -94,7 +53,6 @@
         input:checked + .slider { background-color: #f2a922; }
         input:checked + .slider:before { transform: translateX(4cqi); }
 
-        /* ANIMATIONS */
         @keyframes slicerMove {
             0% { transform: translateY(0%); }      
             50% { transform: translateY(200%); }   
@@ -143,43 +101,59 @@
             trigger: function(e, d) { if(this.hooks[e]) this.hooks[e].forEach(cb=>cb(d)); }
         };
 
+        // SHARED GEOMETRY (The Walls)
+        const DrawLevel1Layout = (draw) => {
+            const THICK_H = 14;          
+            const THICK_W = 7.875;       
+            const startY = 62; 
+            const OVERLAP = 0.5;
+
+            const p2X = 55 - THICK_W;     
+            const p2Height = 20;          
+            const p2Y = startY - p2Height;
+            
+            const p3Width = 35;
+            const p4X = p2X + p3Width - THICK_W;
+            const p4Height = 24;
+            const p4Y = p2Y - p4Height;
+            
+            const p5Width = 45;
+            const topPathLeftX = p4X - p5Width + THICK_W;
+
+            draw.path(0, startY, 55 + OVERLAP, THICK_H); 
+            draw.path(p2X, p2Y, THICK_W, p2Height + THICK_H + OVERLAP);    
+            draw.path(p2X, p2Y, p3Width + OVERLAP, THICK_H);         
+            draw.path(p4X, p4Y, THICK_W, p4Height + THICK_H + OVERLAP);    
+            draw.path(topPathLeftX, p4Y, p5Width + OVERLAP, THICK_H);
+            
+            // Return key points for goals to use
+            return { topPathLeftX, p4Y, THICK_W, THICK_H, startY };
+        };
+
         const LevelData = {
             1: (draw) => {
-                const THICK_H = 14;          
-                const THICK_W = 7.875;       
-                const startY = 62; 
-                const OVERLAP = 0.5;
-
-                const p2X = 55 - THICK_W;     
-                const p2Height = 20;          
-                const p2Y = startY - p2Height;
-                const p3Width = 35;
-                const p4X = p2X + p3Width - THICK_W;
-                const p4Height = 24;
-                const p4Y = p2Y - p4Height;
-                const p5Width = 45;
-                const topPathLeftX = p4X - p5Width + THICK_W;
-
-                draw.path(0, startY, 55 + OVERLAP, THICK_H); 
-                draw.path(p2X, p2Y, THICK_W, p2Height + THICK_H + OVERLAP);    
-                draw.path(p2X, p2Y, p3Width + OVERLAP, THICK_H);         
-                draw.path(p4X, p4Y, THICK_W, p4Height + THICK_H + OVERLAP);    
-                draw.path(topPathLeftX, p4Y, p5Width + OVERLAP, THICK_H);      
+                // Draw Walls
+                const geom = DrawLevel1Layout(draw);
                 
-                draw.goal(topPathLeftX, p4Y - THICK_H, THICK_W, THICK_H, 2);
+                // Draw L1 Goal ONLY (Top Left)
+                draw.goal(geom.topPathLeftX, geom.p4Y - geom.THICK_H, geom.THICK_W, geom.THICK_H, 2);
             },
             
             2: (draw) => {
-                LevelData[1](draw); 
-                const THICK_H = 14; const THICK_W = 7.875; const startY = 62;
-                const p2X = 55 - THICK_W; const p2Y = startY - 20; const p4X = p2X + 35 - THICK_W; const p4Y = p2Y - 24; const topPathLeftX = p4X - 45 + THICK_W;
+                // Draw Walls
+                const geom = DrawLevel1Layout(draw);
 
-                draw.path(topPathLeftX, p4Y - THICK_H, THICK_W, THICK_H * 2);
+                // L2 Start Zone (Safe area where L1 Goal was)
+                // Overlaps the top path slightly to ensure connection
+                draw.path(geom.topPathLeftX, geom.p4Y - geom.THICK_H, geom.THICK_W, geom.THICK_H * 2);
+
+                // L2 GOAL ONLY (Bottom Left)
                 draw.goal(5, 63, 6.75, 12, "menu");
 
-                const obsW = THICK_W * 0.6; 
-                const obsH = THICK_H * 1.5; 
-                const obsStartY = startY - (THICK_H * 1.5);
+                // OBSTACLE
+                const obsW = geom.THICK_W * 0.6; 
+                const obsH = geom.THICK_H * 1.5; 
+                const obsStartY = geom.startY - (geom.THICK_H * 1.5);
                 
                 draw.obstacle(35, obsStartY, obsW, obsH, "slicerMove 2s linear infinite");
             }
@@ -195,13 +169,11 @@
                 if (this.state.isMobile) { this.state.holdMode = true; this.ui.toggleWrap.style.display = 'none'; }
                 this.ui.startBtn.onmousedown = () => this.startLevel(1);
                 this.ui.startBtn.ontouchstart = () => this.startLevel(1);
-                
                 window.addEventListener('mousemove', e => this.handleInput(e.clientX, e.clientY));
                 window.addEventListener('touchmove', e => { if (this.state.active) { e.preventDefault(); this.handleInput(e.touches[0].clientX, e.touches[0].clientY, e.touches.length > 1); } }, {passive: false});
                 window.addEventListener('mouseup', e => this.handleRelease(e));
                 window.addEventListener('touchend', e => this.handleRelease(e));
                 window.addEventListener('mousedown', e => { if(e.button === 2 && this.state.active) this.die("Panic Click"); });
-                
                 Logger.log("Engine Initialized");
             },
 
@@ -232,7 +204,6 @@
                 this.layers.gfx.appendChild(gfx);
                 
                 const phy = document.createElement('div'); phy.className = phyClass;
-                // Force absolute to prevent layout bugs
                 phy.style.position = 'absolute';
                 phy.style.left = x + '%'; phy.style.top = y + '%'; phy.style.width = w + '%'; phy.style.height = h + '%';
                 this.layers.phy.appendChild(phy);
@@ -267,7 +238,6 @@
                     return;
                 }
 
-                // Safety Logic: Must touch 'path-box' or 'goal-box'.
                 const isSafe = target && (target.classList.contains('path-box') || target.classList.contains('goal-box'));
                 
                 if (!isSafe) {
