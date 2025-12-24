@@ -23,6 +23,7 @@
         #phy-layer { z-index: 20; pointer-events: auto; }
         #ui-layer { z-index: 30; pointer-events: none; }
 
+        /* VISUALS */
         .visual-path { position: absolute; background-color: #26a9e1; box-shadow: 0 0 0 1px #26a9e1; }
         .visual-goal { position: absolute; background-color: #f1a92a; box-shadow: 0 0 0 1px #f1a92a; }
         .visual-obs { position: absolute; background-color: #000000; } 
@@ -33,14 +34,22 @@
         /* --- DEBUG STYLES --- */
         #game-container.debug { background-color: #330000; } 
         
-        .debug .path-box { border: none; background: transparent; }
-        .debug .goal-box { opacity: 0.8; border: 3px solid #00ff00; background: rgba(0, 255, 0, 0.3); z-index: 100; }
-        .debug .obstacle-box { opacity: 0.8; border: 3px solid #ff0000; background: rgba(255, 0, 0, 0.5); z-index: 100; }
-        .debug .trigger-box { opacity: 0.8; border: 3px solid #b0f; background: rgba(150, 0, 255, 0.4); z-index: 100; }
+        /* High Z-Index ensures debug lines show over menu */
+        .debug .goal-box { opacity: 0.8; border: 3px solid #00ff00; background: rgba(0, 255, 0, 0.3); z-index: 999; }
+        .debug .obstacle-box { opacity: 0.8; border: 3px solid #ff0000; background: rgba(255, 0, 0, 0.5); z-index: 999; }
+        .debug .trigger-box { opacity: 0.8; border: 3px solid #b0f; background: rgba(150, 0, 255, 0.4); z-index: 999; }
         
+        /* Menu Debug */
         .debug .circle-btn { border: 3px solid #b0f !important; background-color: rgba(150, 0, 255, 0.4) !important; }
-        .debug .slider { box-shadow: 0 0 0 3px #b0f, 0 0 10px #b0f; background-color: rgba(150, 0, 255, 0.4) !important; }
+        
+        /* FIX: Rectangular hitbox for switch */
+        .debug .switch { 
+            outline: 3px solid #b0f; 
+            background-color: rgba(150, 0, 255, 0.4);
+            z-index: 999;
+        }
 
+        /* DEBUG OVERLAY */
         #debug-info {
             position: absolute; top: 10px; left: 10px; 
             color: lime; font-family: monospace; font-size: 14px; 
@@ -54,37 +63,23 @@
         
         .menu-btn-wrapper { position: absolute; display: flex; align-items: center; pointer-events: auto; }
         
+        /* START BUTTON: 25% Bottom. Height 12% -> Top is 63% (100-25-12) */
         #btn-start-wrap { left: 5%; bottom: 25%; height: 12%; }
         #btn-exit-wrap { left: 5%; bottom: 8%; height: 12%; }
         #btn-save-wrap { left: auto; right: 6%; top: 6%; bottom: auto; height: 12%; }
         #btn-save-wrap .label { margin-left: 0; margin-right: 20px; font-size: 3.5cqi; }
 
-        #save1-wrap { left: 20%; bottom: 50%; height: 12%; }
-        #save2-wrap { left: 55%; bottom: 50%; height: 12%; }
-        #save-back-wrap { left: 5%; bottom: 10%; height: 12%; }
-
         .circle-btn { height: 100%; aspect-ratio: 1/1; background-color: #f2a922; border-radius: 50%; border: 0.5cqi solid #333; cursor: pointer; transition: transform 0.1s; }
         .circle-btn:hover { transform: scale(1.1); filter: brightness(1.1); }
         .label { font-size: 4cqi; font-weight: 900; color: #000; margin-left: 2cqi; white-space: nowrap; }
-        
-        .unlocked { background-color: #00ff00; }
-        .locked { background-color: #555; border-color: #333; filter: grayscale(100%); cursor: not-allowed; }
 
-        #toggle-wrap { 
-            position: absolute; right: 8%; bottom: 15%; 
-            display: flex; flex-direction: column; align-items: center; pointer-events: auto;
-            width: 25cqi;
-        }
+        #toggle-wrap { position: absolute; right: 8%; bottom: 15%; display: flex; flex-direction: column; align-items: center; pointer-events: auto; width: 25cqi; }
         .switch-label { font-family: 'Luckiest Guy', cursive; color: #f2ef45; font-size: 3cqi; margin-bottom: 1cqi; text-shadow: 0.1cqi 0.1cqi 0 #000; width: 100%; text-align: center; }
         .switch { position: relative; display: inline-block; width: 8cqi; height: 4cqi; }
         .switch input { opacity: 0; width: 100%; height: 100%; position: absolute; z-index: 2; cursor: pointer; }
         
         .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #333; border-radius: 4cqi; border: 0.3cqi solid #000; transition: .4s; }
-        .slider:before { 
-            position: absolute; content: ""; height: 3.2cqi; width: 3.2cqi; 
-            left: 0.4cqi; top: 50%; transform: translateY(-50%); 
-            background-color: white; border-radius: 50%; transition: .4s; 
-        }
+        .slider:before { position: absolute; content: ""; height: 3.2cqi; width: 3.2cqi; left: 0.4cqi; top: 50%; transform: translateY(-50%); background-color: white; border-radius: 50%; transition: .4s; }
         input:checked + .slider { background-color: #f2a922; }
         input:checked + .slider:before { transform: translate(4cqi, -50%); }
 
@@ -107,8 +102,6 @@
         <div id="phy-layer" class="layer"></div>
         <div id="ui-layer" class="layer">
             <div id="debug-info">DEBUG: OFF</div>
-            
-            <!-- MAIN MENU -->
             <div id="menu-screen" class="menu-content">
                 <h1 class="title">Touch Yellow</h1>
                 
@@ -119,7 +112,7 @@
 
                 <div id="btn-save-wrap" class="menu-btn-wrapper">
                     <div class="label">Saves -></div>
-                    <div id="save-btn-menu" class="circle-btn" onclick="Engine.openSavesMenu()"></div>
+                    <div id="save-btn-menu" class="circle-btn" onclick="Engine.openSave()"></div>
                 </div>
 
                 <div id="btn-exit-wrap" class="menu-btn-wrapper">
@@ -133,26 +126,6 @@
                         <input type="checkbox" id="mode-check" onchange="Engine.toggleMode()">
                         <span class="slider"></span>
                     </label>
-                </div>
-            </div>
-
-            <!-- SAVES SELECTION SCREEN -->
-            <div id="saves-screen" class="menu-content" style="display:none;">
-                <h1 class="title">Select Save</h1>
-                
-                <div id="save1-wrap" class="menu-btn-wrapper">
-                    <div id="btn-save1" class="circle-btn" onclick="Engine.loadSaveFile(1)"></div>
-                    <div class="label"><- Save 1</div>
-                </div>
-
-                <div id="save2-wrap" class="menu-btn-wrapper">
-                    <div id="btn-save2" class="circle-btn" onclick="Engine.loadSaveFile(2)"></div>
-                    <div class="label"><- Save 2</div>
-                </div>
-
-                <div id="save-back-wrap" class="menu-btn-wrapper">
-                    <div class="circle-btn" onclick="Engine.closeSavesMenu()"></div>
-                    <div class="label"><- Back</div>
                 </div>
             </div>
         </div>
@@ -173,15 +146,13 @@
         };
 
         const Storage = {
-            save: (slot, level) => localStorage.setItem(`touchYellow_save${slot}`, 'true'),
-            hasSave: (slot) => localStorage.getItem(`touchYellow_save${slot}`) === 'true',
+            save: (level) => localStorage.setItem('touchYellow_save1', 'true'),
+            hasSave: () => localStorage.getItem('touchYellow_save1') === 'true',
             clear: () => { 
                 localStorage.removeItem('touchYellow_save1'); 
-                localStorage.removeItem('touchYellow_save2');
-                localStorage.removeItem('touchYellow_holdMode'); // Clear settings too
+                localStorage.removeItem('touchYellow_holdMode');
                 Logger.log("All Saves & Settings Cleared", "system"); 
                 alert("Reset Complete!");
-                Engine.openSavesMenu(); 
             }
         };
 
@@ -211,35 +182,28 @@
             layers: { gfx: document.getElementById('gfx-layer'), phy: document.getElementById('phy-layer'), ui: document.getElementById('ui-layer') },
             ui: { 
                 menu: document.getElementById('menu-screen'), 
-                saves: document.getElementById('saves-screen'),
                 debugInfo: document.getElementById('debug-info'),
                 startBtn: document.getElementById('start-btn'), 
                 modeCheck: document.getElementById('mode-check'), 
                 modeText: document.getElementById('mode-text'), 
                 toggleWrap: document.getElementById('toggle-wrap'), 
                 catchMeter: document.getElementById('catch-meter'), 
-                catchFill: document.getElementById('catch-fill'),
-                btnSave1: document.getElementById('btn-save1'),
-                btnSave2: document.getElementById('btn-save2')
+                catchFill: document.getElementById('catch-fill') 
             },
             state: { active: false, dragging: false, holdMode: false, debug: false, mouseX: 0, mouseY: 0, hoverGoalTime: 0, currentLevel: 0 },
 
             init: function() {
-                // 1. Load Settings
-                const savedHold = localStorage.getItem('touchYellow_holdMode') === 'true';
-                this.state.holdMode = savedHold;
-
                 const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-                if (isMobile) {
-                    this.state.holdMode = true; 
-                    this.ui.toggleWrap.style.display = 'none'; 
-                } else {
-                    // Update UI to match saved setting
-                    this.ui.modeCheck.checked = savedHold;
-                    this.ui.modeText.innerText = savedHold ? "Hold Mode" : "Hover Mode";
-                    this.ui.modeText.style.color = savedHold ? "#f2a922" : "#f2ef45";
-                }
+                if (isMobile) { this.state.holdMode = true; this.ui.toggleWrap.style.display = 'none'; }
                 
+                // Load Settings
+                if (localStorage.getItem('touchYellow_holdMode') === 'true') {
+                    this.state.holdMode = true;
+                    this.ui.modeCheck.checked = true;
+                    this.ui.modeText.innerText = "Hold Mode";
+                    this.ui.modeText.style.color = "#f2a922";
+                }
+
                 const urlParams = new URLSearchParams(window.location.search);
                 const loadCheckpoint = urlParams.get('loadCheckpoint');
                 if (loadCheckpoint) setTimeout(() => this.startLevel(parseInt(loadCheckpoint)), 500);
@@ -255,6 +219,8 @@
                 window.addEventListener('mouseup', e => this.handleRelease(e));
                 window.addEventListener('touchend', e => this.handleRelease(e));
                 window.addEventListener('mousedown', e => { if(e.button === 2 && this.state.active) this.die("Panic Click"); });
+                
+                requestAnimationFrame(this.gameLoop.bind(this));
                 Logger.log("Engine Initialized");
             },
 
@@ -263,34 +229,13 @@
                 this.state.holdMode = this.ui.modeCheck.checked;
                 this.ui.modeText.innerText = this.state.holdMode ? "Hold Mode" : "Hover Mode";
                 this.ui.modeText.style.color = this.state.holdMode ? "#f2a922" : "#f2ef45";
-                // Save Setting
                 localStorage.setItem('touchYellow_holdMode', this.state.holdMode);
                 Logger.log(`Mode Switched: ${this.state.holdMode ? "HOLD" : "HOVER"}`, "system");
             },
 
-            openSavesMenu: function() {
-                this.ui.menu.style.display = 'none';
-                this.ui.saves.style.display = 'block';
-                this.updateSaveBtn(1, this.ui.btnSave1);
-                this.updateSaveBtn(2, this.ui.btnSave2);
-            },
-
-            closeSavesMenu: function() {
-                this.ui.saves.style.display = 'none';
-                this.ui.menu.style.display = 'block';
-            },
-
-            updateSaveBtn: function(slot, btn) {
-                if (Storage.hasSave(slot)) {
-                    btn.classList.add('unlocked'); btn.classList.remove('locked');
-                } else {
-                    btn.classList.add('locked'); btn.classList.remove('unlocked');
-                }
-            },
-
-            loadSaveFile: function(slot) {
-                if (Storage.hasSave(slot)) window.location.href = `save/save${slot}.html`;
-                else alert("Locked! You haven't reached this save yet.");
+            openSave: function() {
+                if (Storage.hasSave()) window.location.href = "save/save1.html";
+                else alert("No Saves Found!");
             },
 
             builder: {
@@ -325,7 +270,7 @@
                 Logger.log(`Starting Level ${lvl}`);
                 if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(e=>{});
                 this.layers.gfx.innerHTML = ''; this.layers.phy.innerHTML = '';
-                this.ui.menu.style.display = 'none'; this.ui.saves.style.display = 'none'; this.state.dragging = true;
+                this.ui.menu.style.display = 'none'; this.state.dragging = true;
                 this.state.hoverGoalTime = 0;
                 this.state.currentLevel = lvl;
                 this.ui.catchMeter.style.display = 'none';
@@ -387,10 +332,7 @@
             win: function(next) {
                 this.state.active = false;
                 Logger.log("Goal Captured!", "success");
-                if (next === "redirect_save1") { 
-                    Storage.save(1, true); 
-                    window.location.href = "save/save1.html"; 
-                } 
+                if (next === "redirect_save1") { window.location.href = "save/save1.html"; } 
                 else if (next === "menu") { alert("You Beat The Game!"); this.reset(); } 
                 else { this.startLevel(parseInt(next)); }
             },
@@ -407,19 +349,23 @@
                 Logger.log("Resetting to Menu");
                 this.state.active = false; this.state.dragging = false;
                 this.ui.menu.style.display = 'block';
-                this.ui.saves.style.display = 'none';
                 this.layers.gfx.innerHTML = ''; this.layers.phy.innerHTML = '';
                 this.ui.catchMeter.style.display = 'none';
             },
             exit: function() { if (document.fullscreenElement) document.exitFullscreen(); this.reset(); },
-            toggleDebug: function() { this.state.debug = !this.state.debug; this.container.classList.toggle('debug'); Logger.log(`Hitbox Mode: ${this.state.debug}`); }
+            toggleDebug: function() { 
+                this.state.debug = !this.state.debug; 
+                this.container.classList.toggle('debug'); 
+                this.ui.debugInfo.style.display = this.state.debug ? 'block' : 'none';
+                Logger.log(`Hitbox Mode: ${this.state.debug}`);
+            }
         };
 
         Engine.init();
         window.cmd = (c) => {
             if (c === 'hitbox') Engine.toggleDebug();
             if (c === 'load menu') Engine.reset();
-            if (c === 'load save') Engine.openSavesMenu();
+            if (c === 'load save') Engine.openSave(); // Added load save
             if (c === 'clear') Storage.clear();
             if (c.startsWith('load level')) { const num = parseInt(c.split('level')[1]); if (!isNaN(num)) Engine.startLevel(num); }
         };
