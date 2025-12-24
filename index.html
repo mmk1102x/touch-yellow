@@ -71,17 +71,24 @@
             100% { transform: translateY(0%); }    
         }
         @keyframes waterfallDrop {
-            0% { transform: translateY(-300%); }
-            100% { transform: translateY(300%); }
+            0% { transform: translateY(-250%); }
+            100% { transform: translateY(250%); }
         }
         
-        @keyframes crazyMove {
+        /* Level 4 Safe Room Movement */
+        /* Moves RELATIVE to its starting position (Left: 10%, Top: 65%) */
+        /* Room is ~85% wide. Goal is ~7%. Safe travel distance X = ~78% of container */
+        /* 78 / 7 = ~11.1 (1100% translateX) */
+        /* Room is ~30% high. Goal is 14%. Safe travel distance Y = ~16% of container */
+        /* 16 / 14 = ~1.1 (110% translateY) */
+        @keyframes safeCrazyMove {
             0%   { transform: translate(0, 0); }
-            20%  { transform: translate(250%, -350%); } 
-            40%  { transform: translate(250%, 0%); }    
-            60%  { transform: translate(120%, -150%); } 
-            80%  { transform: translate(0, -350%); }    
-            100% { transform: translate(0, 0); }
+            20%  { transform: translate(1000%, 0); }    /* Far Right */
+            35%  { transform: translate(1000%, 100%); } /* Far Right Bottom */
+            50%  { transform: translate(500%, 100%); }  /* Middle Bottom */
+            65%  { transform: translate(500%, 0); }     /* Middle Top */
+            80%  { transform: translate(0, 100%); }     /* Left Bottom */
+            100% { transform: translate(0, 0); }        /* Start */
         }
     </style>
 </head>
@@ -162,14 +169,14 @@
                 const obsW = g.THICK_W * 0.6; const obsH = g.THICK_H * 1.5; 
                 
                 // 1. Bottom
-                draw.obstacle(28, g.startY - (g.THICK_H * 1.5), obsW, obsH, "slicerMove 2s linear infinite");
+                draw.obstacle(35, g.startY - (g.THICK_H * 1.5), obsW, obsH, "slicerMove 2s linear infinite");
                 
-                // 2. Middle (Moved to 60%, 3s speed)
+                // 2. Middle (60%)
                 draw.obstacle(60, g.midY - (g.THICK_H * 1.5), obsW, obsH, "slicerMove 3s linear infinite");
                 
-                // 3. Waterfall (Taller blocks, 4s speed)
+                // 3. Waterfall (Better Spacing: 1.5x Height blocks, 4s total loop)
                 const waterX = g.p4X - 15; 
-                const waterH = g.THICK_H * 2.5; // Taller
+                const waterH = g.THICK_H * 1.5; // Shorter blocks
                 const waterAnim = "waterfallDrop 4s linear infinite";
                 draw.obstacle(waterX, g.p4Y, obsW, waterH, waterAnim);
                 draw.obstacle(waterX, g.p4Y, obsW, waterH, waterAnim + " -1.33s");
@@ -178,21 +185,26 @@
             4: (draw) => {
                 const H_THICK = 14; const W_THICK = 7.875; const TOP_Y = 10;
                 
+                // Layout
                 draw.path(15, TOP_Y, 75, H_THICK); 
                 draw.path(90 - W_THICK, TOP_Y, W_THICK, 60);
+                // Big Room (Bottom)
                 draw.path(5, 60, 85, 30);
                 
+                // Trigger (at 25% X)
                 draw.trigger(25, 60, 2, 30, (goalObj) => {
                     if (!goalObj.hitbox.classList.contains('moving')) {
                         goalObj.hitbox.classList.add('moving');
-                        // Faster: 0.8s loop
-                        goalObj.gfx.style.animation = "crazyMove 0.8s linear infinite";
-                        goalObj.hitbox.style.animation = "crazyMove 0.8s linear infinite";
-                        Logger.log("TRIGGERED! FAST GOAL!");
+                        // Use the SAFE movement animation (2.5s loop, fast but safe)
+                        const anim = "safeCrazyMove 2.5s linear infinite";
+                        goalObj.gfx.style.animation = anim;
+                        goalObj.hitbox.style.animation = anim;
+                        Logger.log("TRIGGERED! Goal is fleeing!");
                     }
                 });
 
-                // Goal with 500ms Hold Time
+                // Goal (Starts Left side of room)
+                // 500ms Hold required
                 draw.goal(10, 65, W_THICK, H_THICK, "menu", 500);
             }
         };
@@ -315,9 +327,7 @@
                     if (requiredHold === 0) {
                         this.win(target.dataset.next);
                     } else {
-                        // Hold Win
                         this.state.hoverGoalTime += 16.6;
-                        
                         this.ui.catchMeter.style.display = 'block';
                         this.ui.catchMeter.style.left = this.state.mouseX + 'px';
                         this.ui.catchMeter.style.top = (this.state.mouseY - 20) + 'px';
