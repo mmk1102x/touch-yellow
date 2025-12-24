@@ -23,16 +23,12 @@
         #phy-layer { z-index: 20; pointer-events: auto; }
         #ui-layer { z-index: 30; pointer-events: none; }
 
-        /* --- VISUALS --- */
-        .visual-path { 
-            position: absolute; 
-            background-color: #26a9e1; 
-            /* MAGIC FIX: This shadow fills sub-pixel cracks without making the block look messy */
-            box-shadow: 0 0 0 1px #26a9e1; 
-        }
+        .visual-path { position: absolute; background-color: #26a9e1; box-shadow: 0 0 0 1px #26a9e1; }
         .visual-goal { position: absolute; background-color: #f1a92a; box-shadow: 0 0 0 1px #f1a92a; }
         .visual-obs { position: absolute; background-color: #000000; } 
-        
+        /* Purple Trigger Visual (Invisible in game usually) */
+        .visual-trig { position: absolute; background-color: transparent; }
+
         .hitbox { position: absolute; opacity: 0; cursor: crosshair; }
         
         /* DEBUG STYLES */
@@ -40,7 +36,10 @@
         .debug .path-box { border: none; background: transparent; }
         .debug .goal-box { opacity: 0.8; border: 3px solid #00ff00; background: rgba(0, 255, 0, 0.3); z-index: 100; }
         .debug .obstacle-box { opacity: 0.8; border: 3px solid #ff0000; background: rgba(255, 0, 0, 0.5); z-index: 100; }
+        /* Actionable Block (Trigger) is Purple */
+        .debug .trigger-box { opacity: 0.8; border: 3px solid #b0f; background: rgba(150, 0, 255, 0.4); z-index: 100; }
 
+        /* UI Elements */
         .menu-content { pointer-events: auto; text-align: center; width: 100%; height: 100%; position: relative; background-color: #4d4d4d; }
         .title { position: absolute; width: 100%; top: 10%; font-family: 'Luckiest Guy', cursive; color: #f2ef45; font-size: 10cqi; line-height: 0.9; text-transform: uppercase; text-shadow: 0.4cqi 0.4cqi 0 #000; }
         .menu-btn-wrapper { position: absolute; display: flex; align-items: center; pointer-events: auto; }
@@ -59,19 +58,39 @@
         input:checked + .slider { background-color: #f2a922; }
         input:checked + .slider:before { transform: translateX(4cqi); }
 
+        /* CURSOR CATCH METER */
+        #catch-meter {
+            position: fixed; display: none; width: 40px; height: 6px; 
+            background: #333; border: 1px solid white; border-radius: 3px;
+            pointer-events: none; z-index: 9999; transform: translate(-50%, -20px);
+        }
+        #catch-fill { width: 0%; height: 100%; background: #00ff00; transition: width 0.1s linear; }
+
+        /* ANIMATIONS */
         @keyframes slicerMove {
             0% { transform: translateY(0%); }      
             50% { transform: translateY(200%); }   
             100% { transform: translateY(0%); }    
         }
-
         @keyframes waterfallDrop {
             0% { transform: translateY(-250%); }
             100% { transform: translateY(250%); }
         }
+        /* Level 4 Crazy Goal Movement */
+        /* Moves relative to its starting position */
+        @keyframes crazyMove {
+            0%   { transform: translate(0, 0); }
+            20%  { transform: translate(300%, -400%); } /* Top Right */
+            40%  { transform: translate(300%, 0%); }    /* Bottom Right */
+            60%  { transform: translate(150%, -200%); } /* Middle */
+            80%  { transform: translate(0, -400%); }    /* Top Left */
+            100% { transform: translate(0, 0); }
+        }
     </style>
 </head>
 <body oncontextmenu="return false;">
+
+    <div id="catch-meter"><div id="catch-fill"></div></div>
 
     <div id="game-container">
         <div id="gfx-layer" class="layer"></div>
@@ -112,118 +131,111 @@
             trigger: function(e, d) { if(this.hooks[e]) this.hooks[e].forEach(cb=>cb(d)); }
         };
 
-        // --- PRECISE GEOMETRY ENGINE ---
-        // No overlap logic used. Blocks meet exactly. CSS Shadow handles the visual cracks.
         const DrawLevel1Layout = (draw) => {
-            const THICK_H = 14; 
-            const THICK_W = 7.875; 
-            
-            // Anchor Points
-            const BOTTOM_Y = 62;
-            const MID_Y    = 42;
-            const TOP_Y    = 22;
-            
-            const LEFT_X   = 55 - THICK_W;  
-            const RIGHT_X  = 90 - THICK_W; 
-            
-            // 1. Bottom Path (0 to Vertical 1)
-            // Width goes EXACTLY to the right edge of Vertical 1 (55%)
-            draw.path(0, BOTTOM_Y, 55, THICK_H);
-            
-            // 2. Vertical 1 (Bottom to Mid)
-            // Starts at 55-Thick. Height spans exactly from Mid to Bottom+Thick
-            draw.path(LEFT_X, MID_Y, THICK_W, (BOTTOM_Y - MID_Y) + THICK_H);
-            
-            // 3. Middle Path (Vertical 1 to Vertical 2)
-            // Starts at Left X. Width goes to Right X + Thick
-            draw.path(LEFT_X, MID_Y, (RIGHT_X - LEFT_X) + THICK_W, THICK_H);
-            
-            // 4. Vertical 2 (Mid to Top)
-            draw.path(RIGHT_X, TOP_Y, THICK_W, (MID_Y - TOP_Y) + THICK_H);
-            
-            // 5. Top Path (Vertical 2 back to Left)
-            const GOAL_X = 15;
-            // Starts at Goal X. Width goes to Right X + Thick
-            draw.path(GOAL_X, TOP_Y, (RIGHT_X - GOAL_X) + THICK_W, THICK_H);
+            const THICK_H = 14; const THICK_W = 7.875; const startY = 62;
+            const p2X = 55 - THICK_W; const p2Height = 20; const p2Y = startY - p2Height;
+            const p3Width = 35; const p4X = p2X + p3Width - THICK_W; const p4Height = 24; const p4Y = p2Y - p4Height;
+            const p5Width = 45; const topPathLeftX = p4X - p5Width + THICK_W;
 
-            return { 
-                goalX: GOAL_X, 
-                goalY: TOP_Y, 
-                thickH: THICK_H, 
-                thickW: THICK_W,
-                startY: BOTTOM_Y,
-                midY: MID_Y,
-                topY: TOP_Y,
-                v1X: LEFT_X,
-                v2X: RIGHT_X
-            };
+            draw.path(0, startY, 55, THICK_H); 
+            draw.path(p2X, p2Y, THICK_W, p2Height + THICK_H);    
+            draw.path(p2X, p2Y, p3Width, THICK_H);         
+            draw.path(p4X, p4Y, THICK_W, p4Height + THICK_H);    
+            draw.path(topPathLeftX, p4Y, p5Width, THICK_H);
+            
+            return { topPathLeftX, p4Y, THICK_W, THICK_H, startY, p2X, p4X, p2Y, midY: p2Y };
         };
 
         const LevelData = {
             1: (draw) => {
                 const g = DrawLevel1Layout(draw);
-                draw.goal(g.goalX, g.goalY - g.thickH, g.thickW, g.thickH, 2);
+                draw.goal(g.topPathLeftX, g.p4Y - g.THICK_H, g.THICK_W, g.THICK_H, 2);
             },
-            
             2: (draw) => {
                 const g = DrawLevel1Layout(draw);
-                
-                // Safe Start (Top Left - Overlaps goal area)
-                draw.path(g.goalX, g.goalY - g.thickH, g.thickW, g.thickH * 2);
-                
-                // Goal (Bottom Left - Matches Menu Position)
-                draw.goal(5, 63, 6.75, 12, 3);
-
-                // Obstacle (Bottom Path)
-                const obsW = g.thickW * 0.6; 
-                const obsH = g.thickH * 1.5; 
-                const obsY = g.startY - (g.thickH * 1.5);
-                draw.obstacle(30, obsY, obsW, obsH, "slicerMove 2s linear infinite");
+                draw.path(g.topPathLeftX, g.p4Y - g.THICK_H, g.THICK_W, g.THICK_H * 2); // Start Zone
+                draw.goal(5, 63, 6.75, 12, 3); // L2 Goal (Left 5%)
+                draw.obstacle(30, g.startY - (g.THICK_H * 1.5), g.THICK_W * 0.6, g.THICK_H * 1.5, "slicerMove 2s linear infinite");
             },
-
             3: (draw) => {
                 const g = DrawLevel1Layout(draw);
+                draw.path(0, g.startY, 20, g.THICK_H); // Start Zone
+                draw.goal(g.topPathLeftX, g.p4Y - g.THICK_H, g.THICK_W, g.THICK_H, 4); // To Level 4
                 
-                // Safe Start (Bottom Left)
-                draw.path(0, g.startY, 20, g.thickH); 
-
-                // Goal (Top Left)
-                draw.goal(g.goalX, g.goalY - g.thickH, g.thickW, g.thickH, "menu");
-
-                const obsW = g.thickW * 0.6; 
-                const obsH = g.thickH * 1.5; 
+                // Obstacles
+                const obsW = g.THICK_W * 0.6; const obsH = g.THICK_H * 1.5; 
+                draw.obstacle(28, g.startY - (g.THICK_H * 1.5), obsW, obsH, "slicerMove 2s linear infinite");
+                draw.obstacle(55, g.midY - (g.THICK_H * 1.5), obsW, obsH, "slicerMove 1.5s linear infinite");
+                const wAnim = "waterfallDrop 2.5s linear infinite";
+                draw.obstacle(70, g.topY, obsW, obsH, wAnim);
+                draw.obstacle(70, g.topY, obsW, obsH, wAnim + " -0.83s");
+                draw.obstacle(70, g.topY, obsW, obsH, wAnim + " -1.66s");
+            },
+            4: (draw) => {
+                // LEVEL 4 GEOMETRY: Connects from L3 (Top Left) -> Top Right -> Big Bottom Room
+                const H_THICK = 14; const W_THICK = 7.875;
+                const TOP_Y = 10;
                 
-                // 1. Bottom Path Slicer
-                draw.obstacle(28, g.startY - (g.thickH * 1.5), obsW, obsH, "slicerMove 2s linear infinite");
+                // 1. Top Path (Left to Right)
+                draw.path(15, TOP_Y, 75, H_THICK); // Start Zone is at 15% Left (L3 Goal)
+                
+                // 2. Vertical Down (Right Side)
+                draw.path(90 - W_THICK, TOP_Y, W_THICK, 60);
+                
+                // 3. Bottom Room (Big Arena)
+                // Left 5% to Right 90%
+                draw.path(5, 60, 85, 30);
+                
+                // THE TRIGGER (Purple Hitbox)
+                // Located at x=25%, inside the big room. Vertical strip.
+                // When touched, triggers 'goalEvasion' on the goal.
+                draw.trigger(25, 60, 2, 30, (goalEl) => {
+                    if (!goalEl.classList.contains('moving')) {
+                        goalEl.classList.add('moving');
+                        // Apply animation to BOTH visual and hitbox
+                        goalEl.gfx.style.animation = "crazyMove 3s linear infinite";
+                        goalEl.hitbox.style.animation = "crazyMove 3s linear infinite";
+                        Logger.log("TRIGGERED! Goal is moving!");
+                    }
+                });
 
-                // 2. Middle Path Slicer
-                draw.obstacle(55, g.midY - (g.thickH * 1.5), obsW, obsH, "slicerMove 1.5s linear infinite");
-
-                // 3. THE WATERFALL (Top Path)
-                const waterX = 70; // On Top Path
-                const waterY = g.topY;
-                const waterAnim = "waterfallDrop 2.5s linear infinite";
-                draw.obstacle(waterX, waterY, obsW, obsH, waterAnim);
-                draw.obstacle(waterX, waterY, obsW, obsH, waterAnim + " -0.83s");
-                draw.obstacle(waterX, waterY, obsW, obsH, waterAnim + " -1.66s");
+                // THE GOAL (Starts Left side of room)
+                // Goal is actionable, so it handles the win logic internally
+                // Position: Left 10%, Top 65% (Inside room)
+                draw.goal(10, 65, W_THICK, H_THICK, "menu");
             }
         };
 
         const Engine = {
             container: document.getElementById('game-container'),
             layers: { gfx: document.getElementById('gfx-layer'), phy: document.getElementById('phy-layer'), ui: document.getElementById('ui-layer') },
-            ui: { menu: document.getElementById('menu-screen'), startBtn: document.getElementById('start-btn'), modeCheck: document.getElementById('mode-check'), modeText: document.getElementById('mode-text'), toggleWrap: document.getElementById('toggle-wrap') },
-            state: { active: false, dragging: false, holdMode: false, debug: false, isMobile: /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) },
+            ui: { menu: document.getElementById('menu-screen'), startBtn: document.getElementById('start-btn'), modeCheck: document.getElementById('mode-check'), modeText: document.getElementById('mode-text'), toggleWrap: document.getElementById('toggle-wrap'), catchMeter: document.getElementById('catch-meter'), catchFill: document.getElementById('catch-fill') },
+            
+            state: { 
+                active: false, dragging: false, holdMode: false, debug: false, 
+                isMobile: /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent),
+                mouseX: 0, mouseY: 0,
+                hoverGoalTime: 0, // Time tracking for catch mechanic
+                targetGoalTime: 100 // 100ms to catch
+            },
 
             init: function() {
                 if (this.state.isMobile) { this.state.holdMode = true; this.ui.toggleWrap.style.display = 'none'; }
                 this.ui.startBtn.onmousedown = () => this.startLevel(1);
                 this.ui.startBtn.ontouchstart = () => this.startLevel(1);
-                window.addEventListener('mousemove', e => this.handleInput(e.clientX, e.clientY));
-                window.addEventListener('touchmove', e => { if (this.state.active) { e.preventDefault(); this.handleInput(e.touches[0].clientX, e.touches[0].clientY, e.touches.length > 1); } }, {passive: false});
+                
+                // Input Tracking
+                window.addEventListener('mousemove', e => { this.state.mouseX = e.clientX; this.state.mouseY = e.clientY; });
+                window.addEventListener('touchmove', e => { 
+                    if (this.state.active) { e.preventDefault(); this.state.mouseX = e.touches[0].clientX; this.state.mouseY = e.touches[0].clientY; }
+                }, {passive: false});
+                
                 window.addEventListener('mouseup', e => this.handleRelease(e));
                 window.addEventListener('touchend', e => this.handleRelease(e));
                 window.addEventListener('mousedown', e => { if(e.button === 2 && this.state.active) this.die("Panic Click"); });
+                
+                // START GAME LOOP
+                requestAnimationFrame(this.gameLoop.bind(this));
                 Logger.log("Engine Initialized");
             },
 
@@ -239,11 +251,16 @@
                 goal: (x, y, w, h, next) => {
                     const el = Engine.spawnEntity(x, y, w, h, 'visual-goal', 'hitbox goal-box');
                     el.hitbox.dataset.next = next;
+                    return el; // Return for trigger reference
                 },
                 obstacle: (x, y, w, h, anim) => {
                     const el = Engine.spawnEntity(x, y, w, h, 'visual-obs', 'hitbox obstacle-box'); 
                     el.gfx.style.animation = anim;
                     el.hitbox.style.animation = anim; 
+                },
+                trigger: (x, y, w, h, onTouch) => {
+                    const el = Engine.spawnEntity(x, y, w, h, 'visual-trig', 'hitbox trigger-box');
+                    el.hitbox.onTouch = onTouch; // Attach callback
                 }
             },
 
@@ -262,32 +279,91 @@
             startLevel: function(lvl) {
                 Logger.log(`Starting Level ${lvl}`);
                 if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(e=>{});
+                
                 this.layers.gfx.innerHTML = ''; this.layers.phy.innerHTML = '';
                 this.ui.menu.style.display = 'none'; this.state.dragging = true;
-                if (LevelData[lvl]) LevelData[lvl](this.builder);
+                this.state.hoverGoalTime = 0;
+                this.ui.catchMeter.style.display = 'none';
+                
+                // Track the goal element for triggers
+                let goalRef = null;
+                const builderProxy = Object.assign({}, this.builder, {
+                    goal: (x, y, w, h, next) => {
+                        goalRef = this.builder.goal(x, y, w, h, next);
+                        return goalRef;
+                    },
+                    trigger: (x, y, w, h, callback) => {
+                        this.builder.trigger(x, y, w, h, () => callback(goalRef));
+                    }
+                });
+
+                if (LevelData[lvl]) LevelData[lvl](builderProxy);
+                
                 this.state.active = false;
                 setTimeout(() => { this.state.active = true; PluginManager.trigger('startLevel', lvl); }, 50);
             },
 
-            handleInput: function(x, y, multi) {
-                if (!this.state.active) return;
-                if (this.state.holdMode && !this.state.dragging) return;
-                if (multi) { this.die("Multi-touch"); return; }
-                const target = document.elementFromPoint(x, y);
-                if (target && target.classList.contains('goal-box')) {
-                    this.state.active = false;
-                    const next = target.dataset.next;
-                    Logger.log("Goal Reached!", "success");
-                    if (next === "menu") { alert("You Beat The Game!"); this.reset(); } 
-                    else { this.startLevel(parseInt(next)); }
-                    return;
+            // --- MAIN GAME LOOP ---
+            gameLoop: function() {
+                if (this.state.active) {
+                    this.checkCollision();
                 }
-                const isSafe = target && (target.classList.contains('path-box') || target.classList.contains('goal-box'));
+                requestAnimationFrame(this.gameLoop.bind(this));
+            },
+
+            checkCollision: function() {
+                if (this.state.holdMode && !this.state.dragging) return;
+                
+                // Check what's under the mouse
+                const target = document.elementFromPoint(this.state.mouseX, this.state.mouseY);
+
+                // 1. TRIGGER LOGIC
+                if (target && target.classList.contains('trigger-box')) {
+                    if (target.onTouch) target.onTouch();
+                }
+
+                // 2. GOAL LOGIC (Catch Mechanic)
+                if (target && target.classList.contains('goal-box')) {
+                    // Increment Timer
+                    this.state.hoverGoalTime += 16.6; // ~1 frame at 60fps
+                    
+                    // Show Meter
+                    this.ui.catchMeter.style.display = 'block';
+                    this.ui.catchMeter.style.left = this.state.mouseX + 'px';
+                    this.ui.catchMeter.style.top = (this.state.mouseY - 20) + 'px';
+                    const pct = Math.min(100, (this.state.hoverGoalTime / this.state.targetGoalTime) * 100);
+                    this.ui.catchFill.style.width = pct + '%';
+
+                    if (this.state.hoverGoalTime >= this.state.targetGoalTime) {
+                        this.win(target.dataset.next);
+                    }
+                    return; // Safe if touching goal
+                } else {
+                    // Reset timer if lost contact
+                    this.state.hoverGoalTime = 0;
+                    this.ui.catchMeter.style.display = 'none';
+                    this.ui.catchFill.style.width = '0%';
+                }
+
+                // 3. DEATH LOGIC
+                const isSafe = target && (
+                    target.classList.contains('path-box') || 
+                    target.classList.contains('goal-box') || 
+                    target.classList.contains('trigger-box') // Triggers are safe zones
+                );
+                
                 if (!isSafe) {
                     let reason = "Void";
                     if(target && target.classList.contains('obstacle-box')) reason = "Obstacle Hit";
                     this.die(reason);
                 }
+            },
+
+            win: function(next) {
+                this.state.active = false;
+                Logger.log("Goal Captured!", "success");
+                if (next === "menu") { alert("You Beat The Game!"); this.reset(); } 
+                else { this.startLevel(parseInt(next)); }
             },
 
             handleRelease: function(e) {
@@ -305,6 +381,7 @@
                 this.state.active = false; this.state.dragging = false;
                 this.ui.menu.style.display = 'block';
                 this.layers.gfx.innerHTML = ''; this.layers.phy.innerHTML = '';
+                this.ui.catchMeter.style.display = 'none';
                 if (document.fullscreenElement) document.exitFullscreen();
             },
             exit: function() { this.reset(); },
@@ -319,9 +396,10 @@
         window.cmd = (c) => {
             if (c === 'hitbox') Engine.toggleDebug();
             if (c === 'load menu') Engine.reset();
-            if (c === 'load level1') Engine.startLevel(1);
-            if (c === 'load level2') Engine.startLevel(2);
-            if (c === 'load level3') Engine.startLevel(3);
+            if (c.startsWith('load level')) {
+                const num = parseInt(c.split('level')[1]);
+                if (!isNaN(num)) Engine.startLevel(num);
+            }
         };
     </script>
 </body>
