@@ -8,7 +8,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Roboto:wght@700&display=swap" rel="stylesheet">
     
     <style>
-        /* --- CORE STYLES --- */
         * { box-sizing: border-box; }
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; overflow: hidden; user-select: none; touch-action: none; font-family: 'Roboto', sans-serif; display: flex; justify-content: center; align-items: center; }
         
@@ -54,8 +53,6 @@
         input:checked + .slider { background-color: #f2a922; }
         input:checked + .slider:before { transform: translateX(4cqi); }
 
-        /* --- ANIMATIONS --- */
-        
         @keyframes slicerMove {
             0% { transform: translateY(0%); }      
             50% { transform: translateY(200%); }   
@@ -109,7 +106,6 @@
             trigger: function(e, d) { if(this.hooks[e]) this.hooks[e].forEach(cb=>cb(d)); }
         };
 
-        // SHARED GEOMETRY
         const DrawLevel1Layout = (draw) => {
             const THICK_H = 14; const THICK_W = 7.875; const startY = 62; const OVERLAP = 0.5;
             const p2X = 55 - THICK_W; const p2Height = 20; const p2Y = startY - p2Height;
@@ -134,8 +130,10 @@
             2: (draw) => {
                 const geom = DrawLevel1Layout(draw);
                 draw.path(geom.topPathLeftX, geom.p4Y - geom.THICK_H, geom.THICK_W, geom.THICK_H * 2);
-                draw.goal(5, 63, 6.75, 12, 3);
                 
+                // GOAL: Moved to 10% (Left side of bottom path)
+                draw.goal(10, 63, 6.75, 12, 3);
+
                 const obsW = geom.THICK_W * 0.6; const obsH = geom.THICK_H * 1.5; const obsStartY = geom.startY - (geom.THICK_H * 1.5);
                 draw.obstacle(35, obsStartY, obsW, obsH, "slicerMove 2s linear infinite");
             },
@@ -143,28 +141,27 @@
             3: (draw) => {
                 const geom = DrawLevel1Layout(draw);
                 
-                // Safe Start (Bottom)
-                draw.path(0, geom.startY, 20, geom.THICK_H); 
+                // Safe Start (Bottom - 0 to 40 covers the new 10% start point)
+                draw.path(0, geom.startY, 40, geom.THICK_H); 
 
-                // Goal (Top Left)
                 draw.goal(geom.topPathLeftX, geom.p4Y - geom.THICK_H, geom.THICK_W, geom.THICK_H, "menu");
 
-                // --- OBSTACLES ---
                 const obsW = geom.THICK_W * 0.6; 
                 const obsH = geom.THICK_H * 1.5; 
                 
                 // 1. Bottom Path Slicer
-                draw.obstacle(25, geom.startY - (geom.THICK_H * 1.5), obsW, obsH, "slicerMove 2s linear infinite");
+                draw.obstacle(32, geom.startY - (geom.THICK_H * 1.5), obsW, obsH, "slicerMove 2s linear infinite");
 
-                // 2. Middle Path Slicer (MOVED LEFT to 55%)
-                draw.obstacle(55, geom.p2Y - (geom.THICK_H * 1.5), obsW, obsH, "slicerMove 1.5s linear infinite");
+                // 2. Middle Path Slicer (48%)
+                draw.obstacle(48, geom.p2Y - (geom.THICK_H * 1.5), obsW, obsH, "slicerMove 1.5s linear infinite");
 
-                // 3. THE WATERFALL (Top Path)
+                // 3. THE WATERFALL (2.5s)
                 const waterX = geom.p4X - 15; 
                 const waterY = geom.p4Y;
-                draw.obstacle(waterX, waterY, obsW, obsH, "waterfallDrop 1.5s linear infinite");
-                draw.obstacle(waterX, waterY, obsW, obsH, "waterfallDrop 1.5s linear infinite -0.5s");
-                draw.obstacle(waterX, waterY, obsW, obsH, "waterfallDrop 1.5s linear infinite -1.0s");
+                const waterAnim = "waterfallDrop 2.5s linear infinite";
+                draw.obstacle(waterX, waterY, obsW, obsH, waterAnim);
+                draw.obstacle(waterX, waterY, obsW, obsH, waterAnim + " -0.83s");
+                draw.obstacle(waterX, waterY, obsW, obsH, waterAnim + " -1.66s");
             }
         };
 
@@ -185,7 +182,6 @@
                 window.addEventListener('mouseup', e => this.handleRelease(e));
                 window.addEventListener('touchend', e => this.handleRelease(e));
                 window.addEventListener('mousedown', e => { if(e.button === 2 && this.state.active) this.die("Panic Click"); });
-                
                 Logger.log("Engine Initialized");
             },
 
