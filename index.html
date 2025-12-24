@@ -23,7 +23,6 @@
         #phy-layer { z-index: 20; pointer-events: auto; }
         #ui-layer { z-index: 30; pointer-events: none; }
 
-        /* VISUALS */
         .visual-path { position: absolute; background-color: #26a9e1; box-shadow: 0 0 0 1px #26a9e1; }
         .visual-goal { position: absolute; background-color: #f1a92a; box-shadow: 0 0 0 1px #f1a92a; }
         .visual-obs { position: absolute; background-color: #000000; } 
@@ -31,19 +30,13 @@
 
         .hitbox { position: absolute; opacity: 0; cursor: crosshair; }
         
-        /* --- DEBUG STYLES --- */
+        /* DEBUG STYLES */
         #game-container.debug { background-color: #330000; } 
-        
-        /* Game Objects */
         .debug .path-box { border: none; background: transparent; }
         .debug .goal-box { opacity: 0.8; border: 3px solid #00ff00; background: rgba(0, 255, 0, 0.3); z-index: 100; }
         .debug .obstacle-box { opacity: 0.8; border: 3px solid #ff0000; background: rgba(255, 0, 0, 0.5); z-index: 100; }
         .debug .trigger-box { opacity: 0.8; border: 3px solid #b0f; background: rgba(150, 0, 255, 0.4); z-index: 100; }
-        
-        /* Menu Hitboxes */
         .debug .circle-btn { border: 3px solid #b0f !important; background-color: rgba(150, 0, 255, 0.4) !important; }
-        
-        /* Fixed: Toggle Switch Debug Highlight */
         .debug .slider { outline: 3px solid #b0f; background-color: rgba(150, 0, 255, 0.4) !important; }
 
         /* DEBUG OVERLAY */
@@ -63,39 +56,33 @@
         #btn-start-wrap { left: 5%; bottom: 25%; height: 12%; }
         #btn-exit-wrap { left: 5%; bottom: 8%; height: 12%; }
 
-        /* SAVES BUTTON: Positioned slightly inward to avoid edge */
+        /* SAVES BUTTON: Right Side, Normal Flow (Label -> Button) */
         #btn-save-wrap { 
             left: auto; right: 6%; 
             top: 6%; bottom: auto; 
             height: 12%; 
-            flex-direction: row-reverse; 
+            /* Removed row-reverse so it is [Label] [Button] */
         }
-        #btn-save-wrap .label { margin-left: 0; margin-right: 2cqi; font-size: 3.5cqi; }
+        /* Spacing for label */
+        #btn-save-wrap .label { margin-left: 0; margin-right: 20px; font-size: 3.5cqi; }
 
         .circle-btn { height: 100%; aspect-ratio: 1/1; background-color: #f2a922; border-radius: 50%; border: 0.5cqi solid #333; cursor: pointer; transition: transform 0.1s; }
         .circle-btn:hover { transform: scale(1.1); filter: brightness(1.1); }
         .label { font-size: 4cqi; font-weight: 900; color: #000; margin-left: 2cqi; white-space: nowrap; }
 
-        /* TOGGLE SWITCH */
         #toggle-wrap { position: absolute; right: 8%; bottom: 15%; display: flex; flex-direction: column; align-items: center; pointer-events: auto; }
         .switch-label { font-family: 'Luckiest Guy', cursive; color: #f2ef45; font-size: 3cqi; margin-bottom: 1cqi; text-shadow: 0.1cqi 0.1cqi 0 #000; }
         .switch { position: relative; display: inline-block; width: 8cqi; height: 4cqi; }
         .switch input { opacity: 0; width: 100%; height: 100%; position: absolute; z-index: 2; cursor: pointer; }
         
         .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #333; border-radius: 4cqi; border: 0.3cqi solid #000; transition: .4s; }
-        .slider:before { position: absolute; content: ""; height: 2.6cqi; width: 2.6cqi; left: 0.4cqi; bottom: 0.4cqi; background-color: white; border-radius: 50%; transition: .4s; }
+        .slider:before { position: absolute; content: ""; height: 3.2cqi; width: 3.2cqi; left: 0.4cqi; bottom: 0.4cqi; background-color: white; border-radius: 50%; transition: .4s; }
         input:checked + .slider { background-color: #f2a922; }
         input:checked + .slider:before { transform: translateX(4cqi); }
 
-        /* METER */
-        #catch-meter {
-            position: fixed; display: none; width: 40px; height: 6px; 
-            background: #333; border: 1px solid white; border-radius: 3px;
-            pointer-events: none; z-index: 9999; transform: translate(-50%, -20px);
-        }
+        #catch-meter { position: fixed; display: none; width: 40px; height: 6px; background: #333; border: 1px solid white; border-radius: 3px; pointer-events: none; z-index: 9999; transform: translate(-50%, -20px); }
         #catch-fill { width: 0%; height: 100%; background: #00ff00; transition: width 0.05s linear; }
 
-        /* ANIMATIONS */
         @keyframes slicerMove { 0% { transform: translateY(0%); } 50% { transform: translateY(200%); } 100% { transform: translateY(0%); } }
         @keyframes waterfallDrop { 0% { transform: translateY(-250%); } 100% { transform: translateY(250%); } }
         @keyframes crazyMove { 0% { transform: translate(0, 0); } 20% { transform: translate(250%, -350%); } 40% { transform: translate(250%, 0%); } 60% { transform: translate(120%, -150%); } 80% { transform: translate(0, -350%); } 100% { transform: translate(0, 0); } }
@@ -122,7 +109,7 @@
 
                 <div id="btn-save-wrap" class="menu-btn-wrapper">
                     <div class="label">Saves -></div>
-                    <div id="save-btn-menu" class="circle-btn" onclick="Engine.openSave()"></div>
+                    <div id="save-btn-menu" class="circle-btn" onclick="Engine.start('s1')"></div>
                 </div>
 
                 <div id="btn-exit-wrap" class="menu-btn-wrapper">
@@ -157,7 +144,8 @@
 
         const Storage = {
             save: (level) => localStorage.setItem('touchYellow_save1', 'true'),
-            hasSave: () => localStorage.getItem('touchYellow_save1') === 'true'
+            hasSave: () => localStorage.getItem('touchYellow_save1') === 'true',
+            clear: () => { localStorage.removeItem('touchYellow_save1'); Logger.log("Save Data Cleared", "system"); alert("Save Data Cleared"); }
         };
 
         const DrawLevel1Layout = (draw) => {
@@ -270,10 +258,16 @@
                 Logger.log(`Mode Switched: ${this.state.holdMode ? "HOLD" : "HOVER"}`, "system");
             },
 
-            openSave: function() {
-                if (Storage.hasSave()) window.location.href = "save/save1.html";
-                else alert("No Saves Found!");
+            // --- API: START (Controls loading logic) ---
+            start: function(id) {
+                if (id === 's1') {
+                    if (Storage.hasSave()) window.location.href = "save/save1.html";
+                    else alert("No Saves Found!");
+                }
             },
+            
+            // Legacy openSave alias for button click
+            openSave: function() { this.start('s1'); },
 
             builder: {
                 path: (x, y, w, h) => Engine.spawnEntity(x, y, w, h, 'visual-path', 'hitbox path-box'),
@@ -339,8 +333,7 @@
 
                 if (target && target.classList.contains('goal-box')) {
                     const requiredHold = parseInt(target.dataset.holdTime) || 0;
-                    if (requiredHold === 0) { this.win(target.dataset.next); } 
-                    else {
+                    if (requiredHold === 0) { this.win(target.dataset.next); } else {
                         this.state.hoverGoalTime += 16.6;
                         this.ui.catchMeter.style.display = 'block';
                         this.ui.catchMeter.style.left = this.state.mouseX + 'px';
@@ -355,11 +348,13 @@
                 } else {
                     this.state.hoverGoalTime = 0;
                     this.ui.catchMeter.style.display = 'none';
+                    this.ui.catchFill.style.width = '0%';
                 }
 
                 const isSafe = target && (target.classList.contains('path-box') || target.classList.contains('goal-box') || target.classList.contains('trigger-box'));
                 if (!isSafe) {
-                    let reason = target ? (target.className || target.tagName) : "Void";
+                    let reason = "Void";
+                    if(target && target.classList.contains('obstacle-box')) reason = "Obstacle Hit";
                     this.die(reason);
                 }
             },
@@ -405,7 +400,8 @@
         window.cmd = (c) => {
             if (c === 'hitbox') Engine.toggleDebug();
             if (c === 'load menu') Engine.reset();
-            if (c === 'load save1') Engine.openSave();
+            if (c === 'load save1') Engine.start('s1');
+            if (c === 'clear') Storage.clear();
             if (c.startsWith('load level')) { const num = parseInt(c.split('level')[1]); if (!isNaN(num)) Engine.startLevel(num); }
         };
     </script>
