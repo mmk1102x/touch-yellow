@@ -75,7 +75,7 @@
             100% { transform: translateY(250%); }
         }
         
-        /* Level 4 Crazy Goal Movement (Fast and erratic) */
+        /* Level 4 Crazy Goal Movement */
         @keyframes crazyMove {
             0%   { transform: translate(0, 0); }
             20%  { transform: translate(250%, -350%); } 
@@ -147,57 +147,54 @@
         const LevelData = {
             1: (draw) => {
                 const g = DrawLevel1Layout(draw);
-                draw.goal(g.topPathLeftX, g.p4Y - g.THICK_H, g.THICK_W, g.THICK_H, 2, 0); // 0ms hold
+                draw.goal(g.topPathLeftX, g.p4Y - g.THICK_H, g.THICK_W, g.THICK_H, 2, 0); 
             },
             2: (draw) => {
                 const g = DrawLevel1Layout(draw);
                 draw.path(g.topPathLeftX, g.p4Y - g.THICK_H, g.THICK_W, g.THICK_H * 2);
-                draw.goal(5, 63, 6.75, 12, 3, 0); // 0ms hold
-                draw.obstacle(30, g.startY - (g.THICK_H * 1.5), g.THICK_W * 0.6, g.THICK_H * 1.5, "slicerMove 2s linear infinite");
+                
+                // GOAL (Moved to 20% to be safer for Level 3 Start)
+                draw.goal(20, 63, 6.75, 12, 3, 0); 
+                
+                draw.obstacle(35, g.startY - (g.THICK_H * 1.5), g.THICK_W * 0.6, g.THICK_H * 1.5, "slicerMove 2s linear infinite");
             },
             3: (draw) => {
                 const g = DrawLevel1Layout(draw);
-                draw.path(0, g.startY, 20, g.THICK_H); 
-                draw.goal(g.topPathLeftX, g.p4Y - g.THICK_H, g.THICK_W, g.THICK_H, 4, 0); // 0ms hold
+                // Start Zone (Matches L2 Goal at 20%)
+                draw.path(0, g.startY, 30, g.THICK_H); 
+                draw.goal(g.topPathLeftX, g.p4Y - g.THICK_H, g.THICK_W, g.THICK_H, 4, 0); 
                 
                 const obsW = g.THICK_W * 0.6; const obsH = g.THICK_H * 1.5; 
-                draw.obstacle(28, g.startY - (g.THICK_H * 1.5), obsW, obsH, "slicerMove 2s linear infinite");
+                // 1. Bottom (Shifted right to avoid insta-kill)
+                draw.obstacle(35, g.startY - (g.THICK_H * 1.5), obsW, obsH, "slicerMove 2s linear infinite");
+                // 2. Middle
                 draw.obstacle(55, g.midY - (g.THICK_H * 1.5), obsW, obsH, "slicerMove 1.5s linear infinite");
-                const wAnim = "waterfallDrop 2.5s linear infinite";
-                draw.obstacle(70, 22, obsW, obsH, wAnim);
-                draw.obstacle(70, 22, obsW, obsH, wAnim + " -0.83s");
-                draw.obstacle(70, 22, obsW, obsH, wAnim + " -1.66s");
+                // 3. Waterfall
+                const waterX = g.p4X - 15; 
+                const waterAnim = "waterfallDrop 2.5s linear infinite";
+                draw.obstacle(waterX, g.topY, obsW, obsH, waterAnim);
+                draw.obstacle(waterX, g.topY, obsW, obsH, waterAnim + " -0.83s");
+                draw.obstacle(waterX, g.topY, obsW, obsH, waterAnim + " -1.66s");
             },
             4: (draw) => {
-                // Connects L3 Goal (Top Left) -> Top Right -> Bottom Room
-                const H_THICK = 14; const W_THICK = 7.875;
-                const TOP_Y = 10;
+                const H_THICK = 14; const W_THICK = 7.875; const TOP_Y = 10;
                 
-                // 1. Top Path (Left to Right)
-                // Starts at 15% Left (Where L3 Goal was)
                 draw.path(15, TOP_Y, 75, H_THICK); 
-                
-                // 2. Vertical Down (Right Side)
                 draw.path(90 - W_THICK, TOP_Y, W_THICK, 60);
-                
-                // 3. Bottom Room (Big Arena)
                 draw.path(5, 60, 85, 30);
                 
-                // THE TRIGGER (Purple Line)
-                // Vertical strip at 25% Left inside the room
-                draw.trigger(25, 60, 2, 30, (goalEl) => {
-                    if (!goalEl.classList.contains('moving')) {
-                        goalEl.classList.add('moving');
-                        // Animate both visual and hitbox
-                        goalEl.gfx.style.animation = "crazyMove 2s linear infinite";
-                        goalEl.hitbox.style.animation = "crazyMove 2s linear infinite";
-                        Logger.log("TRIGGERED! Goal Evasion Started!");
+                // TRIGGER FIX: Use 'goalObj' instead of assuming it's a DOM element
+                draw.trigger(25, 60, 2, 30, (goalObj) => {
+                    // Check the HITBOX for the class
+                    if (!goalObj.hitbox.classList.contains('moving')) {
+                        goalObj.hitbox.classList.add('moving');
+                        // Animate both parts
+                        goalObj.gfx.style.animation = "crazyMove 3s linear infinite";
+                        goalObj.hitbox.style.animation = "crazyMove 3s linear infinite";
+                        Logger.log("TRIGGERED! Goal is moving!");
                     }
                 });
 
-                // THE MOVING GOAL
-                // Starts Left side of room (10%)
-                // HOLD TIME: 100ms
                 draw.goal(10, 65, W_THICK, H_THICK, "menu", 100);
             }
         };
@@ -241,11 +238,10 @@
 
             builder: {
                 path: (x, y, w, h) => Engine.spawnEntity(x, y, w, h, 'visual-path', 'hitbox path-box'),
-                // Added holdTime param (default 0)
                 goal: (x, y, w, h, next, holdTime = 0) => {
                     const el = Engine.spawnEntity(x, y, w, h, 'visual-goal', 'hitbox goal-box');
                     el.hitbox.dataset.next = next;
-                    el.hitbox.dataset.holdTime = holdTime; // Store hold requirement
+                    el.hitbox.dataset.holdTime = holdTime;
                     return el;
                 },
                 obstacle: (x, y, w, h, anim) => {
@@ -319,10 +315,9 @@
                     const requiredHold = parseInt(target.dataset.holdTime) || 0;
 
                     if (requiredHold === 0) {
-                        // Instant Win (Levels 1-3)
                         this.win(target.dataset.next);
                     } else {
-                        // Hold Win (Level 4)
+                        // Hold Win
                         this.state.hoverGoalTime += 16.6;
                         
                         this.ui.catchMeter.style.display = 'block';
@@ -337,7 +332,6 @@
                     }
                     return; 
                 } else {
-                    // Reset timer if not on goal
                     this.state.hoverGoalTime = 0;
                     this.ui.catchMeter.style.display = 'none';
                     this.ui.catchFill.style.width = '0%';
