@@ -30,14 +30,17 @@
 
         .hitbox { position: absolute; opacity: 0; cursor: crosshair; }
         
-        /* DEBUG STYLES */
+        /* --- DEBUG STYLES --- */
         #game-container.debug { background-color: #330000; } 
+        
         .debug .path-box { border: none; background: transparent; }
         .debug .goal-box { opacity: 0.8; border: 3px solid #00ff00; background: rgba(0, 255, 0, 0.3); z-index: 100; }
         .debug .obstacle-box { opacity: 0.8; border: 3px solid #ff0000; background: rgba(255, 0, 0, 0.5); z-index: 100; }
         .debug .trigger-box { opacity: 0.8; border: 3px solid #b0f; background: rgba(150, 0, 255, 0.4); z-index: 100; }
+        
         .debug .circle-btn { border: 3px solid #b0f !important; background-color: rgba(150, 0, 255, 0.4) !important; }
-        .debug .slider { outline: 3px solid #b0f; background-color: rgba(150, 0, 255, 0.4) !important; }
+        /* Box shadow follows the border-radius, unlike outline */
+        .debug .slider { box-shadow: 0 0 0 3px #b0f, 0 0 10px #b0f; background-color: rgba(150, 0, 255, 0.4) !important; }
 
         /* DEBUG OVERLAY */
         #debug-info {
@@ -55,31 +58,44 @@
         
         #btn-start-wrap { left: 5%; bottom: 25%; height: 12%; }
         #btn-exit-wrap { left: 5%; bottom: 8%; height: 12%; }
-
-        /* SAVES BUTTON: Right Side, Normal Flow (Label -> Button) */
-        #btn-save-wrap { 
-            left: auto; right: 6%; 
-            top: 6%; bottom: auto; 
-            height: 12%; 
-            /* Removed row-reverse so it is [Label] [Button] */
-        }
-        /* Spacing for label */
+        #btn-save-wrap { left: auto; right: 6%; top: 6%; bottom: auto; height: 12%; }
         #btn-save-wrap .label { margin-left: 0; margin-right: 20px; font-size: 3.5cqi; }
 
         .circle-btn { height: 100%; aspect-ratio: 1/1; background-color: #f2a922; border-radius: 50%; border: 0.5cqi solid #333; cursor: pointer; transition: transform 0.1s; }
         .circle-btn:hover { transform: scale(1.1); filter: brightness(1.1); }
         .label { font-size: 4cqi; font-weight: 900; color: #000; margin-left: 2cqi; white-space: nowrap; }
 
-        #toggle-wrap { position: absolute; right: 8%; bottom: 15%; display: flex; flex-direction: column; align-items: center; pointer-events: auto; }
-        .switch-label { font-family: 'Luckiest Guy', cursive; color: #f2ef45; font-size: 3cqi; margin-bottom: 1cqi; text-shadow: 0.1cqi 0.1cqi 0 #000; }
+        /* TOGGLE SWITCH (FIXED) */
+        #toggle-wrap { 
+            position: absolute; right: 8%; bottom: 15%; 
+            display: flex; flex-direction: column; align-items: center; pointer-events: auto;
+            width: 25cqi; /* Fixed width prevents jumping when text length changes */
+        }
+        .switch-label { 
+            font-family: 'Luckiest Guy', cursive; color: #f2ef45; font-size: 3cqi; 
+            margin-bottom: 1cqi; text-shadow: 0.1cqi 0.1cqi 0 #000; 
+            width: 100%; text-align: center; white-space: nowrap;
+        }
         .switch { position: relative; display: inline-block; width: 8cqi; height: 4cqi; }
         .switch input { opacity: 0; width: 100%; height: 100%; position: absolute; z-index: 2; cursor: pointer; }
         
         .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #333; border-radius: 4cqi; border: 0.3cqi solid #000; transition: .4s; }
-        .slider:before { position: absolute; content: ""; height: 3.2cqi; width: 3.2cqi; left: 0.4cqi; bottom: 0.4cqi; background-color: white; border-radius: 50%; transition: .4s; }
+        
+        /* KNOB (Vertically Centered) */
+        .slider:before { 
+            position: absolute; content: ""; 
+            height: 3.2cqi; width: 3.2cqi; 
+            left: 0.4cqi; 
+            top: 50%; /* Center vertical */
+            transform: translateY(-50%); /* Adjust for own height */
+            background-color: white; border-radius: 50%; transition: .4s; 
+        }
+        
         input:checked + .slider { background-color: #f2a922; }
-        input:checked + .slider:before { transform: translateX(4cqi); }
+        /* When checked, we move X and keep the Y centering */
+        input:checked + .slider:before { transform: translate(4cqi, -50%); }
 
+        /* METER */
         #catch-meter { position: fixed; display: none; width: 40px; height: 6px; background: #333; border: 1px solid white; border-radius: 3px; pointer-events: none; z-index: 9999; transform: translate(-50%, -20px); }
         #catch-fill { width: 0%; height: 100%; background: #00ff00; transition: width 0.05s linear; }
 
@@ -109,7 +125,7 @@
 
                 <div id="btn-save-wrap" class="menu-btn-wrapper">
                     <div class="label">Saves -></div>
-                    <div id="save-btn-menu" class="circle-btn" onclick="Engine.start('s1')"></div>
+                    <div id="save-btn-menu" class="circle-btn" onclick="Engine.openSave()"></div>
                 </div>
 
                 <div id="btn-exit-wrap" class="menu-btn-wrapper">
@@ -258,16 +274,13 @@
                 Logger.log(`Mode Switched: ${this.state.holdMode ? "HOLD" : "HOVER"}`, "system");
             },
 
-            // --- API: START (Controls loading logic) ---
-            start: function(id) {
-                if (id === 's1') {
-                    if (Storage.hasSave()) window.location.href = "save/save1.html";
-                    else alert("No Saves Found!");
-                }
+            openSave: function() {
+                if (Storage.hasSave()) window.location.href = "save/save1.html";
+                else alert("No Saves Found!");
             },
-            
-            // Legacy openSave alias for button click
-            openSave: function() { this.start('s1'); },
+
+            // Direct start helper
+            start: function(id) { if(id === 's1') this.openSave(); },
 
             builder: {
                 path: (x, y, w, h) => Engine.spawnEntity(x, y, w, h, 'visual-path', 'hitbox path-box'),
