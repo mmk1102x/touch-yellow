@@ -16,58 +16,50 @@
             position: relative; background: #000000; overflow: hidden;
             box-shadow: 0 0 50px rgba(0,0,0,0.5);
             transition: background-color 0.3s;
+            cursor: default;
         }
 
         .layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
         #gfx-layer { z-index: 10; }
-        #phy-layer { z-index: 20; pointer-events: auto; }
+        #phy-layer { z-index: 20; }
         #ui-layer { z-index: 30; pointer-events: none; }
 
+        /* VISUALS */
         .visual-path { position: absolute; background-color: #26a9e1; box-shadow: 0 0 0 1px #26a9e1; }
         .visual-goal { position: absolute; background-color: #f1a92a; box-shadow: 0 0 0 1px #f1a92a; }
         .visual-obs { position: absolute; background-color: #000000; } 
         .visual-trig { position: absolute; background-color: transparent; }
 
-        .hitbox { position: absolute; opacity: 0; cursor: crosshair; }
+        /* HITBOXES (The logic) */
+        .hitbox { position: absolute; opacity: 0; }
         
-        /* --- DEBUG STYLES --- */
-        #game-container.debug { background-color: #330000; } 
+        /* DEBUG STYLES */
+        #game-container.debug { background-color: #330000; cursor: none; } 
         .debug .path-box { border: none; background: transparent; }
         .debug .goal-box { opacity: 0.8; border: 3px solid #00ff00; background: rgba(0, 255, 0, 0.3); z-index: 100; }
         .debug .obstacle-box { opacity: 0.8; border: 3px solid #ff0000; background: rgba(255, 0, 0, 0.5); z-index: 100; }
         .debug .trigger-box { opacity: 0.8; border: 3px solid #b0f; background: rgba(150, 0, 255, 0.4); z-index: 100; }
-        
-        /* Menu Hitboxes */
         .debug .circle-btn { border: 3px solid #b0f !important; background-color: rgba(150, 0, 255, 0.4) !important; }
-        .debug .switch { outline: 3px solid #b0f; background-color: rgba(150, 0, 255, 0.4) !important; }
+        .debug .slider { outline: 3px solid #b0f; background-color: rgba(150, 0, 255, 0.4) !important; }
 
         /* DEBUG OVERLAY */
-        #debug-info {
-            position: absolute; top: 10px; left: 10px; 
-            color: lime; font-family: monospace; font-size: 14px; 
-            background: rgba(0,0,0,0.8); padding: 5px; 
-            z-index: 9999; display: none; pointer-events: none;
-        }
-
-        /* NOCLIP INDICATOR */
-        #noclip-indicator {
-            position: absolute; bottom: 10px; left: 10px;
-            color: yellow; font-family: monospace; font-weight: bold; font-size: 16px;
-            background: rgba(0,0,0,0.8); padding: 5px 10px; border: 1px solid yellow;
-            display: none; pointer-events: none; z-index: 9999;
-        }
+        #debug-info { position: absolute; top: 10px; left: 10px; color: lime; font-family: monospace; font-size: 14px; background: rgba(0,0,0,0.8); padding: 5px; z-index: 9999; display: none; pointer-events: none; }
+        #noclip-indicator { position: absolute; bottom: 10px; left: 10px; color: yellow; font-family: monospace; font-weight: bold; font-size: 16px; background: rgba(0,0,0,0.8); padding: 5px 10px; border: 1px solid yellow; display: none; pointer-events: none; z-index: 9999; }
+        
+        /* DEBUG CROSSHAIR */
+        .debug-line { position: fixed; background-color: cyan; pointer-events: none; z-index: 99999; display: none; }
+        #debug-cross-x { width: 100%; height: 1px; left: 0; }
+        #debug-cross-y { width: 1px; height: 100%; top: 0; }
 
         /* UI Elements */
         .menu-content { pointer-events: auto; text-align: center; width: 100%; height: 100%; position: relative; background-color: #4d4d4d; }
         .title { position: absolute; width: 100%; top: 10%; font-family: 'Luckiest Guy', cursive; color: #f2ef45; font-size: 10cqi; line-height: 0.9; text-transform: uppercase; text-shadow: 0.4cqi 0.4cqi 0 #000; }
-        
         .menu-btn-wrapper { position: absolute; display: flex; align-items: center; pointer-events: auto; }
-        
         #btn-start-wrap { left: 5%; bottom: 25%; height: 12%; }
         #btn-exit-wrap { left: 5%; bottom: 8%; height: 12%; }
         #btn-save-wrap { left: auto; right: 6%; top: 6%; bottom: auto; height: 12%; }
         #btn-save-wrap .label { margin-left: 0; margin-right: 20px; font-size: 3.5cqi; }
-
+        
         #save1-wrap { left: 20%; bottom: 50%; height: 12%; }
         #save2-wrap { left: 55%; bottom: 50%; height: 12%; }
         #save-back-wrap { left: 5%; bottom: 10%; height: 12%; }
@@ -75,25 +67,15 @@
         .circle-btn { height: 100%; aspect-ratio: 1/1; background-color: #f2a922; border-radius: 50%; border: 0.5cqi solid #333; cursor: pointer; transition: transform 0.1s; }
         .circle-btn:hover { transform: scale(1.1); filter: brightness(1.1); }
         .label { font-size: 4cqi; font-weight: 900; color: #000; margin-left: 2cqi; white-space: nowrap; }
-        
         .unlocked { background-color: #00ff00; }
         .locked { background-color: #555; border-color: #333; filter: grayscale(100%); cursor: not-allowed; }
 
-        #toggle-wrap { 
-            position: absolute; right: 8%; bottom: 15%; 
-            display: flex; flex-direction: column; align-items: center; pointer-events: auto;
-            width: 25cqi;
-        }
+        #toggle-wrap { position: absolute; right: 8%; bottom: 15%; display: flex; flex-direction: column; align-items: center; pointer-events: auto; width: 25cqi; }
         .switch-label { font-family: 'Luckiest Guy', cursive; color: #f2ef45; font-size: 3cqi; margin-bottom: 1cqi; text-shadow: 0.1cqi 0.1cqi 0 #000; width: 100%; text-align: center; }
         .switch { position: relative; display: inline-block; width: 8cqi; height: 4cqi; }
         .switch input { opacity: 0; width: 100%; height: 100%; position: absolute; z-index: 2; cursor: pointer; }
-        
         .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #333; border-radius: 4cqi; border: 0.3cqi solid #000; transition: .4s; }
-        .slider:before { 
-            position: absolute; content: ""; height: 3.2cqi; width: 3.2cqi; 
-            left: 0.4cqi; top: 50%; transform: translateY(-50%); 
-            background-color: white; border-radius: 50%; transition: .4s; 
-        }
+        .slider:before { position: absolute; content: ""; height: 3.2cqi; width: 3.2cqi; left: 0.4cqi; top: 50%; transform: translateY(-50%); background-color: white; border-radius: 50%; transition: .4s; }
         input:checked + .slider { background-color: #f2a922; }
         input:checked + .slider:before { transform: translate(4cqi, -50%); }
 
@@ -110,6 +92,10 @@
 <body oncontextmenu="return false;">
 
     <div id="catch-meter"><div id="catch-fill"></div></div>
+    
+    <!-- DEBUG CROSSHAIR -->
+    <div id="debug-cross-x" class="debug-line"></div>
+    <div id="debug-cross-y" class="debug-line"></div>
 
     <div id="game-container">
         <div id="gfx-layer" class="layer"></div>
@@ -120,22 +106,18 @@
             
             <div id="menu-screen" class="menu-content">
                 <h1 class="title">Touch Yellow</h1>
-                
                 <div id="btn-start-wrap" class="menu-btn-wrapper">
                     <div id="start-btn" class="circle-btn"></div>
                     <div class="label"><- Start/Restart</div>
                 </div>
-
                 <div id="btn-save-wrap" class="menu-btn-wrapper">
                     <div class="label">Saves -></div>
                     <div id="save-btn-menu" class="circle-btn" onclick="Engine.openSavesMenu()"></div>
                 </div>
-
                 <div id="btn-exit-wrap" class="menu-btn-wrapper">
                     <div class="circle-btn" onclick="Engine.exit()"></div>
                     <div class="label" style="font-size: 6cqi;"><-Exit</div>
                 </div>
-
                 <div id="toggle-wrap">
                     <div class="switch-label" id="mode-text">Hover Mode</div>
                     <label class="switch">
@@ -181,10 +163,7 @@
             save: (slot, level) => localStorage.setItem(`touchYellow_save${slot}`, 'true'),
             hasSave: (slot) => localStorage.getItem(`touchYellow_save${slot}`) === 'true',
             clear: () => { 
-                localStorage.removeItem('touchYellow_save1'); 
-                localStorage.removeItem('touchYellow_save2');
-                localStorage.removeItem('touchYellow_holdMode');
-                localStorage.removeItem('touchYellow_noclip');
+                localStorage.clear();
                 Logger.log("All Saves & Settings Cleared", "system"); 
                 alert("Reset Complete!");
                 Engine.closeSavesMenu();
@@ -196,7 +175,6 @@
             const p2X = 55 - THICK_W; const p2Height = 20; const p2Y = startY - p2Height;
             const p3Width = 35; const p4X = p2X + p3Width - THICK_W; const p4Height = 24; const p4Y = p2Y - p4Height;
             const p5Width = 45; const topPathLeftX = p4X - p5Width + THICK_W;
-
             draw.path(0, startY, 55, THICK_H); 
             draw.path(p2X, p2Y, THICK_W, p2Height + THICK_H);    
             draw.path(p2X, p2Y, p3Width, THICK_H);         
@@ -220,7 +198,9 @@
                 menu: document.getElementById('menu-screen'), 
                 saves: document.getElementById('saves-screen'),
                 debugInfo: document.getElementById('debug-info'),
-                noclipInfo: document.getElementById('noclip-indicator'), // Added missing reference
+                noclipInfo: document.getElementById('noclip-indicator'),
+                crossX: document.getElementById('debug-cross-x'),
+                crossY: document.getElementById('debug-cross-y'),
                 startBtn: document.getElementById('start-btn'), 
                 modeCheck: document.getElementById('mode-check'), 
                 modeText: document.getElementById('mode-text'), 
@@ -232,18 +212,19 @@
             },
             state: { active: false, dragging: false, holdMode: false, debug: false, noclip: false, mouseX: 0, mouseY: 0, hoverGoalTime: 0, currentLevel: 0 },
             
+            // Stores references to all hitbox DOM elements
+            hitboxes: [],
+
             init: function() {
                 const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
                 if (isMobile) { this.state.holdMode = true; this.ui.toggleWrap.style.display = 'none'; }
                 else { 
                     const savedHold = localStorage.getItem('touchYellow_holdMode') === 'true';
-                    const savedNoclip = localStorage.getItem('touchYellow_noclip') === 'true'; // Restore Noclip state
-                    
+                    const savedNoclip = localStorage.getItem('touchYellow_noclip') === 'true';
                     this.state.holdMode = savedHold;
                     this.ui.modeCheck.checked = savedHold;
                     this.ui.modeText.innerText = savedHold ? "Hold Mode" : "Hover Mode";
                     this.ui.modeText.style.color = savedHold ? "#f2a922" : "#f2ef45";
-
                     if(savedNoclip) this.toggleNoclip(true);
                 }
 
@@ -255,23 +236,29 @@
                 
                 window.addEventListener('mousemove', e => { 
                     this.state.mouseX = e.clientX; this.state.mouseY = e.clientY; 
-                    if(this.state.debug) this.updateDebugInfo();
+                    if(this.state.debug) {
+                        this.updateDebugInfo();
+                        this.ui.crossX.style.top = e.clientY + 'px';
+                        this.ui.crossY.style.left = e.clientX + 'px';
+                    }
                 });
                 window.addEventListener('touchmove', e => { if (this.state.active) { e.preventDefault(); this.state.mouseX = e.touches[0].clientX; this.state.mouseY = e.touches[0].clientY; } }, {passive: false});
                 window.addEventListener('mouseup', e => this.handleRelease(e));
                 window.addEventListener('touchend', e => this.handleRelease(e));
                 window.addEventListener('mousedown', e => { if(e.button === 2 && this.state.active) this.die("Panic Click"); });
+                // Anti-Cheat: Blur (Lose Focus)
+                window.addEventListener('blur', () => { if(this.state.active && !this.state.noclip) this.die("Tab Focus Lost"); });
                 
                 requestAnimationFrame(this.gameLoop.bind(this));
                 Logger.log("Engine Initialized");
             },
 
             toggleMode: function() {
+                if (this.state.isMobile) return;
                 this.state.holdMode = this.ui.modeCheck.checked;
                 this.ui.modeText.innerText = this.state.holdMode ? "Hold Mode" : "Hover Mode";
                 this.ui.modeText.style.color = this.state.holdMode ? "#f2a922" : "#f2ef45";
                 localStorage.setItem('touchYellow_holdMode', this.state.holdMode);
-                Logger.log(`Mode Switched: ${this.state.holdMode ? "HOLD" : "HOVER"}`, "system");
             },
 
             toggleNoclip: function(forceVal) {
@@ -287,94 +274,129 @@
             loadSaveFile: function(slot) { if (Storage.hasSave(slot)) window.location.href = `save/save${slot}.html`; else alert("Locked!"); },
 
             builder: {
-                path: (x, y, w, h) => Engine.spawnEntity(x, y, w, h, 'visual-path', 'hitbox path-box'),
-                goal: (x, y, w, h, next, holdTime = 0) => {
-                    const el = Engine.spawnEntity(x, y, w, h, 'visual-goal', 'hitbox goal-box');
-                    el.hitbox.dataset.next = next;
-                    el.hitbox.dataset.holdTime = holdTime;
-                    return el;
-                },
+                path: (x, y, w, h) => Engine.registerCollider(x, y, w, h, 'path'),
+                goal: (x, y, w, h, next, holdTime = 0) => Engine.registerCollider(x, y, w, h, 'goal', { next, holdTime }),
                 obstacle: (x, y, w, h, anim) => {
-                    const el = Engine.spawnEntity(x, y, w, h, 'visual-obs', 'hitbox obstacle-box'); 
-                    el.gfx.style.animation = anim; el.hitbox.style.animation = anim; 
+                    const c = Engine.registerCollider(x, y, w, h, 'obs');
+                    c.gfx.style.animation = anim; c.hitbox.style.animation = anim; 
                 },
-                trigger: (x, y, w, h, onTouch) => {
-                    const el = Engine.spawnEntity(x, y, w, h, 'visual-trig', 'hitbox trigger-box');
-                    el.hitbox.onTouch = onTouch;
+                trigger: (x, y, w, h, cb) => {
+                    const c = Engine.registerCollider(x, y, w, h, 'trig');
+                    c.onTouch = () => cb(c.gfx, c.hitbox);
                 }
             },
 
-            spawnEntity: function(x, y, w, h, gfxClass, phyClass) {
-                const gfx = document.createElement('div'); gfx.className = gfxClass;
+            registerCollider: function(x, y, w, h, type, data={}) {
+                const gfx = document.createElement('div'); 
+                gfx.className = type === 'path' ? 'visual-path' : `visual-` + type;
                 gfx.style.left = x + '%'; gfx.style.top = y + '%'; gfx.style.width = w + '%'; gfx.style.height = h + '%';
                 this.layers.gfx.appendChild(gfx);
-                const phy = document.createElement('div'); phy.className = phyClass;
-                phy.style.position = 'absolute'; phy.style.left = x + '%'; phy.style.top = y + '%'; phy.style.width = w + '%'; phy.style.height = h + '%';
+
+                const phy = document.createElement('div'); 
+                phy.className = `hitbox debug-box type-` + type + ' ' + (type === 'obs' ? 'obstacle-box' : type === 'goal' ? 'goal-box' : type === 'path' ? 'path-box' : 'trigger-box');
+                phy.style.left = x + '%'; phy.style.top = y + '%'; phy.style.width = w + '%'; phy.style.height = h + '%';
+                if(!this.state.debug) phy.style.display = 'block'; /* Hitbox must be block to calculate rect, opacity handles visibility */
                 this.layers.phy.appendChild(phy);
-                return { gfx, hitbox: phy };
+
+                const collider = { x, y, w, h, type, gfx, hitbox: phy, ...data };
+                this.state.hitboxes.push(collider);
+                return collider;
             },
 
             startLevel: function(lvl) {
                 Logger.log(`Starting Level ${lvl}`);
                 if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(e=>{});
+                
                 this.layers.gfx.innerHTML = ''; this.layers.phy.innerHTML = '';
+                this.state.hitboxes = [];
                 this.ui.menu.style.display = 'none'; this.ui.saves.style.display = 'none'; this.state.dragging = true;
-                this.state.hoverGoalTime = 0;
-                this.state.currentLevel = lvl;
-                this.ui.catchMeter.style.display = 'none';
-                this.ui.catchFill.style.width = '0%';
+                this.state.hoverGoalTime = 0; this.state.currentLevel = lvl;
+                this.ui.catchMeter.style.display = 'none'; this.ui.catchFill.style.width = '0%';
                 
                 let goalRef = null;
-                const builderProxy = Object.assign({}, this.builder, {
+                const proxy = Object.assign({}, this.builder, {
                     goal: (x, y, w, h, next, ht) => { goalRef = this.builder.goal(x, y, w, h, next, ht); return goalRef; },
-                    trigger: (x, y, w, h, callback) => { this.builder.trigger(x, y, w, h, () => callback(goalRef)); }
+                    trigger: (x, y, w, h, cb) => { this.builder.trigger(x, y, w, h, () => cb(goalRef.gfx, goalRef.hitbox)); }
                 });
 
-                if (LevelData[lvl]) LevelData[lvl](builderProxy);
+                if (LevelData[lvl]) LevelData[lvl](proxy);
                 
-                this.state.active = false;
-                setTimeout(() => { this.state.active = true; PluginManager.trigger('startLevel', lvl); }, 50);
+                // INSTANT START - No I-Frames
+                this.state.active = true;
+                PluginManager.trigger('startLevel', lvl);
+                
+                // Force an immediate collision check
+                this.checkCollision();
             },
 
-            gameLoop: function() { if (this.state.active) this.checkCollision(); requestAnimationFrame(this.gameLoop.bind(this)); },
+            gameLoop: function() {
+                if (this.state.active) this.checkCollision();
+                requestAnimationFrame(this.gameLoop.bind(this));
+            },
 
             checkCollision: function() {
                 if (this.state.holdMode && !this.state.dragging) return;
-                const target = document.elementFromPoint(this.state.mouseX, this.state.mouseY);
+                
+                const mx = this.state.mouseX;
+                const my = this.state.mouseY;
 
-                if (target && target.classList.contains('trigger-box')) { if (target.onTouch) target.onTouch(); }
+                let touchingSafe = false;
+                let touchedGoal = false;
+                let activeGoal = null;
 
-                if (target && target.classList.contains('goal-box')) {
-                    const requiredHold = parseInt(target.dataset.holdTime) || 0;
-                    if (requiredHold === 0) { this.win(target.dataset.next); } else {
+                // GEOMETRY HIT TEST
+                // We use getBoundingClientRect because it accounts for CSS Animations accurately
+                for (const c of this.state.hitboxes) {
+                    const rect = c.hitbox.getBoundingClientRect();
+                    
+                    if (mx >= rect.left && mx <= rect.right && my >= rect.top && my <= rect.bottom) {
+                        if (c.type === 'path') touchingSafe = true;
+                        if (c.type === 'trig') { touchingSafe = true; if(c.onTouch) c.onTouch(); }
+                        if (c.type === 'goal') { touchingSafe = true; touchedGoal = true; activeGoal = c; }
+                        if (c.type === 'obs') { this.die("Obstacle"); return; }
+                    }
+                }
+
+                // Update Cursor
+                this.container.style.cursor = touchingSafe ? 'crosshair' : 'default';
+
+                if (touchedGoal && activeGoal) {
+                    if (activeGoal.holdTime === 0) {
+                        this.win(activeGoal.next);
+                    } else {
                         this.state.hoverGoalTime += 16.6;
                         this.ui.catchMeter.style.display = 'block';
-                        this.ui.catchMeter.style.left = this.state.mouseX + 'px';
-                        this.ui.catchMeter.style.top = (this.state.mouseY - 20) + 'px';
-                        const pct = Math.min(100, (this.state.hoverGoalTime / requiredHold) * 100);
+                        this.ui.catchMeter.style.left = mx + 'px';
+                        this.ui.catchMeter.style.top = (my - 20) + 'px';
+                        const pct = Math.min(100, (this.state.hoverGoalTime / activeGoal.holdTime) * 100);
                         this.ui.catchFill.style.width = pct + '%';
-                        if (this.state.hoverGoalTime >= requiredHold) {
-                            setTimeout(() => { if (this.state.active) this.win(target.dataset.next); }, 50);
+                        if (this.state.hoverGoalTime >= activeGoal.holdTime) {
+                             setTimeout(() => { if(this.state.active) this.win(activeGoal.next); }, 50);
                         }
                     }
-                    return; 
+                    return;
                 } else {
                     this.state.hoverGoalTime = 0;
                     this.ui.catchMeter.style.display = 'none';
-                    this.ui.catchFill.style.width = '0%';
                 }
 
-                const isSafe = target && (target.classList.contains('path-box') || target.classList.contains('goal-box') || target.classList.contains('trigger-box'));
-                if (!isSafe) {
-                    let reason = "Void";
-                    if(target && target.classList.contains('obstacle-box')) reason = "Obstacle Hit";
-                    this.die(reason);
+                if (!touchingSafe) { 
+                    this.die("Void"); 
                 }
             },
 
             updateDebugInfo: function() {
-                const target = document.elementFromPoint(this.state.mouseX, this.state.mouseY);
-                this.ui.debugInfo.innerText = "TOUCHING: " + (target ? target.className : "NULL");
+                const mx = this.state.mouseX;
+                const my = this.state.mouseY;
+                let touched = "NULL";
+                
+                for (const c of this.state.hitboxes) {
+                    const rect = c.hitbox.getBoundingClientRect();
+                    if (mx >= rect.left && mx <= rect.right && my >= rect.top && my <= rect.bottom) {
+                        touched = c.type;
+                    }
+                }
+                this.ui.debugInfo.innerText = "TOUCHING: " + touched;
             },
 
             win: function(next) {
@@ -388,15 +410,10 @@
             handleRelease: function(e) { if (e.button === 2) return; if (this.state.active && this.state.holdMode) this.die("Released Button"); },
 
             die: function(reason) {
-                // Check Noclip BEFORE dying
                 if (this.state.noclip) return;
-
                 Logger.log(`Died: ${reason}`, "death");
                 this.state.active = false; PluginManager.trigger('death', reason);
-                // Level 5 specific logic: RESTART level, don't go to save screen
-                if (this.state.currentLevel === 5) { this.startLevel(5); } 
-                // Any other level logic (or World 2 logic) goes here if needed, but for now just menu
-                else { this.reset(); }
+                if (this.state.currentLevel >= 5) { this.startLevel(5); } else { this.reset(); }
             },
 
             reset: function() {
@@ -406,12 +423,18 @@
                 this.ui.saves.style.display = 'none';
                 this.layers.gfx.innerHTML = ''; this.layers.phy.innerHTML = '';
                 this.ui.catchMeter.style.display = 'none';
+                this.state.hitboxes = [];
             },
             exit: function() { if (document.fullscreenElement) document.exitFullscreen(); this.reset(); },
+            
             toggleDebug: function() { 
                 this.state.debug = !this.state.debug; 
                 this.container.classList.toggle('debug'); 
                 this.ui.debugInfo.style.display = this.state.debug ? 'block' : 'none';
+                this.ui.crossX.style.display = this.state.debug ? 'block' : 'none';
+                this.ui.crossY.style.display = this.state.debug ? 'block' : 'none';
+                // Toggle hitbox visual class
+                const boxes = document.querySelectorAll('.debug-box');
                 Logger.log(`Hitbox Mode: ${this.state.debug}`);
             }
         };

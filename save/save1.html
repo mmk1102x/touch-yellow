@@ -4,11 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Touch Yellow - Save 1</title>
+    <!-- Hardcoded Icon for subfolder -->
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%23f2a922' stroke='%23333' stroke-width='10'/></svg>">
     <link href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Roboto:wght@700&display=swap" rel="stylesheet">
     
     <style>
-        /* --- CORE STYLES --- */
+        /* --- CORE STYLES (Synced with Index) --- */
         * { box-sizing: border-box; }
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; overflow: hidden; user-select: none; touch-action: none; font-family: 'Roboto', sans-serif; display: flex; justify-content: center; align-items: center; }
         
@@ -26,16 +27,15 @@
         #ui-layer { z-index: 30; pointer-events: none; }
 
         /* VISUALS */
-        /* Added box-shadow to prevent sub-pixel gaps */
         .visual-path { position: absolute; background-color: #26a9e1; box-shadow: 0 0 0 1px #26a9e1; }
         .visual-goal { position: absolute; background-color: #f1a92a; box-shadow: 0 0 0 1px #f1a92a; }
         .visual-obs { position: absolute; background-color: #000000; } 
+        .visual-trig { position: absolute; background-color: transparent; }
         .visual-btn { position: absolute; background-color: #33cc33; box-shadow: 0 0 0 1px #33cc33; }
         .visual-btn.activated { background-color: #228822; }
-        .visual-trig { position: absolute; background-color: transparent; }
 
         /* HITBOXES */
-        .hitbox { position: absolute; opacity: 0; cursor: crosshair; }
+        .hitbox { position: absolute; opacity: 0; }
         
         /* DEBUG STYLES */
         #game-container.debug { background-color: #330000; cursor: none; } 
@@ -44,22 +44,24 @@
         .debug .obstacle-box { opacity: 0.8; border: 3px solid #ff0000; background: rgba(255, 0, 0, 0.5); z-index: 100; }
         .debug .trigger-box { opacity: 0.8; border: 3px solid #b0f; background: rgba(150, 0, 255, 0.4); z-index: 100; }
         .debug .btn-box { opacity: 0.8; border: 3px solid #0f0; background: rgba(0, 255, 0, 0.4); z-index: 100; }
-        .debug .circle-btn { border: 3px solid #b0f !important; background-color: rgba(150, 0, 255, 0.4) !important; }
-
-        /* DEBUG OVERLAY */
+        
+        /* OVERLAYS */
         #debug-info { position: absolute; top: 10px; left: 10px; color: lime; font-family: monospace; font-size: 14px; background: rgba(0,0,0,0.8); padding: 5px; z-index: 9999; display: none; pointer-events: none; }
         #noclip-indicator { position: absolute; bottom: 10px; left: 10px; color: yellow; font-family: monospace; font-weight: bold; font-size: 16px; background: rgba(0,0,0,0.8); padding: 5px 10px; border: 1px solid yellow; display: none; pointer-events: none; z-index: 9999; }
+        
+        /* CROSSHAIR */
         .debug-line { position: fixed; background-color: cyan; pointer-events: none; z-index: 99999; display: none; }
         #debug-cross-x { width: 100%; height: 1px; left: 0; }
         #debug-cross-y { width: 1px; height: 100%; top: 0; }
 
-        /* UI Elements */
+        /* UI Elements (Save Screen Theme - Blue) */
         .menu-content { pointer-events: auto; text-align: center; width: 100%; height: 100%; position: relative; background-color: #00b0f0; }
+        
         .title { position: absolute; width: 100%; top: 10%; font-family: 'Roboto', sans-serif; font-weight: bold; color: black; font-size: 8cqi; line-height: 0.9; text-transform: capitalize; }
+        
         .menu-btn-wrapper { position: absolute; display: flex; align-items: center; pointer-events: auto; }
         
-        /* MENU BUTTON POSITIONS */
-        /* Continue is Bottom: 50%, Height: 12% -> Spans Y: 38% to 50% */
+        /* ALIGNMENT: Continue button is at Bottom 50%, Left 20% -> Level 6 Starts here */
         #btn-continue-wrap { left: 20%; bottom: 50%; height: 12%; }
         #btn-menu-wrap { left: 20%; bottom: 30%; height: 12%; }
         #btn-exit-wrap { left: 20%; bottom: 10%; height: 12%; }
@@ -69,10 +71,8 @@
         .label { font-size: 4cqi; font-weight: 900; color: #000; margin-left: 2cqi; white-space: nowrap; }
 
         /* ANIMATIONS */
-        @keyframes doorOpen { 
-            0% { transform: translateY(0%); }
-            100% { transform: translateY(-120%); } 
-        }
+        @keyframes doorOpen { 0% { transform: translateY(0%); } 100% { transform: translateY(-120%); } }
+        @keyframes slicerMove { 0% { transform: translateY(0%); } 50% { transform: translateY(200%); } 100% { transform: translateY(0%); } }
     </style>
 </head>
 <body oncontextmenu="return false;">
@@ -81,8 +81,8 @@
     <div id="debug-cross-y" class="debug-line"></div>
 
     <div id="game-container">
-        <!-- ENTITIES (Visual + Physics combined) -->
-        <div id="entity-layer" class="layer"></div>
+        <div id="gfx-layer" class="layer"></div>
+        <div id="phy-layer" class="layer"></div>
         
         <div id="ui-layer" class="layer">
             <div id="debug-info">DEBUG: OFF</div>
@@ -99,7 +99,10 @@
 
     <script>
         const Logger = {
-            log: (msg, type='info') => console.log(`%c[Save1] ${msg}`, { info: 'color:#26a9e1', success: 'color:#f1a92a;font-weight:bold', death: 'color:#ff4444', system:'color:#888' }[type] || 'color:#26a9e1')
+            log: (msg, type='info') => {
+                const styles = { info: 'color: #26a9e1', success: 'color: #f1a92a; font-weight: bold', death: 'color: #ff4444; font-weight: bold', system: 'color: #888' };
+                console.log(`%c[Save1] ${msg}`, styles[type] || styles.info);
+            }
         };
 
         const PluginManager = {
@@ -110,48 +113,56 @@
 
         const Storage = {
             save: () => localStorage.setItem('touchYellow_save1', 'true'),
-            clear: () => { localStorage.clear(); alert("Cleared!"); Engine.goToMainMenu(); }
+            clear: () => { 
+                localStorage.clear();
+                Logger.log("All Data Cleared", "system"); 
+                alert("Data Cleared! Returning to Menu.");
+                Engine.goToMainMenu();
+            }
         };
 
+        // --- WORLD 2 LEVELS ---
         const LevelData = {
-            // Level 6: The Green Button Tutorial
             6: (draw) => {
-                const THICK_H = 14; 
-                const THICK_W = 7.875;
+                const THICK = 14; 
+                const W_THICK = 7.875;
                 
-                // 1. Safe Start Zone (ALIGNED WITH MENU BUTTON)
-                // Button is at Bottom: 50% (Top 38%), Left 20%
-                // We start path at Y=35% to cover the whole button area safely.
-                draw.path(18, 35, 30, THICK_H * 1.5); 
+                // Safe Start (Matches Continue Button: Left 20, Bottom 50 -> Top ~38)
+                draw.path(18, 38, 30, THICK * 1.5); 
 
-                // 2. Connector to main area
-                draw.path(40, 35, THICK_W, 30); // Vertical down
+                // Vertical Corridor
+                draw.path(40, 20, W_THICK, 60);
 
-                // 3. Bottom Path (To Door)
-                draw.path(40, 65, 50, THICK_H); 
+                // Top Path (To Button)
+                draw.path(40, 20, 35, THICK);
 
-                // 4. THE BUTTON (Top Right)
-                // A path leading to it
-                draw.path(40, 35, 40, THICK_H); 
-                draw.button(75, 35, THICK_W, THICK_H, (btnObj) => {
+                // Bottom Path (To Goal)
+                draw.path(40, 66, 65, THICK);
+
+                // BUTTON (Green)
+                draw.button(70, 20, W_THICK, THICK, (btnObj) => {
                     const door = Engine.findEntity('door-level6');
                     if (door && !door.opened) {
                         door.opened = true;
-                        door.entity.style.animation = "doorOpen 1s forwards"; // Animate Wrapper
-                        btnObj.visual.classList.add('activated');
+                        door.gfx.style.animation = "doorOpen 1s forwards";
+                        // Note: To animate hitbox, we should ideally animate a wrapper or both
+                        // For this engine, we animate visual. Hitbox stays? 
+                        // Wait, geometry engine checks updated rects. So we MUST animate hitbox too.
+                        // We will set animation on the specific elements.
+                        door.hitbox.style.animation = "doorOpen 1s forwards";
+                        btnObj.gfx.classList.add('activated');
                         Logger.log("Door Opened!");
                     }
                 });
 
-                // 5. THE DOOR (Blocking goal)
-                // Located on bottom path
-                draw.obstacle(70, 65, THICK_W, THICK_H, null, 'door-level6');
+                // DOOR (Obstacle)
+                // ID: 'door-level6'
+                draw.obstacle(60, 66, W_THICK, THICK, null, 'door-level6');
 
-                // 6. Goal (Far Right Bottom)
-                draw.goal(85, 65, THICK_W, THICK_H, 7); 
+                // Goal
+                draw.goal(90, 66, W_THICK, THICK, 7); 
             },
 
-            // Level 7 Placeholder
             7: (draw) => {
                 const THICK = 14; 
                 draw.path(10, 20, 10, 60);
@@ -162,8 +173,15 @@
 
         const Engine = {
             container: document.getElementById('game-container'),
-            layers: { entity: document.getElementById('entity-layer'), ui: document.getElementById('ui-layer') },
-            ui: { menu: document.getElementById('menu-screen'), debugInfo: document.getElementById('debug-info'), noclipInfo: document.getElementById('noclip-indicator'), crossX: document.getElementById('debug-cross-x'), crossY: document.getElementById('debug-cross-y'), continueBtn: document.getElementById('btn-continue') },
+            layers: { gfx: document.getElementById('gfx-layer'), phy: document.getElementById('phy-layer'), ui: document.getElementById('ui-layer') },
+            ui: { 
+                menu: document.getElementById('menu-screen'), 
+                debugInfo: document.getElementById('debug-info'),
+                noclipInfo: document.getElementById('noclip-indicator'),
+                crossX: document.getElementById('debug-cross-x'),
+                crossY: document.getElementById('debug-cross-y'),
+                continueBtn: document.getElementById('btn-continue')
+            },
             state: { active: false, dragging: false, holdMode: false, debug: false, noclip: false, mouseX: 0, mouseY: 0, currentLevel: 6 },
             hitboxes: [],
             entities: {},
@@ -182,7 +200,7 @@
                 window.addEventListener('mousemove', e => { 
                     this.state.mouseX = e.clientX; this.state.mouseY = e.clientY; 
                     if(this.state.debug) {
-                        this.updateDebugInfo();
+                        this.ui.debugInfo.innerText = "TOUCHING: " + (document.elementFromPoint(e.clientX, e.clientY)?.className || "NULL");
                         this.ui.crossX.style.top = e.clientY + 'px';
                         this.ui.crossY.style.left = e.clientX + 'px';
                     }
@@ -200,24 +218,11 @@
             goToMainMenu: function() { window.location.href = "../index.html"; },
 
             builder: {
-                spawn: (x, y, w, h, vClass, hClass) => {
-                    const entity = document.createElement('div');
-                    entity.className = 'entity';
-                    entity.style.left = x + '%'; entity.style.top = y + '%'; entity.style.width = w + '%'; entity.style.height = h + '%';
-                    entity.style.position = 'absolute'; // Critical for wrapper positioning
-                    
-                    const visual = document.createElement('div'); visual.className = 'visual ' + vClass;
-                    const hitbox = document.createElement('div'); hitbox.className = 'hitbox ' + hClass;
-                    
-                    entity.appendChild(visual); entity.appendChild(hitbox);
-                    Engine.layers.entity.appendChild(entity);
-                    return { entity, hitbox, visual };
-                },
                 path: (x, y, w, h) => Engine.registerCollider(x, y, w, h, 'path'),
                 goal: (x, y, w, h, next) => Engine.registerCollider(x, y, w, h, 'goal', { next }),
                 obstacle: (x, y, w, h, anim, name) => {
                     const c = Engine.registerCollider(x, y, w, h, 'obs', { name });
-                    if (anim) c.entity.style.animation = anim;
+                    if (anim) { c.gfx.style.animation = anim; c.hitbox.style.animation = anim; }
                 },
                 button: (x, y, w, h, cb) => {
                     const c = Engine.registerCollider(x, y, w, h, 'btn');
@@ -226,36 +231,40 @@
             },
 
             registerCollider: function(x, y, w, h, type, data={}) {
+                const gfx = document.createElement('div'); 
                 const map = { 'path': 'visual-path', 'goal': 'visual-goal', 'obs': 'visual-obs', 'btn': 'visual-btn' };
-                const debugMap = { 'path': 'path-box', 'goal': 'goal-box', 'obs': 'obstacle-box', 'btn': 'btn-box' };
-                
-                const obj = this.builder.spawn(x, y, w, h, map[type], debugMap[type] || 'trigger-box');
-                if(!this.state.debug) obj.hitbox.style.display = 'none';
+                gfx.className = map[type] || 'visual-trig';
+                gfx.style.left = x + '%'; gfx.style.top = y + '%'; gfx.style.width = w + '%'; gfx.style.height = h + '%';
+                this.layers.gfx.appendChild(gfx);
 
-                const collider = { ...obj, type, ...data };
+                const phy = document.createElement('div'); 
+                const debugMap = { 'path': 'path-box', 'goal': 'goal-box', 'obs': 'obstacle-box', 'btn': 'btn-box' };
+                phy.className = `hitbox ${debugMap[type] || 'trigger-box'}`; // hitbox class added
+                phy.style.left = x + '%'; phy.style.top = y + '%'; phy.style.width = w + '%'; phy.style.height = h + '%';
+                if(!this.state.debug) phy.style.display = 'block'; // Must be block for rect calculation
+                this.layers.phy.appendChild(phy);
+
+                const collider = { x, y, w, h, type, gfx, hitbox: phy, ...data };
                 this.state.hitboxes.push(collider);
                 if (data.name) this.entities[data.name] = collider;
                 return collider;
             },
-
+            
             findEntity: function(name) { return this.entities[name]; },
 
             startLevel: function(lvl) {
                 Logger.log(`Starting Level ${lvl}`);
+                if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(e=>{});
                 
-                this.layers.entity.innerHTML = '';
+                this.layers.gfx.innerHTML = ''; this.layers.phy.innerHTML = '';
                 this.state.hitboxes = [];
                 this.entities = {};
-                this.ui.menu.style.display = 'none'; 
-                this.state.dragging = true;
+                this.ui.menu.style.display = 'none'; this.state.dragging = true;
                 this.state.currentLevel = lvl;
                 
                 if (LevelData[lvl]) LevelData[lvl](this.builder);
                 
-                // IMPORTANT: Wait one frame for DOM paint before checking collision
-                requestAnimationFrame(() => {
-                    this.state.active = true;
-                });
+                this.state.active = true;
             },
 
             gameLoop: function() {
@@ -301,11 +310,6 @@
                 if (!touchingSafe) { this.die("Void"); }
             },
 
-            updateDebugInfo: function() {
-                const target = document.elementFromPoint(this.state.mouseX, this.state.mouseY);
-                this.ui.debugInfo.innerText = "TOUCHING: " + (target ? target.className : "NULL");
-            },
-
             win: function(next) {
                 this.state.active = false;
                 Logger.log("Level Complete!", "success");
@@ -318,8 +322,15 @@
                 if (this.state.noclip) return;
                 Logger.log(`Died: ${reason}`, "death");
                 this.state.active = false; 
-                // Instant Restart for smooth gameplay
-                this.startLevel(this.state.currentLevel); 
+                // World 2 Restart Logic: Always back to Level 6 (Checkpoint)
+                this.startLevel(6);
+            },
+
+            reset: function() {
+                Logger.log("Resetting to Save Menu");
+                this.state.active = false; this.state.dragging = false;
+                this.ui.menu.style.display = 'block';
+                this.layers.gfx.innerHTML = ''; this.layers.phy.innerHTML = '';
             },
 
             exit: function() { 
@@ -339,7 +350,6 @@
                 this.ui.debugInfo.style.display = this.state.debug ? 'block' : 'none';
                 this.ui.crossX.style.display = this.state.debug ? 'block' : 'none';
                 this.ui.crossY.style.display = this.state.debug ? 'block' : 'none';
-                document.querySelectorAll('.hitbox').forEach(el => el.style.display = this.state.debug ? 'block' : 'none');
             }
         };
 
