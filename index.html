@@ -30,32 +30,36 @@
 
         .hitbox { position: absolute; opacity: 0; cursor: crosshair; }
         
-        /* DEBUG STYLES */
+        /* --- DEBUG STYLES --- */
         #game-container.debug { background-color: #330000; } 
         .debug .path-box { border: none; background: transparent; }
         .debug .goal-box { opacity: 0.8; border: 3px solid #00ff00; background: rgba(0, 255, 0, 0.3); z-index: 100; }
         .debug .obstacle-box { opacity: 0.8; border: 3px solid #ff0000; background: rgba(255, 0, 0, 0.5); z-index: 100; }
         .debug .trigger-box { opacity: 0.8; border: 3px solid #b0f; background: rgba(150, 0, 255, 0.4); z-index: 100; }
+        
+        /* Menu Hitboxes */
         .debug .circle-btn { border: 3px solid #b0f !important; background-color: rgba(150, 0, 255, 0.4) !important; }
         .debug .switch { outline: 3px solid #b0f; background-color: rgba(150, 0, 255, 0.4) !important; }
 
-        #debug-info { position: absolute; top: 10px; left: 10px; color: lime; font-family: monospace; font-size: 14px; background: rgba(0,0,0,0.8); padding: 5px; z-index: 9999; display: none; pointer-events: none; }
-        
-        /* NOCLIP INDICATOR */
-        #noclip-indicator {
-            position: absolute; bottom: 10px; left: 10px;
-            color: yellow; font-family: monospace; font-weight: bold; font-size: 16px;
-            background: rgba(0,0,0,0.8); padding: 5px 10px; border: 1px solid yellow;
-            display: none; pointer-events: none; z-index: 9999;
+        /* DEBUG OVERLAY */
+        #debug-info {
+            position: absolute; top: 10px; left: 10px; 
+            color: lime; font-family: monospace; font-size: 14px; 
+            background: rgba(0,0,0,0.8); padding: 5px; 
+            z-index: 9999; display: none; pointer-events: none;
         }
 
+        /* UI Elements */
         .menu-content { pointer-events: auto; text-align: center; width: 100%; height: 100%; position: relative; background-color: #4d4d4d; }
         .title { position: absolute; width: 100%; top: 10%; font-family: 'Luckiest Guy', cursive; color: #f2ef45; font-size: 10cqi; line-height: 0.9; text-transform: uppercase; text-shadow: 0.4cqi 0.4cqi 0 #000; }
+        
         .menu-btn-wrapper { position: absolute; display: flex; align-items: center; pointer-events: auto; }
+        
         #btn-start-wrap { left: 5%; bottom: 25%; height: 12%; }
         #btn-exit-wrap { left: 5%; bottom: 8%; height: 12%; }
         #btn-save-wrap { left: auto; right: 6%; top: 6%; bottom: auto; height: 12%; }
         #btn-save-wrap .label { margin-left: 0; margin-right: 20px; font-size: 3.5cqi; }
+
         #save1-wrap { left: 20%; bottom: 50%; height: 12%; }
         #save2-wrap { left: 55%; bottom: 50%; height: 12%; }
         #save-back-wrap { left: 5%; bottom: 10%; height: 12%; }
@@ -63,15 +67,25 @@
         .circle-btn { height: 100%; aspect-ratio: 1/1; background-color: #f2a922; border-radius: 50%; border: 0.5cqi solid #333; cursor: pointer; transition: transform 0.1s; }
         .circle-btn:hover { transform: scale(1.1); filter: brightness(1.1); }
         .label { font-size: 4cqi; font-weight: 900; color: #000; margin-left: 2cqi; white-space: nowrap; }
+        
         .unlocked { background-color: #00ff00; }
         .locked { background-color: #555; border-color: #333; filter: grayscale(100%); cursor: not-allowed; }
 
-        #toggle-wrap { position: absolute; right: 8%; bottom: 15%; display: flex; flex-direction: column; align-items: center; pointer-events: auto; width: 25cqi; }
+        #toggle-wrap { 
+            position: absolute; right: 8%; bottom: 15%; 
+            display: flex; flex-direction: column; align-items: center; pointer-events: auto;
+            width: 25cqi;
+        }
         .switch-label { font-family: 'Luckiest Guy', cursive; color: #f2ef45; font-size: 3cqi; margin-bottom: 1cqi; text-shadow: 0.1cqi 0.1cqi 0 #000; width: 100%; text-align: center; }
         .switch { position: relative; display: inline-block; width: 8cqi; height: 4cqi; }
         .switch input { opacity: 0; width: 100%; height: 100%; position: absolute; z-index: 2; cursor: pointer; }
+        
         .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #333; border-radius: 4cqi; border: 0.3cqi solid #000; transition: .4s; }
-        .slider:before { position: absolute; content: ""; height: 3.2cqi; width: 3.2cqi; left: 0.4cqi; top: 50%; transform: translateY(-50%); background-color: white; border-radius: 50%; transition: .4s; }
+        .slider:before { 
+            position: absolute; content: ""; height: 3.2cqi; width: 3.2cqi; 
+            left: 0.4cqi; top: 50%; transform: translateY(-50%); 
+            background-color: white; border-radius: 50%; transition: .4s; 
+        }
         input:checked + .slider { background-color: #f2a922; }
         input:checked + .slider:before { transform: translate(4cqi, -50%); }
 
@@ -94,7 +108,6 @@
         <div id="phy-layer" class="layer"></div>
         <div id="ui-layer" class="layer">
             <div id="debug-info">DEBUG: OFF</div>
-            <div id="noclip-indicator">NOCLIP ON</div>
             
             <div id="menu-screen" class="menu-content">
                 <h1 class="title">Touch Yellow</h1>
@@ -173,6 +186,7 @@
             const p2X = 55 - THICK_W; const p2Height = 20; const p2Y = startY - p2Height;
             const p3Width = 35; const p4X = p2X + p3Width - THICK_W; const p4Height = 24; const p4Y = p2Y - p4Height;
             const p5Width = 45; const topPathLeftX = p4X - p5Width + THICK_W;
+
             draw.path(0, startY, 55, THICK_H); 
             draw.path(p2X, p2Y, THICK_W, p2Height + THICK_H);    
             draw.path(p2X, p2Y, p3Width, THICK_H);         
@@ -196,7 +210,6 @@
                 menu: document.getElementById('menu-screen'), 
                 saves: document.getElementById('saves-screen'),
                 debugInfo: document.getElementById('debug-info'),
-                noclipInfo: document.getElementById('noclip-indicator'),
                 startBtn: document.getElementById('start-btn'), 
                 modeCheck: document.getElementById('mode-check'), 
                 modeText: document.getElementById('mode-text'), 
@@ -206,21 +219,15 @@
                 btnSave1: document.getElementById('btn-save1'),
                 btnSave2: document.getElementById('btn-save2')
             },
-            state: { active: false, dragging: false, holdMode: false, debug: false, noclip: false, mouseX: 0, mouseY: 0, hoverGoalTime: 0, currentLevel: 0 },
+            state: { active: false, dragging: false, holdMode: false, debug: false, mouseX: 0, mouseY: 0, hoverGoalTime: 0, currentLevel: 0 },
 
             init: function() {
                 const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
                 if (isMobile) { this.state.holdMode = true; this.ui.toggleWrap.style.display = 'none'; }
-                else { 
-                    const savedHold = localStorage.getItem('touchYellow_holdMode') === 'true';
-                    this.state.holdMode = savedHold;
-                    this.ui.modeCheck.checked = savedHold;
-                    this.ui.modeText.innerText = savedHold ? "Hold Mode" : "Hover Mode";
-                    this.ui.modeText.style.color = savedHold ? "#f2a922" : "#f2ef45";
-                }
-
+                
                 const urlParams = new URLSearchParams(window.location.search);
-                if (urlParams.get('loadCheckpoint')) setTimeout(() => this.startLevel(parseInt(urlParams.get('loadCheckpoint'))), 500);
+                const loadCheckpoint = urlParams.get('loadCheckpoint');
+                if (loadCheckpoint) setTimeout(() => this.startLevel(parseInt(loadCheckpoint)), 500);
 
                 this.ui.startBtn.onmousedown = () => this.startLevel(1);
                 this.ui.startBtn.ontouchstart = () => this.startLevel(1);
@@ -233,23 +240,14 @@
                 window.addEventListener('mouseup', e => this.handleRelease(e));
                 window.addEventListener('touchend', e => this.handleRelease(e));
                 window.addEventListener('mousedown', e => { if(e.button === 2 && this.state.active) this.die("Panic Click"); });
-                
-                requestAnimationFrame(this.gameLoop.bind(this));
                 Logger.log("Engine Initialized");
             },
 
             toggleMode: function() {
-                if (this.state.isMobile) return;
                 this.state.holdMode = this.ui.modeCheck.checked;
                 this.ui.modeText.innerText = this.state.holdMode ? "Hold Mode" : "Hover Mode";
                 this.ui.modeText.style.color = this.state.holdMode ? "#f2a922" : "#f2ef45";
-                localStorage.setItem('touchYellow_holdMode', this.state.holdMode);
-            },
-
-            toggleNoclip: function() {
-                this.state.noclip = !this.state.noclip;
-                this.ui.noclipInfo.style.display = this.state.noclip ? 'block' : 'none';
-                Logger.log(`Noclip: ${this.state.noclip}`);
+                Logger.log(`Mode Switched: ${this.state.holdMode ? "HOLD" : "HOVER"}`, "system");
             },
 
             openSavesMenu: function() { this.ui.menu.style.display = 'none'; this.ui.saves.style.display = 'block'; this.updateSaveBtn(1, this.ui.btnSave1); this.updateSaveBtn(2, this.ui.btnSave2); },
@@ -296,14 +294,15 @@
                 this.ui.catchFill.style.width = '0%';
                 
                 let goalRef = null;
-                const proxy = Object.assign({}, this.builder, {
+                const builderProxy = Object.assign({}, this.builder, {
                     goal: (x, y, w, h, next, ht) => { goalRef = this.builder.goal(x, y, w, h, next, ht); return goalRef; },
                     trigger: (x, y, w, h, callback) => { this.builder.trigger(x, y, w, h, () => callback(goalRef)); }
                 });
 
-                if (LevelData[lvl]) LevelData[lvl](proxy);
-                this.state.active = true;
-                PluginManager.trigger('startLevel', lvl);
+                if (LevelData[lvl]) LevelData[lvl](builderProxy);
+                
+                this.state.active = false;
+                setTimeout(() => { this.state.active = true; PluginManager.trigger('startLevel', lvl); }, 50);
             },
 
             gameLoop: function() { if (this.state.active) this.checkCollision(); requestAnimationFrame(this.gameLoop.bind(this)); },
@@ -331,11 +330,13 @@
                 } else {
                     this.state.hoverGoalTime = 0;
                     this.ui.catchMeter.style.display = 'none';
+                    this.ui.catchFill.style.width = '0%';
                 }
 
                 const isSafe = target && (target.classList.contains('path-box') || target.classList.contains('goal-box') || target.classList.contains('trigger-box'));
                 if (!isSafe) {
-                    let reason = target ? target.className : "Void";
+                    let reason = "Void";
+                    if(target && target.classList.contains('obstacle-box')) reason = "Obstacle Hit";
                     this.die(reason);
                 }
             },
@@ -356,33 +357,30 @@
             handleRelease: function(e) { if (e.button === 2) return; if (this.state.active && this.state.holdMode) this.die("Released Button"); },
 
             die: function(reason) {
-                if (this.state.noclip) return; // Noclip check
                 Logger.log(`Died: ${reason}`, "death");
                 this.state.active = false; PluginManager.trigger('death', reason);
-                if (this.state.currentLevel >= 5) { window.location.href = "save/save1.html"; } else { this.reset(); }
+                // FIXED: If Level 5, RESTART Level 5. Do NOT redirect to save1.html (which is the victory screen)
+                if (this.state.currentLevel === 5) { 
+                    this.startLevel(5); 
+                } else { 
+                    this.reset(); 
+                }
             },
 
             reset: function() {
                 Logger.log("Resetting to Menu");
                 this.state.active = false; this.state.dragging = false;
                 this.ui.menu.style.display = 'block';
-                this.ui.saves.style.display = 'none';
                 this.layers.gfx.innerHTML = ''; this.layers.phy.innerHTML = '';
                 this.ui.catchMeter.style.display = 'none';
             },
             exit: function() { if (document.fullscreenElement) document.exitFullscreen(); this.reset(); },
-            toggleDebug: function() { 
-                this.state.debug = !this.state.debug; 
-                this.container.classList.toggle('debug'); 
-                this.ui.debugInfo.style.display = this.state.debug ? 'block' : 'none';
-                Logger.log(`Hitbox Mode: ${this.state.debug}`);
-            }
+            toggleDebug: function() { this.state.debug = !this.state.debug; this.container.classList.toggle('debug'); Logger.log(`Hitbox Mode: ${this.state.debug}`); }
         };
 
         Engine.init();
         window.cmd = (c) => {
             if (c === 'hitbox') Engine.toggleDebug();
-            if (c === 'noclip') Engine.toggleNoclip();
             if (c === 'load menu') Engine.reset();
             if (c === 'load save') Engine.openSavesMenu();
             if (c === 'load save1') Engine.loadSaveFile(1);
