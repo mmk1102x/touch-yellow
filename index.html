@@ -24,43 +24,45 @@
         #phy-layer { z-index: 20; }
         #ui-layer { z-index: 30; pointer-events: none; }
 
+        /* VISUALS */
         .visual-path { position: absolute; background-color: #26a9e1; box-shadow: 0 0 0 1px #26a9e1; }
         .visual-goal { position: absolute; background-color: #f1a92a; box-shadow: 0 0 0 1px #f1a92a; }
         .visual-obs { position: absolute; background-color: #000000; } 
         .visual-trig { position: absolute; background-color: transparent; }
 
+        /* PHYSICS HITBOXES (Always render, just invisible) */
         .hitbox { position: absolute; opacity: 0; cursor: crosshair; }
         
-        /* DEBUG STYLES */
+        /* --- DEBUG VISUALS --- */
         #game-container.debug { background-color: #330000; cursor: none; } 
-        .debug .path-box { border: none; background: transparent; }
+        
+        /* When .debug is active on container, these styles apply */
+        .debug .path-box { opacity: 0.3; border: 1px solid white; background: rgba(255, 255, 255, 0.1); }
         .debug .goal-box { opacity: 0.8; border: 3px solid #00ff00; background: rgba(0, 255, 0, 0.3); z-index: 100; }
         .debug .obstacle-box { opacity: 0.8; border: 3px solid #ff0000; background: rgba(255, 0, 0, 0.5); z-index: 100; }
         .debug .trigger-box { opacity: 0.8; border: 3px solid #b0f; background: rgba(150, 0, 255, 0.4); z-index: 100; }
         
-        /* Menu Debug */
         .debug .circle-btn { border: 3px solid #b0f !important; background-color: rgba(150, 0, 255, 0.4) !important; }
-        .debug .switch { outline: 3px solid #b0f; background-color: rgba(150, 0, 255, 0.4) !important; }
+        .debug .slider { outline: 3px solid #b0f; background-color: rgba(150, 0, 255, 0.4) !important; }
 
-        /* DEBUG OVERLAY */
+        /* DEBUG OVERLAYS */
         #debug-info { position: absolute; top: 10px; left: 10px; color: lime; font-family: monospace; font-size: 14px; background: rgba(0,0,0,0.8); padding: 5px; z-index: 9999; display: none; pointer-events: none; }
         #noclip-indicator { position: absolute; bottom: 10px; left: 10px; color: yellow; font-family: monospace; font-weight: bold; font-size: 16px; background: rgba(0,0,0,0.8); padding: 5px 10px; border: 1px solid yellow; display: none; pointer-events: none; z-index: 9999; }
         
-        /* DEBUG CROSSHAIR */
         .debug-line { position: fixed; background-color: cyan; pointer-events: none; z-index: 99999; display: none; }
         #debug-cross-x { width: 100%; height: 1px; left: 0; }
         #debug-cross-y { width: 1px; height: 100%; top: 0; }
 
-        /* UI Elements */
+        /* UI */
         .menu-content { pointer-events: auto; text-align: center; width: 100%; height: 100%; position: relative; background-color: #4d4d4d; }
         .title { position: absolute; width: 100%; top: 10%; font-family: 'Luckiest Guy', cursive; color: #f2ef45; font-size: 10cqi; line-height: 0.9; text-transform: uppercase; text-shadow: 0.4cqi 0.4cqi 0 #000; }
-        
         .menu-btn-wrapper { position: absolute; display: flex; align-items: center; pointer-events: auto; }
+        
         #btn-start-wrap { left: 5%; bottom: 25%; height: 12%; }
         #btn-exit-wrap { left: 5%; bottom: 8%; height: 12%; }
         #btn-save-wrap { left: auto; right: 6%; top: 6%; bottom: auto; height: 12%; }
         #btn-save-wrap .label { margin-left: 0; margin-right: 20px; font-size: 3.5cqi; }
-
+        
         #save1-wrap { left: 20%; bottom: 50%; height: 12%; }
         #save2-wrap { left: 55%; bottom: 50%; height: 12%; }
         #save-back-wrap { left: 5%; bottom: 10%; height: 12%; }
@@ -68,7 +70,6 @@
         .circle-btn { height: 100%; aspect-ratio: 1/1; background-color: #f2a922; border-radius: 50%; border: 0.5cqi solid #333; cursor: pointer; transition: transform 0.1s; }
         .circle-btn:hover { transform: scale(1.1); filter: brightness(1.1); }
         .label { font-size: 4cqi; font-weight: 900; color: #000; margin-left: 2cqi; white-space: nowrap; }
-        
         .unlocked { background-color: #00ff00; }
         .locked { background-color: #555; border-color: #333; filter: grayscale(100%); cursor: not-allowed; }
 
@@ -76,13 +77,8 @@
         .switch-label { font-family: 'Luckiest Guy', cursive; color: #f2ef45; font-size: 3cqi; margin-bottom: 1cqi; text-shadow: 0.1cqi 0.1cqi 0 #000; width: 100%; text-align: center; }
         .switch { position: relative; display: inline-block; width: 8cqi; height: 4cqi; }
         .switch input { opacity: 0; width: 100%; height: 100%; position: absolute; z-index: 2; cursor: pointer; }
-        
         .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #333; border-radius: 4cqi; border: 0.3cqi solid #000; transition: .4s; }
-        .slider:before { 
-            position: absolute; content: ""; height: 3.2cqi; width: 3.2cqi; 
-            left: 0.4cqi; top: 50%; transform: translateY(-50%); 
-            background-color: white; border-radius: 50%; transition: .4s; 
-        }
+        .slider:before { position: absolute; content: ""; height: 3.2cqi; width: 3.2cqi; left: 0.4cqi; top: 50%; transform: translateY(-50%); background-color: white; border-radius: 50%; transition: .4s; }
         input:checked + .slider { background-color: #f2a922; }
         input:checked + .slider:before { transform: translate(4cqi, -50%); }
 
@@ -99,6 +95,8 @@
 <body oncontextmenu="return false;">
 
     <div id="catch-meter"><div id="catch-fill"></div></div>
+    
+    <!-- DEBUG CROSSHAIR -->
     <div id="debug-cross-x" class="debug-line"></div>
     <div id="debug-cross-y" class="debug-line"></div>
 
@@ -176,14 +174,7 @@
                 Logger.log("All Saves & Settings Cleared", "system"); 
                 alert("Reset Complete!");
                 Engine.closeSavesMenu();
-                // Visual reset
-                Engine.state.noclip = false;
-                Engine.state.debug = false;
-                Engine.ui.noclipInfo.style.display = 'none';
-                Engine.container.classList.remove('debug');
-                Engine.ui.crossX.style.display = 'none';
-                Engine.ui.crossY.style.display = 'none';
-                Engine.ui.debugInfo.style.display = 'none';
+                Engine.reset();
             }
         };
 
@@ -227,11 +218,7 @@
                 btnSave1: document.getElementById('btn-save1'),
                 btnSave2: document.getElementById('btn-save2')
             },
-            state: { 
-                active: false, dragging: false, holdMode: false, debug: false, noclip: false, 
-                mouseX: 0, mouseY: 0, hoverGoalTime: 0, currentLevel: 0,
-                hitboxes: [] // MOVED HERE
-            },
+            state: { active: false, dragging: false, holdMode: false, debug: false, noclip: false, mouseX: 0, mouseY: 0, hoverGoalTime: 0, currentLevel: 0, hitboxes: [] },
 
             init: function() {
                 const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
@@ -239,10 +226,12 @@
                 else { 
                     const savedHold = localStorage.getItem('touchYellow_holdMode') === 'true';
                     const savedNoclip = localStorage.getItem('touchYellow_noclip') === 'true';
+                    
                     this.state.holdMode = savedHold;
                     this.ui.modeCheck.checked = savedHold;
                     this.ui.modeText.innerText = savedHold ? "Hold Mode" : "Hover Mode";
                     this.ui.modeText.style.color = savedHold ? "#f2a922" : "#f2ef45";
+
                     if(savedNoclip) this.toggleNoclip(true);
                 }
 
@@ -264,7 +253,13 @@
                 window.addEventListener('mouseup', e => this.handleRelease(e));
                 window.addEventListener('touchend', e => this.handleRelease(e));
                 window.addEventListener('mousedown', e => { if(e.button === 2 && this.state.active) this.die("Panic Click"); });
-                window.addEventListener('blur', () => { if(this.state.active && !this.state.noclip) this.die("Tab Focus Lost"); });
+                
+                // ANTI-CHEAT (Robust Visibility Check)
+                document.addEventListener('visibilitychange', () => {
+                    if (document.hidden && this.state.active && !this.state.noclip) {
+                        this.die("Anti-Cheat: Tab Hidden");
+                    }
+                });
                 
                 requestAnimationFrame(this.gameLoop.bind(this));
                 Logger.log("Engine Initialized");
@@ -311,9 +306,10 @@
                 this.layers.gfx.appendChild(gfx);
 
                 const phy = document.createElement('div'); 
-                phy.className = `debug-box type-` + type + ' ' + (type === 'obs' ? 'obstacle-box' : type === 'goal' ? 'goal-box' : type === 'path' ? 'path-box' : 'trigger-box');
+                phy.className = `hitbox debug-box type-` + type + ' ' + (type === 'obs' ? 'obstacle-box' : type === 'goal' ? 'goal-box' : type === 'path' ? 'path-box' : 'trigger-box');
                 phy.style.left = x + '%'; phy.style.top = y + '%'; phy.style.width = w + '%'; phy.style.height = h + '%';
-                if(!this.state.debug) phy.style.display = 'none';
+                
+                // NO display:none. Always render, control visibility via CSS debug classes
                 this.layers.phy.appendChild(phy);
 
                 const collider = { x, y, w, h, type, gfx, hitbox: phy, ...data };
@@ -339,7 +335,9 @@
 
                 if (LevelData[lvl]) LevelData[lvl](proxy);
                 
-                // INSTANT START
+                // Re-apply debug state if needed
+                if(this.state.debug) this.toggleDebug(true);
+
                 this.state.active = true;
                 PluginManager.trigger('startLevel', lvl);
                 this.checkCollision();
@@ -403,9 +401,25 @@
                 if (!touchingSafe) { this.die("Void"); }
             },
 
+            // Updated Debug Info using Math Engine
             updateDebugInfo: function() {
-                const target = document.elementFromPoint(this.state.mouseX, this.state.mouseY);
-                this.ui.debugInfo.innerText = "TOUCHING: " + (target ? target.className : "NULL");
+                const rect = this.container.getBoundingClientRect();
+                const mx = ((this.state.mouseX - rect.left) / rect.width) * 100;
+                const my = ((this.state.mouseY - rect.top) / rect.height) * 100;
+                
+                let touched = "VOID";
+                for (let c of this.state.hitboxes) {
+                    const boxRect = c.hitbox.getBoundingClientRect();
+                    const boxX = ((boxRect.left - rect.left) / rect.width) * 100;
+                    const boxY = ((boxRect.top - rect.top) / rect.height) * 100;
+                    const boxW = (boxRect.width / rect.width) * 100;
+                    const boxH = (boxRect.height / rect.height) * 100;
+                    
+                    if (mx >= boxX && mx <= boxX + boxW && my >= boxY && my <= boxY + boxH) {
+                        touched = c.type;
+                    }
+                }
+                this.ui.debugInfo.innerText = "TOUCHING: " + touched;
             },
 
             win: function(next) {
@@ -436,14 +450,12 @@
             },
             exit: function() { if (document.fullscreenElement) document.exitFullscreen(); this.reset(); },
             
-            toggleDebug: function() { 
-                this.state.debug = !this.state.debug; 
-                this.container.classList.toggle('debug'); 
+            toggleDebug: function(forceVal) { 
+                this.state.debug = (forceVal !== undefined) ? forceVal : !this.state.debug; 
+                this.container.classList.toggle('debug', this.state.debug); 
                 this.ui.debugInfo.style.display = this.state.debug ? 'block' : 'none';
                 this.ui.crossX.style.display = this.state.debug ? 'block' : 'none';
                 this.ui.crossY.style.display = this.state.debug ? 'block' : 'none';
-                const debugBoxes = document.querySelectorAll('.debug-box');
-                debugBoxes.forEach(b => b.style.display = this.state.debug ? 'block' : 'none');
                 Logger.log(`Hitbox Mode: ${this.state.debug}`);
             }
         };
