@@ -2,112 +2,371 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Touch Yellow - Save 1</title>
+    <!-- Hardcoded Icon for subfolder -->
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%23f2a922' stroke='%23333' stroke-width='10'/></svg>">
     <link href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Roboto:wght@700&display=swap" rel="stylesheet">
+    
     <style>
-        body {
-            margin: 0; padding: 0; width: 100%; height: 100vh;
-            background-color: #00b0f0; 
-            overflow: hidden;
-            font-family: 'Roboto', sans-serif;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            user-select: none;
+        /* --- CORE STYLES (Synced with index.html) --- */
+        * { box-sizing: border-box; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; overflow: hidden; user-select: none; touch-action: none; font-family: 'Roboto', sans-serif; display: flex; justify-content: center; align-items: center; }
+        
+        #game-container {
+            width: 100%; max-width: 177.78vh; aspect-ratio: 16/9;
+            position: relative; background: #000000; overflow: hidden;
+            box-shadow: 0 0 50px rgba(0,0,0,0.5);
+            transition: background-color 0.3s;
         }
 
-        .title {
-            font-family: 'Roboto', sans-serif; 
-            font-weight: bold; 
-            color: black; 
-            font-size: 80px; 
-            margin-bottom: 50px;
-            text-transform: capitalize;
+        .layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+        #gfx-layer { z-index: 10; }
+        #phy-layer { z-index: 20; }
+        #ui-layer { z-index: 30; pointer-events: none; }
+
+        /* VISUALS */
+        .visual-path { position: absolute; background-color: #26a9e1; box-shadow: 0 0 0 1px #26a9e1; }
+        .visual-goal { position: absolute; background-color: #f1a92a; box-shadow: 0 0 0 1px #f1a92a; }
+        .visual-obs { position: absolute; background-color: #000000; } 
+        .visual-trig { position: absolute; background-color: transparent; }
+
+        .hitbox { position: absolute; opacity: 0; cursor: crosshair; }
+        
+        /* DEBUG STYLES */
+        #game-container.debug { background-color: #330000; } 
+        .debug .path-box { border: none; background: transparent; }
+        .debug .goal-box { opacity: 0.8; border: 3px solid #00ff00; background: rgba(0, 255, 0, 0.3); z-index: 100; }
+        .debug .obstacle-box { opacity: 0.8; border: 3px solid #ff0000; background: rgba(255, 0, 0, 0.5); z-index: 100; }
+        .debug .trigger-box { opacity: 0.8; border: 3px solid #b0f; background: rgba(150, 0, 255, 0.4); z-index: 100; }
+        .debug .circle-btn { border: 3px solid #b0f !important; background-color: rgba(150, 0, 255, 0.4) !important; }
+
+        #debug-info, #noclip-indicator {
+            position: absolute; left: 10px; 
+            color: lime; font-family: monospace; font-size: 14px; 
+            background: rgba(0,0,0,0.8); padding: 5px; 
+            z-index: 9999; display: none; pointer-events: none;
         }
+        #debug-info { top: 10px; }
+        #noclip-indicator { bottom: 10px; color: yellow; border: 1px solid yellow; font-size: 16px; font-weight: bold; }
 
-        .menu-btn-wrapper {
-            display: flex;
-            align-items: center;
-            margin-bottom: 30px;
-            cursor: pointer;
-            transition: transform 0.1s;
-        }
-
-        .menu-btn-wrapper:hover { transform: scale(1.1); }
-
-        .circle-btn {
-            width: 60px; height: 60px;
-            background-color: #f2a922;
-            border-radius: 50%;
-            border: 4px solid #b37a15;
-            margin-right: 20px;
-        }
-
-        .label {
-            font-size: 40px;
-            font-weight: 900;
-            color: black;
+        /* UI Elements (Save Screen Theme) */
+        /* Background is BLUE for World 2 Menu */
+        .menu-content { pointer-events: auto; text-align: center; width: 100%; height: 100%; position: relative; background-color: #00b0f0; }
+        
+        .title { 
+            position: absolute; width: 100%; top: 10%; 
+            font-family: 'Roboto', sans-serif; font-weight: bold; color: black;
+            font-size: 8cqi; line-height: 0.9; text-transform: capitalize; 
         }
         
-        .large-circle { width: 80px; height: 80px; }
-        .large-label { font-size: 60px; }
+        .menu-btn-wrapper { position: absolute; display: flex; align-items: center; pointer-events: auto; }
+        
+        /* Menu Layout */
+        #btn-continue-wrap { left: 20%; bottom: 50%; height: 12%; }
+        #btn-menu-wrap { left: 20%; bottom: 30%; height: 12%; }
+        #btn-exit-wrap { left: 20%; bottom: 10%; height: 12%; }
+
+        .circle-btn { 
+            height: 100%; aspect-ratio: 1/1; 
+            background-color: #f2a922; 
+            border-radius: 50%; border: 0.5cqi solid #b37a15; 
+            cursor: pointer; transition: transform 0.1s; 
+        }
+        .circle-btn:hover { transform: scale(1.1); filter: brightness(1.1); }
+        .label { font-size: 4cqi; font-weight: 900; color: #000; margin-left: 2cqi; white-space: nowrap; }
+
+        /* METER */
+        #catch-meter { position: fixed; display: none; width: 40px; height: 6px; background: #333; border: 1px solid white; border-radius: 3px; pointer-events: none; z-index: 9999; transform: translate(-50%, -20px); }
+        #catch-fill { width: 0%; height: 100%; background: #00ff00; transition: width 0.05s linear; }
+
+        /* ANIMATIONS (Synced with Index) */
+        @keyframes slicerMove { 0% { transform: translateY(0%); } 50% { transform: translateY(200%); } 100% { transform: translateY(0%); } }
+        /* Add new animations for World 2 here */
     </style>
 </head>
-<body>
+<body oncontextmenu="return false;">
 
-    <div class="title">Got Save!</div>
+    <div id="catch-meter"><div id="catch-fill"></div></div>
 
-    <div class="menu-btn-wrapper" onclick="goBackToGame()">
-        <div class="circle-btn"></div>
-        <div class="label"><-Continue</div>
-    </div>
+    <div id="game-container">
+        <div id="gfx-layer" class="layer"></div>
+        <div id="phy-layer" class="layer"></div>
+        
+        <div id="ui-layer" class="layer">
+            <div id="debug-info">DEBUG: OFF</div>
+            <div id="noclip-indicator">NOCLIP ON</div>
+            
+            <!-- SAVE MENU -->
+            <div id="menu-screen" class="menu-content">
+                <h1 class="title">Got Save!</h1>
+                
+                <div id="btn-continue-wrap" class="menu-btn-wrapper">
+                    <div id="btn-continue" class="circle-btn"></div>
+                    <div class="label"><-Continue</div>
+                </div>
 
-    <div class="menu-btn-wrapper" onclick="goToMenu()">
-        <div class="circle-btn large-circle"></div>
-        <div class="label"><-Menu</div>
-    </div>
+                <div id="btn-menu-wrap" class="menu-btn-wrapper">
+                    <div class="circle-btn" onclick="Engine.goToMainMenu()"></div>
+                    <div class="label"><-Menu</div>
+                </div>
 
-    <div class="menu-btn-wrapper" onclick="exitGame()">
-        <div class="circle-btn large-circle"></div>
-        <div class="label large-label"><-Exit</div>
+                <div id="btn-exit-wrap" class="menu-btn-wrapper">
+                    <div class="circle-btn" onclick="Engine.exit()"></div>
+                    <div class="label"><-Exit</div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
-        // ON LOAD: Save progress
-        window.onload = function() {
-            localStorage.setItem('touchYellow_save1', 'true');
-            console.log("[Save] Progress Saved: Save 1");
+        const Logger = {
+            log: (msg, type='info') => {
+                const styles = { info: 'color: #26a9e1', success: 'color: #f1a92a; font-weight: bold', death: 'color: #ff4444; font-weight: bold', system: 'color: #888' };
+                console.log(`%c[Save1] ${msg}`, styles[type] || styles.info);
+            }
         };
 
-        function goBackToGame() {
-            window.location.href = "../index.html?loadCheckpoint=5";
-        }
+        const PluginManager = {
+            hooks: {},
+            on: function(e, cb) { (this.hooks[e] = this.hooks[e] || []).push(cb); },
+            trigger: function(e, d) { if(this.hooks[e]) this.hooks[e].forEach(cb=>cb(d)); }
+        };
 
-        function goToMenu() {
-            window.location.href = "../index.html";
-        }
-
-        function exitGame() {
-            if (document.fullscreenElement) {
-                document.exitFullscreen();
-            }
-            window.close(); 
-            window.location.href = "https://google.com";
-        }
-
-        // --- CONSOLE COMMANDS ---
-        window.cmd = (c) => {
-            const command = c.toLowerCase().trim();
-            if (command === 'load menu') goToMenu();
-            if (command === 'load game') goBackToGame();
-            if (command === 'clear') {
+        const Storage = {
+            save: () => localStorage.setItem('touchYellow_save1', 'true'),
+            clear: () => { 
                 localStorage.clear();
-                alert("All Data Cleared");
-                goToMenu();
+                Logger.log("All Data Cleared", "system"); 
+                alert("Data Cleared! Returning to Menu.");
+                Engine.goToMainMenu();
             }
+        };
+
+        // --- LEVEL DATA FOR WORLD 2 ---
+        const LevelData = {
+            // Placeholder Level 6
+            6: (draw) => {
+                const THICK = 14; 
+                // Simple Path to prove engine works
+                draw.path(10, 50, 80, THICK);
+                // Goal at the right
+                draw.goal(80, 50, 7.875, THICK, 7); // Next would be 7
+            },
+            7: (draw) => {
+                // Placeholder Level 7
+                const THICK = 14; 
+                draw.path(10, 20, 10, 60);
+                draw.path(10, 80, 80, THICK);
+                draw.goal(80, 20, 7.875, THICK, 6); // Loop back for now
+            }
+        };
+
+        const Engine = {
+            container: document.getElementById('game-container'),
+            layers: { gfx: document.getElementById('gfx-layer'), phy: document.getElementById('phy-layer'), ui: document.getElementById('ui-layer') },
+            ui: { 
+                menu: document.getElementById('menu-screen'), 
+                debugInfo: document.getElementById('debug-info'),
+                noclipInfo: document.getElementById('noclip-indicator'),
+                continueBtn: document.getElementById('btn-continue'),
+                catchMeter: document.getElementById('catch-meter'), 
+                catchFill: document.getElementById('catch-fill')
+            },
+            state: { active: false, dragging: false, holdMode: false, debug: false, noclip: false, mouseX: 0, mouseY: 0, hoverGoalTime: 0, currentLevel: 6 },
+            hitboxes: [],
+
+            init: function() {
+                // 1. Save Progress Immediately
+                Storage.save();
+
+                // 2. Load Settings from Index
+                const savedHold = localStorage.getItem('touchYellow_holdMode') === 'true';
+                const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+                this.state.holdMode = isMobile ? true : savedHold;
+
+                // 3. Bind Inputs
+                this.ui.continueBtn.onmousedown = () => this.startLevel(6);
+                this.ui.continueBtn.ontouchstart = () => this.startLevel(6);
+
+                window.addEventListener('mousemove', e => { 
+                    this.state.mouseX = e.clientX; this.state.mouseY = e.clientY; 
+                    if(this.state.debug) this.updateDebugInfo();
+                });
+                window.addEventListener('touchmove', e => { if (this.state.active) { e.preventDefault(); this.state.mouseX = e.touches[0].clientX; this.state.mouseY = e.touches[0].clientY; } }, {passive: false});
+                window.addEventListener('mouseup', e => this.handleRelease(e));
+                window.addEventListener('touchend', e => this.handleRelease(e));
+                window.addEventListener('mousedown', e => { if(e.button === 2 && this.state.active) this.die("Panic Click"); });
+
+                requestAnimationFrame(this.gameLoop.bind(this));
+                Logger.log("World 2 Engine Ready");
+            },
+
+            // Navigation
+            goToMainMenu: function() { window.location.href = "../index.html"; },
+
+            builder: {
+                path: (x, y, w, h) => Engine.registerCollider(x, y, w, h, 'path'),
+                goal: (x, y, w, h, next, holdTime = 0) => Engine.registerCollider(x, y, w, h, 'goal', { next, holdTime }),
+                obstacle: (x, y, w, h, anim) => {
+                    const c = Engine.registerCollider(x, y, w, h, 'obs');
+                    c.gfx.style.animation = anim; c.hitbox.style.animation = anim; 
+                },
+                trigger: (x, y, w, h, cb) => {
+                    const c = Engine.registerCollider(x, y, w, h, 'trig');
+                    c.onTouch = () => cb(c.gfx, c.hitbox);
+                }
+            },
+
+            registerCollider: function(x, y, w, h, type, data={}) {
+                const gfx = document.createElement('div'); 
+                gfx.className = type === 'path' ? 'visual-path' : `visual-` + type;
+                gfx.style.left = x + '%'; gfx.style.top = y + '%'; gfx.style.width = w + '%'; gfx.style.height = h + '%';
+                this.layers.gfx.appendChild(gfx);
+
+                const phy = document.createElement('div'); 
+                phy.className = `debug-box type-` + type + ' ' + (type === 'obs' ? 'obstacle-box' : type === 'goal' ? 'goal-box' : type === 'path' ? 'path-box' : 'trigger-box');
+                phy.style.left = x + '%'; phy.style.top = y + '%'; phy.style.width = w + '%'; phy.style.height = h + '%';
+                if(!this.state.debug) phy.style.display = 'none';
+                this.layers.phy.appendChild(phy);
+
+                const collider = { x, y, w, h, type, gfx, hitbox: phy, ...data };
+                this.state.hitboxes.push(collider);
+                return collider;
+            },
+
+            startLevel: function(lvl) {
+                Logger.log(`Starting World 2 - Level ${lvl}`);
+                if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(e=>{});
+                
+                this.layers.gfx.innerHTML = ''; this.layers.phy.innerHTML = '';
+                this.state.hitboxes = [];
+                this.ui.menu.style.display = 'none'; this.state.dragging = true;
+                this.state.hoverGoalTime = 0; this.state.currentLevel = lvl;
+                this.ui.catchMeter.style.display = 'none'; this.ui.catchFill.style.width = '0%';
+                
+                // Build Level
+                if (LevelData[lvl]) LevelData[lvl](this.builder);
+                
+                this.state.active = true;
+                PluginManager.trigger('startLevel', lvl);
+            },
+
+            gameLoop: function() { if (this.state.active) this.checkCollision(); requestAnimationFrame(this.gameLoop.bind(this)); },
+
+            checkCollision: function() {
+                if (this.state.holdMode && !this.state.dragging) return;
+                
+                const rect = this.container.getBoundingClientRect();
+                const mx = ((this.state.mouseX - rect.left) / rect.width) * 100;
+                const my = ((this.state.mouseY - rect.top) / rect.height) * 100;
+
+                let touchingSafe = false;
+                let touchedGoal = false;
+                let activeGoal = null;
+
+                if (mx < 0 || mx > 100 || my < 0 || my > 100) { this.die("Out of Bounds"); return; }
+
+                for (let c of this.state.hitboxes) {
+                    const boxRect = c.hitbox.getBoundingClientRect();
+                    const boxX = ((boxRect.left - rect.left) / rect.width) * 100;
+                    const boxY = ((boxRect.top - rect.top) / rect.height) * 100;
+                    const boxW = (boxRect.width / rect.width) * 100;
+                    const boxH = (boxRect.height / rect.height) * 100;
+
+                    if (mx >= boxX && mx <= boxX + boxW && my >= boxY && my <= boxY + boxH) {
+                        if (c.type === 'path') touchingSafe = true;
+                        if (c.type === 'goal') { touchingSafe = true; touchedGoal = true; activeGoal = c; }
+                        if (c.type === 'trig') { touchingSafe = true; if(c.onTouch) c.onTouch(); }
+                        if (c.type === 'obs') { this.die("Obstacle"); return; }
+                    }
+                }
+
+                this.container.style.cursor = touchingSafe ? 'crosshair' : 'default';
+
+                if (touchedGoal && activeGoal) {
+                    if (activeGoal.holdTime === 0) {
+                        this.win(activeGoal.next);
+                    } else {
+                        this.state.hoverGoalTime += 16.6;
+                        this.ui.catchMeter.style.display = 'block';
+                        this.ui.catchMeter.style.left = this.state.mouseX + 'px';
+                        this.ui.catchMeter.style.top = (this.state.mouseY - 20) + 'px';
+                        const pct = Math.min(100, (this.state.hoverGoalTime / activeGoal.holdTime) * 100);
+                        this.ui.catchFill.style.width = pct + '%';
+                        if (this.state.hoverGoalTime >= activeGoal.holdTime) {
+                             setTimeout(() => { if(this.state.active) this.win(activeGoal.next); }, 50);
+                        }
+                    }
+                    return;
+                } else {
+                    this.state.hoverGoalTime = 0;
+                    this.ui.catchMeter.style.display = 'none';
+                }
+
+                if (!touchingSafe) { this.die("Void"); }
+            },
+
+            updateDebugInfo: function() {
+                const target = document.elementFromPoint(this.state.mouseX, this.state.mouseY);
+                this.ui.debugInfo.innerText = "TOUCHING: " + (target ? target.className : "NULL");
+            },
+
+            win: function(next) {
+                this.state.active = false;
+                Logger.log("Goal Captured!", "success");
+                if (next === "menu") { alert("End of Demo!"); this.reset(); } 
+                else { this.startLevel(parseInt(next)); }
+            },
+
+            handleRelease: function(e) { if (e.button === 2) return; if (this.state.active && this.state.holdMode) this.die("Released Button"); },
+
+            die: function(reason) {
+                if (this.state.noclip) return;
+                Logger.log(`Died: ${reason}`, "death");
+                this.state.active = false; PluginManager.trigger('death', reason);
+                // In Save1, dying resets to Level 6 (Checkpoint)
+                if (this.state.currentLevel >= 6) { this.startLevel(6); } else { this.reset(); }
+            },
+
+            reset: function() {
+                Logger.log("Resetting to Save Menu");
+                this.state.active = false; this.state.dragging = false;
+                this.ui.menu.style.display = 'block';
+                this.layers.gfx.innerHTML = ''; this.layers.phy.innerHTML = '';
+                this.ui.catchMeter.style.display = 'none';
+                this.state.hitboxes = [];
+            },
+            
+            exit: function() { 
+                if (document.fullscreenElement) document.exitFullscreen(); 
+                window.close();
+                window.location.href = "https://google.com";
+            },
+
+            toggleNoclip: function() {
+                this.state.noclip = !this.state.noclip;
+                this.ui.noclipInfo.style.display = this.state.noclip ? 'block' : 'none';
+                Logger.log(`Noclip: ${this.state.noclip}`);
+            },
+            
+            toggleDebug: function() { 
+                this.state.debug = !this.state.debug; 
+                this.container.classList.toggle('debug'); 
+                this.ui.debugInfo.style.display = this.state.debug ? 'block' : 'none';
+                const debugBoxes = document.querySelectorAll('.debug-box');
+                debugBoxes.forEach(b => b.style.display = this.state.debug ? 'block' : 'none');
+                Logger.log(`Hitbox Mode: ${this.state.debug}`);
+            }
+        };
+
+        Engine.init();
+        window.cmd = (c) => {
+            if (c === 'hitbox') Engine.toggleDebug();
+            if (c === 'noclip') Engine.toggleNoclip();
+            if (c === 'load menu') Engine.reset();
+            if (c === 'clear') Storage.clear();
+            if (c.startsWith('load level')) { const num = parseInt(c.split('level')[1]); if (!isNaN(num)) Engine.startLevel(num); }
         };
     </script>
 </body>
