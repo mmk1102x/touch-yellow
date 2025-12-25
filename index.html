@@ -18,87 +18,66 @@
             transition: background-color 0.3s;
         }
 
+        /* LAYERS */
         .layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+        
         #gfx-layer { z-index: 10; }
-        #phy-layer { z-index: 20; pointer-events: auto; }
+        
+        /* FIX: Layer itself is transparent to mouse, children are auto */
+        #phy-layer { z-index: 20; pointer-events: none; }
+        
         #ui-layer { z-index: 30; pointer-events: none; }
 
+        /* VISUALS */
         .visual-path { position: absolute; background-color: #26a9e1; box-shadow: 0 0 0 1px #26a9e1; }
         .visual-goal { position: absolute; background-color: #f1a92a; box-shadow: 0 0 0 1px #f1a92a; }
         .visual-obs { position: absolute; background-color: #000000; } 
         .visual-trig { position: absolute; background-color: transparent; }
 
-        .hitbox { position: absolute; opacity: 0; cursor: crosshair; }
+        /* PHYSICS - HITBOXES */
+        /* FIX: pointer-events MUST be auto here to be detected */
+        .hitbox { 
+            position: absolute; opacity: 0; cursor: crosshair; 
+            pointer-events: auto !important; 
+        }
         
-        /* --- DEBUG STYLES --- */
+        /* DEBUG STYLES */
         #game-container.debug { background-color: #330000; } 
         .debug .path-box { border: none; background: transparent; }
         .debug .goal-box { opacity: 0.8; border: 3px solid #00ff00; background: rgba(0, 255, 0, 0.3); z-index: 100; }
         .debug .obstacle-box { opacity: 0.8; border: 3px solid #ff0000; background: rgba(255, 0, 0, 0.5); z-index: 100; }
         .debug .trigger-box { opacity: 0.8; border: 3px solid #b0f; background: rgba(150, 0, 255, 0.4); z-index: 100; }
         .debug .circle-btn { border: 3px solid #b0f !important; background-color: rgba(150, 0, 255, 0.4) !important; }
-        .debug .switch { outline: 3px solid #b0f; background-color: rgba(150, 0, 255, 0.4) !important; }
+        .debug .slider { outline: 3px solid #b0f; background-color: rgba(150, 0, 255, 0.4) !important; }
 
-        #debug-info { position: absolute; top: 10px; left: 10px; color: lime; font-family: monospace; font-size: 14px; background: rgba(0,0,0,0.8); padding: 5px; z-index: 9999; display: none; pointer-events: none; }
+        /* TARGET MONITOR (New) */
+        #target-monitor {
+            position: absolute; top: 10px; left: 10px;
+            color: #00ff00; font-family: monospace; font-weight: bold; font-size: 14px;
+            background: rgba(0,0,0,0.8); padding: 5px 10px; border-radius: 4px;
+            z-index: 9999; display: none;
+        }
 
         /* UI Elements */
         .menu-content { pointer-events: auto; text-align: center; width: 100%; height: 100%; position: relative; background-color: #4d4d4d; }
         .title { position: absolute; width: 100%; top: 10%; font-family: 'Luckiest Guy', cursive; color: #f2ef45; font-size: 10cqi; line-height: 0.9; text-transform: uppercase; text-shadow: 0.4cqi 0.4cqi 0 #000; }
-        
         .menu-btn-wrapper { position: absolute; display: flex; align-items: center; pointer-events: auto; }
         #btn-start-wrap { left: 5%; bottom: 25%; height: 12%; }
         #btn-exit-wrap { left: 5%; bottom: 8%; height: 12%; }
         #btn-save-wrap { left: auto; right: 6%; top: 6%; bottom: auto; height: 12%; }
         #btn-save-wrap .label { margin-left: 0; margin-right: 20px; font-size: 3.5cqi; }
 
+        /* Save Menu Buttons */
+        #save1-wrap { left: 20%; bottom: 50%; height: 12%; }
+        #save2-wrap { left: 55%; bottom: 50%; height: 12%; }
+        #save-back-wrap { left: 5%; bottom: 10%; height: 12%; }
+
         .circle-btn { height: 100%; aspect-ratio: 1/1; background-color: #f2a922; border-radius: 50%; border: 0.5cqi solid #333; cursor: pointer; transition: transform 0.1s; }
         .circle-btn:hover { transform: scale(1.1); filter: brightness(1.1); }
         .label { font-size: 4cqi; font-weight: 900; color: #000; margin-left: 2cqi; white-space: nowrap; }
+        .unlocked { background-color: #00ff00; }
+        .locked { background-color: #555; border-color: #333; filter: grayscale(100%); cursor: not-allowed; }
 
-        /* SAVE POPUP (NEW STYLE) */
-        .popup-overlay {
-            display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background-color: rgba(0, 0, 0, 0.7); /* Dimmed background */
-            z-index: 100; justify-content: center; align-items: center;
-            pointer-events: auto;
-        }
-        
-        .popup-window {
-            width: 50%; height: 60%; 
-            background-color: #333; 
-            border: 0.5cqi solid #f2ef45; border-radius: 2cqi;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            position: relative;
-            box-shadow: 0 0 50px rgba(0,0,0,0.8);
-        }
-
-        .popup-title {
-            font-family: 'Luckiest Guy', cursive; color: #f2ef45; font-size: 6cqi; 
-            margin-bottom: 4cqi; text-shadow: 0.2cqi 0.2cqi 0 #000;
-        }
-
-        .save-slot {
-            display: flex; align-items: center; justify-content: flex-start;
-            width: 70%; height: 15%; margin: 1.5cqi 0;
-            background: #222; border-radius: 1cqi; padding: 1cqi;
-            cursor: pointer; transition: 0.1s; border: 2px solid #000;
-        }
-        .save-slot:hover { transform: scale(1.02); }
-        .save-slot .slot-icon { width: 10%; aspect-ratio: 1/1; border-radius: 50%; margin-right: 5%; border: 2px solid #000; }
-        .save-slot .slot-name { font-size: 3cqi; color: white; font-weight: bold; }
-        
-        .unlocked .slot-icon { background-color: #00ff00; }
-        .locked { opacity: 0.5; cursor: not-allowed; }
-        .locked .slot-icon { background-color: #ff0000; }
-
-        .close-btn {
-            margin-top: 4cqi; padding: 1cqi 3cqi; background: #f2a922; color: black;
-            font-weight: bold; font-size: 3cqi; border: 3px solid #333; cursor: pointer;
-            border-radius: 1cqi;
-        }
-        .close-btn:hover { transform: scale(1.1); }
-
-        /* TOGGLE SWITCH */
         #toggle-wrap { position: absolute; right: 8%; bottom: 15%; display: flex; flex-direction: column; align-items: center; pointer-events: auto; width: 25cqi; }
         .switch-label { font-family: 'Luckiest Guy', cursive; color: #f2ef45; font-size: 3cqi; margin-bottom: 1cqi; text-shadow: 0.1cqi 0.1cqi 0 #000; width: 100%; text-align: center; }
         .switch { position: relative; display: inline-block; width: 8cqi; height: 4cqi; }
@@ -125,28 +104,24 @@
     <div id="game-container">
         <div id="gfx-layer" class="layer"></div>
         <div id="phy-layer" class="layer"></div>
+        
         <div id="ui-layer" class="layer">
-            <div id="debug-info">DEBUG: OFF</div>
+            <div id="target-monitor">Initializing...</div>
             
-            <!-- MAIN MENU -->
             <div id="menu-screen" class="menu-content">
                 <h1 class="title">Touch Yellow</h1>
-                
                 <div id="btn-start-wrap" class="menu-btn-wrapper">
                     <div id="start-btn" class="circle-btn"></div>
                     <div class="label"><- Start/Restart</div>
                 </div>
-
                 <div id="btn-save-wrap" class="menu-btn-wrapper">
                     <div class="label">Saves -></div>
                     <div id="save-btn-menu" class="circle-btn" onclick="Engine.openSavesMenu()"></div>
                 </div>
-
                 <div id="btn-exit-wrap" class="menu-btn-wrapper">
                     <div class="circle-btn" onclick="Engine.exit()"></div>
                     <div class="label" style="font-size: 6cqi;"><-Exit</div>
                 </div>
-
                 <div id="toggle-wrap">
                     <div class="switch-label" id="mode-text">Hover Mode</div>
                     <label class="switch">
@@ -157,21 +132,19 @@
             </div>
 
             <!-- SAVES POPUP -->
-            <div id="saves-popup" class="popup-overlay">
-                <div class="popup-window">
-                    <div class="popup-title">SELECT SAVE</div>
-                    
-                    <div id="save-slot-1" class="save-slot" onclick="Engine.loadSaveFile(1)">
-                        <div class="slot-icon"></div>
-                        <div class="slot-name">Save 1</div>
-                    </div>
-
-                    <div id="save-slot-2" class="save-slot" onclick="Engine.loadSaveFile(2)">
-                        <div class="slot-icon"></div>
-                        <div class="slot-name">Save 2</div>
-                    </div>
-
-                    <div class="close-btn" onclick="Engine.closeSavesMenu()">Close</div>
+            <div id="saves-screen" class="menu-content" style="display:none;">
+                <h1 class="title">Select Save</h1>
+                <div id="save1-wrap" class="menu-btn-wrapper">
+                    <div id="btn-save1" class="circle-btn" onclick="Engine.loadSaveFile(1)"></div>
+                    <div class="label"><- Save 1</div>
+                </div>
+                <div id="save2-wrap" class="menu-btn-wrapper">
+                    <div id="btn-save2" class="circle-btn" onclick="Engine.loadSaveFile(2)"></div>
+                    <div class="label"><- Save 2</div>
+                </div>
+                <div id="save-back-wrap" class="menu-btn-wrapper">
+                    <div class="circle-btn" onclick="Engine.closeSavesMenu()"></div>
+                    <div class="label"><- Back</div>
                 </div>
             </div>
         </div>
@@ -230,32 +203,22 @@
             layers: { gfx: document.getElementById('gfx-layer'), phy: document.getElementById('phy-layer'), ui: document.getElementById('ui-layer') },
             ui: { 
                 menu: document.getElementById('menu-screen'), 
-                saves: document.getElementById('saves-popup'),
-                slot1: document.getElementById('save-slot-1'),
-                slot2: document.getElementById('save-slot-2'),
-                debugInfo: document.getElementById('debug-info'),
+                saves: document.getElementById('saves-screen'),
+                monitor: document.getElementById('target-monitor'),
                 startBtn: document.getElementById('start-btn'), 
                 modeCheck: document.getElementById('mode-check'), 
                 modeText: document.getElementById('mode-text'), 
                 toggleWrap: document.getElementById('toggle-wrap'), 
                 catchMeter: document.getElementById('catch-meter'), 
-                catchFill: document.getElementById('catch-fill')
+                catchFill: document.getElementById('catch-fill'),
+                btnSave1: document.getElementById('btn-save1'),
+                btnSave2: document.getElementById('btn-save2')
             },
             state: { active: false, dragging: false, holdMode: false, debug: false, mouseX: 0, mouseY: 0, hoverGoalTime: 0, currentLevel: 0 },
 
             init: function() {
-                const savedHold = localStorage.getItem('touchYellow_holdMode') === 'true';
-                this.state.holdMode = savedHold;
-                
                 const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-                if (isMobile) {
-                    this.state.holdMode = true; 
-                    this.ui.toggleWrap.style.display = 'none'; 
-                } else {
-                    this.ui.modeCheck.checked = savedHold;
-                    this.ui.modeText.innerText = savedHold ? "Hold Mode" : "Hover Mode";
-                    this.ui.modeText.style.color = savedHold ? "#f2a922" : "#f2ef45";
-                }
+                if (isMobile) { this.state.holdMode = true; this.ui.toggleWrap.style.display = 'none'; }
                 
                 const urlParams = new URLSearchParams(window.location.search);
                 const loadCheckpoint = urlParams.get('loadCheckpoint');
@@ -266,7 +229,7 @@
                 
                 window.addEventListener('mousemove', e => { 
                     this.state.mouseX = e.clientX; this.state.mouseY = e.clientY; 
-                    if(this.state.debug) this.updateDebugInfo();
+                    if(this.state.debug) this.updateMonitor();
                 });
                 window.addEventListener('touchmove', e => { if (this.state.active) { e.preventDefault(); this.state.mouseX = e.touches[0].clientX; this.state.mouseY = e.touches[0].clientY; } }, {passive: false});
                 window.addEventListener('mouseup', e => this.handleRelease(e));
@@ -276,29 +239,29 @@
             },
 
             toggleMode: function() {
-                if (this.state.isMobile) return;
                 this.state.holdMode = this.ui.modeCheck.checked;
                 this.ui.modeText.innerText = this.state.holdMode ? "Hold Mode" : "Hover Mode";
                 this.ui.modeText.style.color = this.state.holdMode ? "#f2a922" : "#f2ef45";
-                localStorage.setItem('touchYellow_holdMode', this.state.holdMode);
                 Logger.log(`Mode Switched: ${this.state.holdMode ? "HOLD" : "HOVER"}`, "system");
             },
 
             openSavesMenu: function() {
-                this.ui.saves.style.display = 'flex';
-                this.updateSaveSlot(1, this.ui.slot1);
-                this.updateSaveSlot(2, this.ui.slot2);
+                this.ui.menu.style.display = 'none';
+                this.ui.saves.style.display = 'block';
+                this.updateSaveBtn(1, this.ui.btnSave1);
+                this.updateSaveBtn(2, this.ui.btnSave2);
             },
 
             closeSavesMenu: function() {
                 this.ui.saves.style.display = 'none';
+                this.ui.menu.style.display = 'block';
             },
 
-            updateSaveSlot: function(slot, el) {
+            updateSaveBtn: function(slot, btn) {
                 if (Storage.hasSave(slot)) {
-                    el.classList.add('unlocked'); el.classList.remove('locked');
+                    btn.classList.add('unlocked'); btn.classList.remove('locked');
                 } else {
-                    el.classList.add('locked'); el.classList.remove('unlocked');
+                    btn.classList.add('locked'); btn.classList.remove('unlocked');
                 }
             },
 
@@ -387,15 +350,14 @@
 
                 const isSafe = target && (target.classList.contains('path-box') || target.classList.contains('goal-box') || target.classList.contains('trigger-box'));
                 if (!isSafe) {
-                    let reason = "Void";
-                    if(target && target.classList.contains('obstacle-box')) reason = "Obstacle Hit";
+                    let reason = target ? target.className : "Void";
                     this.die(reason);
                 }
             },
 
-            updateDebugInfo: function() {
+            updateMonitor: function() {
                 const target = document.elementFromPoint(this.state.mouseX, this.state.mouseY);
-                this.ui.debugInfo.innerText = "TOUCHING: " + (target ? target.className : "NULL");
+                this.ui.monitor.innerText = "TOUCHING: " + (target ? target.className : "NULL");
             },
 
             win: function(next) {
@@ -413,8 +375,6 @@
 
             die: function(reason) {
                 Logger.log(`Died: ${reason}`, "death");
-                if (reason === "Panic Click") { this.reset(); return; } // Right click = Menu
-                
                 this.state.active = false; PluginManager.trigger('death', reason);
                 if (this.state.currentLevel >= 5) { window.location.href = "save/save1.html"; } else { this.reset(); }
             },
@@ -428,13 +388,18 @@
                 this.ui.catchMeter.style.display = 'none';
             },
             exit: function() { if (document.fullscreenElement) document.exitFullscreen(); this.reset(); },
-            toggleDebug: function() { this.state.debug = !this.state.debug; this.container.classList.toggle('debug'); Logger.log(`Hitbox Mode: ${this.state.debug}`); }
+            toggleDebug: function() { 
+                this.state.debug = !this.state.debug; 
+                this.container.classList.toggle('debug'); 
+                this.ui.monitor.style.display = this.state.debug ? 'block' : 'none';
+            }
         };
 
         Engine.init();
         window.cmd = (c) => {
             if (c === 'hitbox') Engine.toggleDebug();
             if (c === 'load menu') Engine.reset();
+            if (c === 'load save') Engine.openSavesMenu();
             if (c === 'load save1') Engine.loadSaveFile(1);
             if (c === 'load save2') Engine.loadSaveFile(2);
             if (c === 'clear') Storage.clear();
