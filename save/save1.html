@@ -4,7 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Touch Yellow - Save 1</title>
-    <!-- Same Font -->
+    
+    <!-- FIX: HARDCODED ICON (Data URI) -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%23f2a922' stroke='%23333' stroke-width='10'/></svg>">
+    
     <link href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Roboto:wght@700&display=swap" rel="stylesheet">
     <style>
         body {
@@ -52,7 +55,6 @@
             color: black;
         }
         
-        /* Specific sizing to match your screenshot */
         .large-circle { width: 80px; height: 80px; }
         .large-label { font-size: 60px; }
 
@@ -62,13 +64,13 @@
 
     <div class="title">Got Save!</div>
 
-    <!-- Continue Button (Goes back to Game at Level 5/6) -->
+    <!-- Continue Button -->
     <div class="menu-btn-wrapper" onclick="goBackToGame()">
         <div class="circle-btn"></div>
         <div class="label"><-Continue</div>
     </div>
 
-    <!-- Menu Button (Goes back to Main Menu) -->
+    <!-- Menu Button -->
     <div class="menu-btn-wrapper" onclick="goToMenu()">
         <div class="circle-btn large-circle"></div>
         <div class="label"><-Menu</div>
@@ -81,14 +83,14 @@
     </div>
 
     <script>
-        // ON LOAD: Save to Cookies / LocalStorage
+        // ON LOAD: Save to LocalStorage so 'Saves' button in menu unlocks
         window.onload = function() {
             localStorage.setItem('touchYellow_save1', 'true');
             console.log("Game Saved: Save 1 Unlocked");
         };
 
         function goBackToGame() {
-            // Returns to index.html with a special flag to start at the checkpoint
+            // Load index.html and tell it to jump to Level 5 immediately
             window.location.href = "../index.html?loadCheckpoint=5";
         }
 
@@ -100,8 +102,8 @@
             if (document.fullscreenElement) {
                 document.exitFullscreen();
             }
-            window.close(); // Tries to close tab
-            // Fallback if script can't close tab:
+            window.close(); 
+            // Fallback
             window.location.href = "https://google.com";
         }
     </script>
