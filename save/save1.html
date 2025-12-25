@@ -4,15 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Touch Yellow - Save 1</title>
-    
-    <!-- FIX: HARDCODED ICON (Data URI) -->
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%23f2a922' stroke='%23333' stroke-width='10'/></svg>">
-    
     <link href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Roboto:wght@700&display=swap" rel="stylesheet">
     <style>
         body {
             margin: 0; padding: 0; width: 100%; height: 100vh;
-            background-color: #00b0f0; /* The Blue Save Background */
+            background-color: #00b0f0; 
             overflow: hidden;
             font-family: 'Roboto', sans-serif;
             display: flex;
@@ -57,40 +54,35 @@
         
         .large-circle { width: 80px; height: 80px; }
         .large-label { font-size: 60px; }
-
     </style>
 </head>
 <body>
 
     <div class="title">Got Save!</div>
 
-    <!-- Continue Button -->
     <div class="menu-btn-wrapper" onclick="goBackToGame()">
         <div class="circle-btn"></div>
         <div class="label"><-Continue</div>
     </div>
 
-    <!-- Menu Button -->
     <div class="menu-btn-wrapper" onclick="goToMenu()">
         <div class="circle-btn large-circle"></div>
         <div class="label"><-Menu</div>
     </div>
 
-    <!-- Exit Button -->
     <div class="menu-btn-wrapper" onclick="exitGame()">
         <div class="circle-btn large-circle"></div>
         <div class="label large-label"><-Exit</div>
     </div>
 
     <script>
-        // ON LOAD: Save to LocalStorage so 'Saves' button in menu unlocks
+        // ON LOAD: Save progress
         window.onload = function() {
             localStorage.setItem('touchYellow_save1', 'true');
-            console.log("Game Saved: Save 1 Unlocked");
+            console.log("[Save] Progress Saved: Save 1");
         };
 
         function goBackToGame() {
-            // Load index.html and tell it to jump to Level 5 immediately
             window.location.href = "../index.html?loadCheckpoint=5";
         }
 
@@ -103,9 +95,20 @@
                 document.exitFullscreen();
             }
             window.close(); 
-            // Fallback
             window.location.href = "https://google.com";
         }
+
+        // --- CONSOLE COMMANDS ---
+        window.cmd = (c) => {
+            const command = c.toLowerCase().trim();
+            if (command === 'load menu') goToMenu();
+            if (command === 'load game') goBackToGame();
+            if (command === 'clear') {
+                localStorage.clear();
+                alert("All Data Cleared");
+                goToMenu();
+            }
+        };
     </script>
 </body>
 </html>
