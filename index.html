@@ -24,14 +24,12 @@
         #phy-layer { z-index: 20; }
         #ui-layer { z-index: 30; pointer-events: none; }
 
-        /* VISUALS */
         .visual-path { position: absolute; background-color: #26a9e1; box-shadow: 0 0 0 1px #26a9e1; }
         .visual-goal { position: absolute; background-color: #f1a92a; box-shadow: 0 0 0 1px #f1a92a; }
         .visual-obs { position: absolute; background-color: #000000; } 
         .visual-trig { position: absolute; background-color: transparent; }
 
-        /* HITBOXES (The logic) */
-        .hitbox { position: absolute; opacity: 0; }
+        .hitbox { position: absolute; opacity: 0; cursor: crosshair; }
         
         /* DEBUG STYLES */
         #game-container.debug { background-color: #330000; cursor: none; } 
@@ -39,8 +37,10 @@
         .debug .goal-box { opacity: 0.8; border: 3px solid #00ff00; background: rgba(0, 255, 0, 0.3); z-index: 100; }
         .debug .obstacle-box { opacity: 0.8; border: 3px solid #ff0000; background: rgba(255, 0, 0, 0.5); z-index: 100; }
         .debug .trigger-box { opacity: 0.8; border: 3px solid #b0f; background: rgba(150, 0, 255, 0.4); z-index: 100; }
+        
+        /* Menu Debug */
         .debug .circle-btn { border: 3px solid #b0f !important; background-color: rgba(150, 0, 255, 0.4) !important; }
-        .debug .slider { outline: 3px solid #b0f; background-color: rgba(150, 0, 255, 0.4) !important; }
+        .debug .switch { outline: 3px solid #b0f; background-color: rgba(150, 0, 255, 0.4) !important; }
 
         /* DEBUG OVERLAY */
         #debug-info { position: absolute; top: 10px; left: 10px; color: lime; font-family: monospace; font-size: 14px; background: rgba(0,0,0,0.8); padding: 5px; z-index: 9999; display: none; pointer-events: none; }
@@ -54,12 +54,13 @@
         /* UI Elements */
         .menu-content { pointer-events: auto; text-align: center; width: 100%; height: 100%; position: relative; background-color: #4d4d4d; }
         .title { position: absolute; width: 100%; top: 10%; font-family: 'Luckiest Guy', cursive; color: #f2ef45; font-size: 10cqi; line-height: 0.9; text-transform: uppercase; text-shadow: 0.4cqi 0.4cqi 0 #000; }
+        
         .menu-btn-wrapper { position: absolute; display: flex; align-items: center; pointer-events: auto; }
         #btn-start-wrap { left: 5%; bottom: 25%; height: 12%; }
         #btn-exit-wrap { left: 5%; bottom: 8%; height: 12%; }
         #btn-save-wrap { left: auto; right: 6%; top: 6%; bottom: auto; height: 12%; }
         #btn-save-wrap .label { margin-left: 0; margin-right: 20px; font-size: 3.5cqi; }
-        
+
         #save1-wrap { left: 20%; bottom: 50%; height: 12%; }
         #save2-wrap { left: 55%; bottom: 50%; height: 12%; }
         #save-back-wrap { left: 5%; bottom: 10%; height: 12%; }
@@ -67,6 +68,7 @@
         .circle-btn { height: 100%; aspect-ratio: 1/1; background-color: #f2a922; border-radius: 50%; border: 0.5cqi solid #333; cursor: pointer; transition: transform 0.1s; }
         .circle-btn:hover { transform: scale(1.1); filter: brightness(1.1); }
         .label { font-size: 4cqi; font-weight: 900; color: #000; margin-left: 2cqi; white-space: nowrap; }
+        
         .unlocked { background-color: #00ff00; }
         .locked { background-color: #555; border-color: #333; filter: grayscale(100%); cursor: not-allowed; }
 
@@ -74,8 +76,13 @@
         .switch-label { font-family: 'Luckiest Guy', cursive; color: #f2ef45; font-size: 3cqi; margin-bottom: 1cqi; text-shadow: 0.1cqi 0.1cqi 0 #000; width: 100%; text-align: center; }
         .switch { position: relative; display: inline-block; width: 8cqi; height: 4cqi; }
         .switch input { opacity: 0; width: 100%; height: 100%; position: absolute; z-index: 2; cursor: pointer; }
+        
         .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #333; border-radius: 4cqi; border: 0.3cqi solid #000; transition: .4s; }
-        .slider:before { position: absolute; content: ""; height: 3.2cqi; width: 3.2cqi; left: 0.4cqi; top: 50%; transform: translateY(-50%); background-color: white; border-radius: 50%; transition: .4s; }
+        .slider:before { 
+            position: absolute; content: ""; height: 3.2cqi; width: 3.2cqi; 
+            left: 0.4cqi; top: 50%; transform: translateY(-50%); 
+            background-color: white; border-radius: 50%; transition: .4s; 
+        }
         input:checked + .slider { background-color: #f2a922; }
         input:checked + .slider:before { transform: translate(4cqi, -50%); }
 
@@ -92,8 +99,6 @@
 <body oncontextmenu="return false;">
 
     <div id="catch-meter"><div id="catch-fill"></div></div>
-    
-    <!-- DEBUG CROSSHAIR -->
     <div id="debug-cross-x" class="debug-line"></div>
     <div id="debug-cross-y" class="debug-line"></div>
 
@@ -106,18 +111,22 @@
             
             <div id="menu-screen" class="menu-content">
                 <h1 class="title">Touch Yellow</h1>
+                
                 <div id="btn-start-wrap" class="menu-btn-wrapper">
                     <div id="start-btn" class="circle-btn"></div>
                     <div class="label"><- Start/Restart</div>
                 </div>
+
                 <div id="btn-save-wrap" class="menu-btn-wrapper">
                     <div class="label">Saves -></div>
                     <div id="save-btn-menu" class="circle-btn" onclick="Engine.openSavesMenu()"></div>
                 </div>
+
                 <div id="btn-exit-wrap" class="menu-btn-wrapper">
                     <div class="circle-btn" onclick="Engine.exit()"></div>
                     <div class="label" style="font-size: 6cqi;"><-Exit</div>
                 </div>
+
                 <div id="toggle-wrap">
                     <div class="switch-label" id="mode-text">Hover Mode</div>
                     <label class="switch">
@@ -167,6 +176,14 @@
                 Logger.log("All Saves & Settings Cleared", "system"); 
                 alert("Reset Complete!");
                 Engine.closeSavesMenu();
+                // Visual reset
+                Engine.state.noclip = false;
+                Engine.state.debug = false;
+                Engine.ui.noclipInfo.style.display = 'none';
+                Engine.container.classList.remove('debug');
+                Engine.ui.crossX.style.display = 'none';
+                Engine.ui.crossY.style.display = 'none';
+                Engine.ui.debugInfo.style.display = 'none';
             }
         };
 
@@ -210,10 +227,11 @@
                 btnSave1: document.getElementById('btn-save1'),
                 btnSave2: document.getElementById('btn-save2')
             },
-            state: { active: false, dragging: false, holdMode: false, debug: false, noclip: false, mouseX: 0, mouseY: 0, hoverGoalTime: 0, currentLevel: 0 },
-            
-            // Stores references to all hitbox DOM elements
-            hitboxes: [],
+            state: { 
+                active: false, dragging: false, holdMode: false, debug: false, noclip: false, 
+                mouseX: 0, mouseY: 0, hoverGoalTime: 0, currentLevel: 0,
+                hitboxes: [] // MOVED HERE
+            },
 
             init: function() {
                 const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
@@ -246,7 +264,6 @@
                 window.addEventListener('mouseup', e => this.handleRelease(e));
                 window.addEventListener('touchend', e => this.handleRelease(e));
                 window.addEventListener('mousedown', e => { if(e.button === 2 && this.state.active) this.die("Panic Click"); });
-                // Anti-Cheat: Blur (Lose Focus)
                 window.addEventListener('blur', () => { if(this.state.active && !this.state.noclip) this.die("Tab Focus Lost"); });
                 
                 requestAnimationFrame(this.gameLoop.bind(this));
@@ -259,6 +276,7 @@
                 this.ui.modeText.innerText = this.state.holdMode ? "Hold Mode" : "Hover Mode";
                 this.ui.modeText.style.color = this.state.holdMode ? "#f2a922" : "#f2ef45";
                 localStorage.setItem('touchYellow_holdMode', this.state.holdMode);
+                Logger.log(`Mode Switched: ${this.state.holdMode ? "HOLD" : "HOVER"}`, "system");
             },
 
             toggleNoclip: function(forceVal) {
@@ -293,9 +311,9 @@
                 this.layers.gfx.appendChild(gfx);
 
                 const phy = document.createElement('div'); 
-                phy.className = `hitbox debug-box type-` + type + ' ' + (type === 'obs' ? 'obstacle-box' : type === 'goal' ? 'goal-box' : type === 'path' ? 'path-box' : 'trigger-box');
+                phy.className = `debug-box type-` + type + ' ' + (type === 'obs' ? 'obstacle-box' : type === 'goal' ? 'goal-box' : type === 'path' ? 'path-box' : 'trigger-box');
                 phy.style.left = x + '%'; phy.style.top = y + '%'; phy.style.width = w + '%'; phy.style.height = h + '%';
-                if(!this.state.debug) phy.style.display = 'block'; /* Hitbox must be block to calculate rect, opacity handles visibility */
+                if(!this.state.debug) phy.style.display = 'none';
                 this.layers.phy.appendChild(phy);
 
                 const collider = { x, y, w, h, type, gfx, hitbox: phy, ...data };
@@ -321,11 +339,9 @@
 
                 if (LevelData[lvl]) LevelData[lvl](proxy);
                 
-                // INSTANT START - No I-Frames
+                // INSTANT START
                 this.state.active = true;
                 PluginManager.trigger('startLevel', lvl);
-                
-                // Force an immediate collision check
                 this.checkCollision();
             },
 
@@ -337,27 +353,31 @@
             checkCollision: function() {
                 if (this.state.holdMode && !this.state.dragging) return;
                 
-                const mx = this.state.mouseX;
-                const my = this.state.mouseY;
+                const rect = this.container.getBoundingClientRect();
+                const mx = ((this.state.mouseX - rect.left) / rect.width) * 100;
+                const my = ((this.state.mouseY - rect.top) / rect.height) * 100;
 
                 let touchingSafe = false;
                 let touchedGoal = false;
                 let activeGoal = null;
 
-                // GEOMETRY HIT TEST
-                // We use getBoundingClientRect because it accounts for CSS Animations accurately
-                for (const c of this.state.hitboxes) {
-                    const rect = c.hitbox.getBoundingClientRect();
-                    
-                    if (mx >= rect.left && mx <= rect.right && my >= rect.top && my <= rect.bottom) {
+                if (mx < 0 || mx > 100 || my < 0 || my > 100) { this.die("Out of Bounds"); return; }
+
+                for (let c of this.state.hitboxes) {
+                    const boxRect = c.hitbox.getBoundingClientRect();
+                    const boxX = ((boxRect.left - rect.left) / rect.width) * 100;
+                    const boxY = ((boxRect.top - rect.top) / rect.height) * 100;
+                    const boxW = (boxRect.width / rect.width) * 100;
+                    const boxH = (boxRect.height / rect.height) * 100;
+
+                    if (mx >= boxX && mx <= boxX + boxW && my >= boxY && my <= boxY + boxH) {
                         if (c.type === 'path') touchingSafe = true;
-                        if (c.type === 'trig') { touchingSafe = true; if(c.onTouch) c.onTouch(); }
                         if (c.type === 'goal') { touchingSafe = true; touchedGoal = true; activeGoal = c; }
+                        if (c.type === 'trig') { touchingSafe = true; if(c.onTouch) c.onTouch(); }
                         if (c.type === 'obs') { this.die("Obstacle"); return; }
                     }
                 }
 
-                // Update Cursor
                 this.container.style.cursor = touchingSafe ? 'crosshair' : 'default';
 
                 if (touchedGoal && activeGoal) {
@@ -366,8 +386,8 @@
                     } else {
                         this.state.hoverGoalTime += 16.6;
                         this.ui.catchMeter.style.display = 'block';
-                        this.ui.catchMeter.style.left = mx + 'px';
-                        this.ui.catchMeter.style.top = (my - 20) + 'px';
+                        this.ui.catchMeter.style.left = this.state.mouseX + 'px';
+                        this.ui.catchMeter.style.top = (this.state.mouseY - 20) + 'px';
                         const pct = Math.min(100, (this.state.hoverGoalTime / activeGoal.holdTime) * 100);
                         this.ui.catchFill.style.width = pct + '%';
                         if (this.state.hoverGoalTime >= activeGoal.holdTime) {
@@ -380,23 +400,12 @@
                     this.ui.catchMeter.style.display = 'none';
                 }
 
-                if (!touchingSafe) { 
-                    this.die("Void"); 
-                }
+                if (!touchingSafe) { this.die("Void"); }
             },
 
             updateDebugInfo: function() {
-                const mx = this.state.mouseX;
-                const my = this.state.mouseY;
-                let touched = "NULL";
-                
-                for (const c of this.state.hitboxes) {
-                    const rect = c.hitbox.getBoundingClientRect();
-                    if (mx >= rect.left && mx <= rect.right && my >= rect.top && my <= rect.bottom) {
-                        touched = c.type;
-                    }
-                }
-                this.ui.debugInfo.innerText = "TOUCHING: " + touched;
+                const target = document.elementFromPoint(this.state.mouseX, this.state.mouseY);
+                this.ui.debugInfo.innerText = "TOUCHING: " + (target ? target.className : "NULL");
             },
 
             win: function(next) {
@@ -433,8 +442,8 @@
                 this.ui.debugInfo.style.display = this.state.debug ? 'block' : 'none';
                 this.ui.crossX.style.display = this.state.debug ? 'block' : 'none';
                 this.ui.crossY.style.display = this.state.debug ? 'block' : 'none';
-                // Toggle hitbox visual class
-                const boxes = document.querySelectorAll('.debug-box');
+                const debugBoxes = document.querySelectorAll('.debug-box');
+                debugBoxes.forEach(b => b.style.display = this.state.debug ? 'block' : 'none');
                 Logger.log(`Hitbox Mode: ${this.state.debug}`);
             }
         };
