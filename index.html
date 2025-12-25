@@ -49,6 +49,14 @@
             z-index: 9999; display: none; pointer-events: none;
         }
 
+        /* NOCLIP INDICATOR */
+        #noclip-indicator {
+            position: absolute; bottom: 10px; left: 10px;
+            color: yellow; font-family: monospace; font-weight: bold; font-size: 16px;
+            background: rgba(0,0,0,0.8); padding: 5px 10px; border: 1px solid yellow;
+            display: none; pointer-events: none; z-index: 9999;
+        }
+
         /* UI Elements */
         .menu-content { pointer-events: auto; text-align: center; width: 100%; height: 100%; position: relative; background-color: #4d4d4d; }
         .title { position: absolute; width: 100%; top: 10%; font-family: 'Luckiest Guy', cursive; color: #f2ef45; font-size: 10cqi; line-height: 0.9; text-transform: uppercase; text-shadow: 0.4cqi 0.4cqi 0 #000; }
@@ -108,6 +116,7 @@
         <div id="phy-layer" class="layer"></div>
         <div id="ui-layer" class="layer">
             <div id="debug-info">DEBUG: OFF</div>
+            <div id="noclip-indicator">NOCLIP ON</div>
             
             <div id="menu-screen" class="menu-content">
                 <h1 class="title">Touch Yellow</h1>
@@ -175,6 +184,7 @@
                 localStorage.removeItem('touchYellow_save1'); 
                 localStorage.removeItem('touchYellow_save2');
                 localStorage.removeItem('touchYellow_holdMode');
+                localStorage.removeItem('touchYellow_noclip');
                 Logger.log("All Saves & Settings Cleared", "system"); 
                 alert("Reset Complete!");
                 Engine.closeSavesMenu();
@@ -210,6 +220,7 @@
                 menu: document.getElementById('menu-screen'), 
                 saves: document.getElementById('saves-screen'),
                 debugInfo: document.getElementById('debug-info'),
+                noclipInfo: document.getElementById('noclip-indicator'), // Added missing reference
                 startBtn: document.getElementById('start-btn'), 
                 modeCheck: document.getElementById('mode-check'), 
                 modeText: document.getElementById('mode-text'), 
@@ -219,15 +230,25 @@
                 btnSave1: document.getElementById('btn-save1'),
                 btnSave2: document.getElementById('btn-save2')
             },
-            state: { active: false, dragging: false, holdMode: false, debug: false, mouseX: 0, mouseY: 0, hoverGoalTime: 0, currentLevel: 0 },
-
+            state: { active: false, dragging: false, holdMode: false, debug: false, noclip: false, mouseX: 0, mouseY: 0, hoverGoalTime: 0, currentLevel: 0 },
+            
             init: function() {
                 const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
                 if (isMobile) { this.state.holdMode = true; this.ui.toggleWrap.style.display = 'none'; }
-                
+                else { 
+                    const savedHold = localStorage.getItem('touchYellow_holdMode') === 'true';
+                    const savedNoclip = localStorage.getItem('touchYellow_noclip') === 'true'; // Restore Noclip state
+                    
+                    this.state.holdMode = savedHold;
+                    this.ui.modeCheck.checked = savedHold;
+                    this.ui.modeText.innerText = savedHold ? "Hold Mode" : "Hover Mode";
+                    this.ui.modeText.style.color = savedHold ? "#f2a922" : "#f2ef45";
+
+                    if(savedNoclip) this.toggleNoclip(true);
+                }
+
                 const urlParams = new URLSearchParams(window.location.search);
-                const loadCheckpoint = urlParams.get('loadCheckpoint');
-                if (loadCheckpoint) setTimeout(() => this.startLevel(parseInt(loadCheckpoint)), 500);
+                if (urlParams.get('loadCheckpoint')) setTimeout(() => this.startLevel(parseInt(urlParams.get('loadCheckpoint'))), 500);
 
                 this.ui.startBtn.onmousedown = () => this.startLevel(1);
                 this.ui.startBtn.ontouchstart = () => this.startLevel(1);
@@ -240,6 +261,8 @@
                 window.addEventListener('mouseup', e => this.handleRelease(e));
                 window.addEventListener('touchend', e => this.handleRelease(e));
                 window.addEventListener('mousedown', e => { if(e.button === 2 && this.state.active) this.die("Panic Click"); });
+                
+                requestAnimationFrame(this.gameLoop.bind(this));
                 Logger.log("Engine Initialized");
             },
 
@@ -247,7 +270,15 @@
                 this.state.holdMode = this.ui.modeCheck.checked;
                 this.ui.modeText.innerText = this.state.holdMode ? "Hold Mode" : "Hover Mode";
                 this.ui.modeText.style.color = this.state.holdMode ? "#f2a922" : "#f2ef45";
+                localStorage.setItem('touchYellow_holdMode', this.state.holdMode);
                 Logger.log(`Mode Switched: ${this.state.holdMode ? "HOLD" : "HOVER"}`, "system");
+            },
+
+            toggleNoclip: function(forceVal) {
+                this.state.noclip = (forceVal !== undefined) ? forceVal : !this.state.noclip;
+                this.ui.noclipInfo.style.display = this.state.noclip ? 'block' : 'none';
+                localStorage.setItem('touchYellow_noclip', this.state.noclip);
+                Logger.log(`Noclip: ${this.state.noclip}`);
             },
 
             openSavesMenu: function() { this.ui.menu.style.display = 'none'; this.ui.saves.style.display = 'block'; this.updateSaveBtn(1, this.ui.btnSave1); this.updateSaveBtn(2, this.ui.btnSave2); },
@@ -357,30 +388,38 @@
             handleRelease: function(e) { if (e.button === 2) return; if (this.state.active && this.state.holdMode) this.die("Released Button"); },
 
             die: function(reason) {
+                // Check Noclip BEFORE dying
+                if (this.state.noclip) return;
+
                 Logger.log(`Died: ${reason}`, "death");
                 this.state.active = false; PluginManager.trigger('death', reason);
-                // FIXED: If Level 5, RESTART Level 5. Do NOT redirect to save1.html (which is the victory screen)
-                if (this.state.currentLevel === 5) { 
-                    this.startLevel(5); 
-                } else { 
-                    this.reset(); 
-                }
+                // Level 5 specific logic: RESTART level, don't go to save screen
+                if (this.state.currentLevel === 5) { this.startLevel(5); } 
+                // Any other level logic (or World 2 logic) goes here if needed, but for now just menu
+                else { this.reset(); }
             },
 
             reset: function() {
                 Logger.log("Resetting to Menu");
                 this.state.active = false; this.state.dragging = false;
                 this.ui.menu.style.display = 'block';
+                this.ui.saves.style.display = 'none';
                 this.layers.gfx.innerHTML = ''; this.layers.phy.innerHTML = '';
                 this.ui.catchMeter.style.display = 'none';
             },
             exit: function() { if (document.fullscreenElement) document.exitFullscreen(); this.reset(); },
-            toggleDebug: function() { this.state.debug = !this.state.debug; this.container.classList.toggle('debug'); Logger.log(`Hitbox Mode: ${this.state.debug}`); }
+            toggleDebug: function() { 
+                this.state.debug = !this.state.debug; 
+                this.container.classList.toggle('debug'); 
+                this.ui.debugInfo.style.display = this.state.debug ? 'block' : 'none';
+                Logger.log(`Hitbox Mode: ${this.state.debug}`);
+            }
         };
 
         Engine.init();
         window.cmd = (c) => {
             if (c === 'hitbox') Engine.toggleDebug();
+            if (c === 'noclip') Engine.toggleNoclip();
             if (c === 'load menu') Engine.reset();
             if (c === 'load save') Engine.openSavesMenu();
             if (c === 'load save1') Engine.loadSaveFile(1);
