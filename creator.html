@@ -3,622 +3,397 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Touch Yellow - Ultimate Creator</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%23f2a922' stroke='%23333' stroke-width='10'/></svg>">
+    <title>Touch Yellow - Creator</title>
     <link href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Roboto:wght@700&display=swap" rel="stylesheet">
-    
     <style>
+        /* --- COMPACT CSS --- */
         * { box-sizing: border-box; }
-        body { margin: 0; padding: 0; width: 100vw; height: 100vh; background: #222; font-family: 'Roboto', sans-serif; display: flex; flex-direction: column; overflow: hidden; color: white; user-select: none; }
+        body { margin: 0; width: 100vw; height: 100vh; background: #222; font-family: 'Roboto', sans-serif; display: flex; flex-direction: column; overflow: hidden; color: white; user-select: none; }
         
-        /* TOOLBAR */
-        #toolbar { height: 50px; background: #333; display: flex; align-items: center; padding: 0 15px; border-bottom: 2px solid #444; gap: 15px; }
-        .tool-section { display: flex; gap: 5px; border-right: 1px solid #555; padding-right: 10px; align-items: center; }
-        button { background: #444; border: 1px solid #666; color: white; padding: 6px 10px; cursor: pointer; border-radius: 4px; font-size: 12px; transition: 0.1s; }
-        button:hover { background: #555; }
-        button.active { background: #666; border-color: #888; box-shadow: inset 0 0 5px rgba(0,0,0,0.5); }
-        button.primary { background: #f2a922; color: black; border-color: #b37a15; font-weight: bold; }
-        button.danger { background: #cc3333; border-color: #992222; }
-        input[type="checkbox"] { transform: scale(1.2); margin-right: 5px; cursor: pointer; }
-        label { font-size: 12px; color: #ccc; cursor: pointer; display: flex; align-items: center; }
-
-        /* WORKSPACE */
+        /* UI LAYOUT */
+        #toolbar { height: 50px; background: #333; display: flex; align-items: center; padding: 0 15px; border-bottom: 2px solid #444; gap: 10px; }
         #workspace { flex: 1; display: flex; position: relative; }
-        #sidebar { width: 280px; background: #2a2a2a; border-left: 2px solid #444; padding: 10px; overflow-y: auto; z-index: 200; }
+        #sidebar { width: 260px; background: #2a2a2a; border-left: 2px solid #444; padding: 10px; overflow-y: auto; z-index: 200; }
+        #canvas-wrapper { flex: 1; display: flex; justify-content: center; align-items: center; background-image: radial-gradient(#444 1px, transparent 1px); background-size: 20px 20px; position: relative; overflow: hidden; }
         
-        #canvas-wrapper { flex: 1; display: flex; justify-content: center; align-items: center; background-image: linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px); background-size: 5% 5%; position: relative; overflow: hidden; }
-        
-        #game-container { width: 80%; aspect-ratio: 16/9; position: relative; background: #000000; box-shadow: 0 0 50px rgba(0,0,0,0.8); border: 1px solid #444; }
+        /* GAME CONTAINER */
+        #game-container { width: 80%; aspect-ratio: 16/9; position: relative; background: #000; box-shadow: 0 0 50px #000; border: 1px solid #444; }
+        .play-active #game-container { border-color: lime; }
 
         /* OBJECTS */
         .obj { position: absolute; box-sizing: border-box; transform-origin: center center; }
-        .v-path { background-color: #26a9e1; box-shadow: 0 0 0 1px #26a9e1; }
-        .v-goal { background-color: #f1a92a; box-shadow: 0 0 0 1px #f1a92a; }
-        .v-obs { background-color: #000000; border: 1px dashed #555; }
-        .v-btn { background-color: #33cc33; box-shadow: 0 0 0 1px #33cc33; }
-        .v-trig { background-color: rgba(150, 0, 255, 0.2); border: 2px solid #b0f; }
-        .v-start { background: transparent; border: 2px solid lime; border-radius: 50%; display: flex; justify-content: center; align-items: center; }
-        .v-start::after { content: "S"; color: lime; font-weight: bold; }
+        .v-path { background: #26a9e1; box-shadow: 0 0 0 1px #26a9e1; }
+        .v-goal { background: #f1a92a; box-shadow: 0 0 0 1px #f1a92a; }
+        .v-obs { background: #000; border: 1px dashed #555; }
+        .v-btn { background: #33cc33; box-shadow: 0 0 0 1px #33cc33; }
+        .v-trig { background: rgba(150,0,255,0.2); border: 2px solid #b0f; }
+        .v-start { border: 2px solid lime; border-radius: 50%; display: flex; justify-content: center; align-items: center; color: lime; font-weight: bold; font-size: 10px; }
+        .v-start::after { content: "S"; }
 
         /* GIZMOS */
-        .gizmo-box { position: absolute; pointer-events: none; z-index: 1000; border: 2px solid white; box-shadow: 0 0 5px rgba(0,0,0,0.5); }
+        .gizmo-box { position: absolute; pointer-events: none; z-index: 1000; border: 2px solid white; }
         .handle { position: absolute; width: 10px; height: 10px; background: white; border: 1px solid black; pointer-events: auto; }
-        .h-tl { top: -6px; left: -6px; cursor: nw-resize; }
-        .h-tr { top: -6px; right: -6px; cursor: ne-resize; }
-        .h-bl { bottom: -6px; left: -6px; cursor: sw-resize; }
-        .h-br { bottom: -6px; right: -6px; cursor: se-resize; }
-        .rotate-stem { position: absolute; top: -30px; left: 50%; width: 2px; height: 30px; background: white; transform: translateX(-50%); pointer-events: none; }
-        .rotate-knob { position: absolute; top: -38px; left: 50%; width: 12px; height: 12px; background: #f2a922; border-radius: 50%; border: 2px solid white; transform: translateX(-50%); cursor: grab; pointer-events: auto; }
+        .h-tl { top: -6px; left: -6px; cursor: nw-resize; } .h-tr { top: -6px; right: -6px; cursor: ne-resize; }
+        .h-bl { bottom: -6px; left: -6px; cursor: sw-resize; } .h-br { bottom: -6px; right: -6px; cursor: se-resize; }
+        .rot-stem { position: absolute; top: -20px; left: 50%; width: 1px; height: 20px; background: white; }
+        .rot-knob { position: absolute; top: -28px; left: 50%; width: 10px; height: 10px; background: #f2a922; border-radius: 50%; transform: translateX(-50%); cursor: grab; pointer-events: auto; }
 
         /* PATH EDITOR */
         svg#path-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 900; }
         .path-line { stroke: #f2a922; stroke-width: 2; stroke-dasharray: 5; fill: none; }
-        .path-point { position: absolute; width: 12px; height: 12px; background: #f2a922; border: 2px solid white; border-radius: 50%; transform: translate(-50%, -50%); cursor: move; z-index: 950; pointer-events: auto; }
+        .path-point { position: absolute; width: 10px; height: 10px; background: #f2a922; border: 2px solid white; border-radius: 50%; transform: translate(-50%, -50%); cursor: move; z-index: 950; pointer-events: auto; }
+
+        /* UI COMPONENTS */
+        button { background: #444; border: 1px solid #666; color: white; padding: 5px 8px; cursor: pointer; border-radius: 3px; font-size: 11px; }
+        button:hover { background: #555; }
+        button.primary { background: #f2a922; color: black; border-color: #b37a15; font-weight: bold; }
+        button.danger { background: #c33; border-color: #922; }
+        button.active { background: #666; box-shadow: inset 0 0 5px #000; }
         
-        .prop-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-        .prop-row label { font-size: 12px; color: #aaa; }
-        .prop-row input { width: 60px; background: #111; border: 1px solid #444; color: white; padding: 4px; border-radius: 3px; }
+        .prop-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
+        .prop-row label { font-size: 11px; color: #aaa; }
+        .prop-row input { width: 50px; background: #111; border: 1px solid #444; color: white; padding: 3px; }
+        
+        #play-overlay { position: absolute; top: 10px; left: 10px; pointer-events: none; display: none; color: lime; font-weight: bold; z-index: 9999; text-shadow: 1px 1px 0 #000; }
+        #dynamic-css { display: none; }
         
         /* MODAL */
         #kf-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 2000; display: none; justify-content: center; align-items: center; }
-        .modal-content { background: #333; padding: 20px; border-radius: 8px; width: 500px; border: 2px solid #f2ef45; }
-        .kf-list { max-height: 300px; overflow-y: auto; margin: 10px 0; background: #222; padding: 10px; }
-        .kf-item { display: flex; gap: 10px; margin-bottom: 5px; }
-
-        /* PLAY MODE */
-        .play-active #game-container { border-color: lime; }
-        #play-overlay { position: absolute; top: 10px; left: 10px; pointer-events: none; display: none; color: lime; font-weight: bold; z-index: 9999; text-shadow: 1px 1px 0 black; }
-        
-        #dynamic-css { display: none; }
+        .modal-content { background: #333; padding: 15px; border-radius: 5px; width: 400px; border: 2px solid #f2ef45; }
+        .kf-list { max-height: 300px; overflow-y: auto; margin: 10px 0; background: #222; padding: 5px; }
+        .kf-item { display: flex; gap: 5px; margin-bottom: 5px; }
     </style>
     <style id="dynamic-css"></style>
 </head>
 <body>
 
     <div id="toolbar">
-        <div class="tool-section">
-            <button class="primary" id="btn-play" onclick="Creator.togglePlay()">▶ PLAY</button>
-        </div>
-        <div class="tool-section">
-            <button id="tool-select" class="active" onclick="Creator.setTool('select')">Select (V)</button>
-            <button id="tool-path" onclick="Creator.setTool('path')">Edit Path (P)</button>
-        </div>
-        <div class="tool-section">
-            <label><input type="checkbox" id="chk-snap" checked> Snap</label>
-            <label><input type="checkbox" id="chk-multi"> Multi</label>
-        </div>
-        <div class="tool-section">
-            <button onclick="Creator.create('path')">+ Path</button>
-            <button onclick="Creator.create('obs')">+ Obs</button>
-            <button onclick="Creator.create('goal')">+ Goal</button>
-            <button onclick="Creator.create('btn')">+ Btn</button>
-            <button onclick="Creator.create('trig')">+ Trig</button>
-            <button onclick="Creator.create('start')">+ Start</button>
-        </div>
-        <div class="tool-section" style="margin-left: auto; border:none;">
-            <button onclick="Creator.exportCode()">Code</button>
-            <button onclick="Creator.exportJson()">Save</button>
-            <button onclick="Creator.importJson()">Load</button>
-            <button class="danger" onclick="Creator.clear()">Clear</button>
-        </div>
+        <button class="primary" onclick="Creator.togglePlay()">▶ PLAY</button>
+        <span style="width:1px;height:20px;background:#555;margin:0 5px;"></span>
+        <button id="t-sel" class="active" onclick="Creator.setTool('select')">Select</button>
+        <button id="t-path" onclick="Creator.setTool('path')">Anim Path</button>
+        <label style="margin-left:10px"><input type="checkbox" id="chk-snap" checked> Snap</label>
+        <span style="width:1px;height:20px;background:#555;margin:0 5px;"></span>
+        <button onclick="Creator.add('path')">+Path</button>
+        <button onclick="Creator.add('obs')">+Obs</button>
+        <button onclick="Creator.add('goal')">+Goal</button>
+        <button onclick="Creator.add('btn')">+Btn</button>
+        <button onclick="Creator.add('trig')">+Trig</button>
+        <button onclick="Creator.add('start')">+Start</button>
+        <span style="flex:1"></span>
+        <button onclick="Creator.export()">Export</button>
+        <button onclick="Creator.import()">Import</button>
+        <button class="danger" onclick="Creator.clear()">Clear</button>
     </div>
 
     <div id="workspace">
-        <div id="canvas-wrapper" onmousedown="Creator.onCanvasDown(event)" onmousemove="Creator.onCanvasMove(event)" onmouseup="Creator.onCanvasUp(event)">
+        <div id="canvas-wrapper" onmousedown="Creator.onDown(event)" onmousemove="Creator.onMove(event)" onmouseup="Creator.onUp(event)">
             <div id="game-container">
                 <div id="obj-layer"></div>
                 <div id="engine-layer"></div>
                 <svg id="path-overlay"></svg>
                 <div id="path-points"></div>
                 <div id="gizmo-layer"></div>
-                <div id="play-overlay">Move to Start to begin</div>
+                <div id="play-overlay">Move to Start...</div>
             </div>
         </div>
 
         <div id="sidebar">
-            <h3 style="margin-top:0;">PROPERTIES</h3>
-            <div id="props-panel" style="display:none;">
-                <div style="margin-bottom:10px; color:#f2a922; font-weight:bold;" id="prop-id"></div>
-                <div class="prop-row"><label>X %</label><input type="number" id="inp-x" onchange="Creator.setProp('x', this.value)"></div>
-                <div class="prop-row"><label>Y %</label><input type="number" id="inp-y" onchange="Creator.setProp('y', this.value)"></div>
-                <div class="prop-row"><label>W %</label><input type="number" id="inp-w" onchange="Creator.setProp('w', this.value)"></div>
-                <div class="prop-row"><label>H %</label><input type="number" id="inp-h" onchange="Creator.setProp('h', this.value)"></div>
-                <div class="prop-row"><label>Rot °</label><input type="number" id="inp-r" onchange="Creator.setProp('r', this.value)"></div>
-                <hr style="border-color:#444">
-                <div id="grp-anim" style="display:none;"><label>Anim</label><input type="text" id="inp-anim" style="width:100%" onchange="Creator.setProp('anim', this.value)"><button style="width:100%;margin-top:5px;" onclick="KeyframeEditor.open()">Edit Visual Path</button></div>
-                <div id="grp-goal" style="display:none;">
-                    <div class="prop-row"><label>Next</label><input type="text" id="inp-next" onchange="Creator.setProp('next', this.value)"></div>
-                    <div class="prop-row"><label>Hold</label><input type="number" id="inp-hold" onchange="Creator.setProp('holdTime', this.value)"></div>
+            <h4 style="margin:0 0 10px 0; color:#f2a922">PROPERTIES</h4>
+            <div id="props" style="display:none;">
+                <div class="prop-row"><label>X%</label><input type="number" id="p-x" onchange="Creator.set('x',this.value)"></div>
+                <div class="prop-row"><label>Y%</label><input type="number" id="p-y" onchange="Creator.set('y',this.value)"></div>
+                <div class="prop-row"><label>W%</label><input type="number" id="p-w" onchange="Creator.set('w',this.value)"></div>
+                <div class="prop-row"><label>H%</label><input type="number" id="p-h" onchange="Creator.set('h',this.value)"></div>
+                <div class="prop-row"><label>Rot</label><input type="number" id="p-r" onchange="Creator.set('r',this.value)"></div>
+                
+                <div id="g-anim" style="display:none; border-top:1px solid #444; margin-top:10px; padding-top:10px;">
+                    <label>Animation</label><input type="text" id="p-anim" style="width:100%" onchange="Creator.set('anim',this.value)">
+                    <button style="width:100%;margin-top:5px" onclick="Keyframes.open()">Edit Path</button>
                 </div>
-                <button class="danger" style="width:100%; margin-top:20px;" onclick="Creator.deleteSelection()">DELETE</button>
+                
+                <div id="g-goal" style="display:none; border-top:1px solid #444; margin-top:10px; padding-top:10px;">
+                    <div class="prop-row"><label>Next</label><input type="text" id="p-next" onchange="Creator.set('next',this.value)"></div>
+                    <div class="prop-row"><label>Hold</label><input type="number" id="p-hold" onchange="Creator.set('holdTime',this.value)"></div>
+                </div>
+
+                <button class="danger" style="width:100%; margin-top:20px;" onclick="Creator.del()">DELETE</button>
             </div>
-            <div id="props-empty" style="color:#666; text-align:center; margin-top:50px;">Select Object</div>
         </div>
     </div>
 
-    <!-- KEYFRAME EDITOR -->
-    <div id="kf-modal">
-        <div class="modal-content">
-            <h3>Keyframe Editor</h3>
-            <p style="font-size:12px; color:#aaa;">Steps (0-100%). X/Y are offsets relative to start position.</p>
-            <div id="kf-list" class="kf-list"></div>
-            <button onclick="KeyframeEditor.addStep()">+ Add Step</button>
-            <div style="margin-top:20px; display:flex; justify-content:flex-end; gap:10px;">
-                <button onclick="document.getElementById('kf-modal').style.display='none'">Cancel</button>
-                <button class="primary" onclick="KeyframeEditor.save()">Save</button>
-            </div>
-        </div>
-    </div>
+    <div id="kf-modal"><div class="modal-content"><h3>Animation Path</h3><div id="kf-list" class="kf-list"></div><button onclick="Keyframes.add()">+ Step</button><div style="margin-top:10px;text-align:right"><button onclick="document.getElementById('kf-modal').style.display='none'">Done</button></div></div></div>
 
     <script>
+        // --- HELPER ---
+        const el = (tag, cls, style='') => { const e=document.createElement(tag); e.className=cls; e.style.cssText=style; return e; };
+
         const Creator = {
-            objects: [],
-            selection: [],
-            tool: 'select',
-            isPlaying: false,
-            dragState: null,
-            container: document.getElementById('game-container'),
-            objLayer: document.getElementById('obj-layer'),
-            engLayer: document.getElementById('engine-layer'),
-            gizmoLayer: document.getElementById('gizmo-layer'),
-            pathOverlay: document.getElementById('path-overlay'),
-            pathPoints: document.getElementById('path-points'),
-
-            init: function() {
-                this.create('start', 10, 50, 5, 9);
-                window.addEventListener('keydown', (e) => {
-                    if (e.key === 'Delete') this.deleteSelection();
-                    if (e.key === 'v') this.setTool('select');
-                    if (e.key === 'p') this.setTool('path');
-                });
+            objs: [], sel: [], tool: 'select', playing: false, drag: null,
+            ui: { 
+                cont: document.getElementById('game-container'),
+                objL: document.getElementById('obj-layer'),
+                engL: document.getElementById('engine-layer'),
+                gizL: document.getElementById('gizmo-layer'),
+                pathL: document.getElementById('path-overlay'),
+                ptsL: document.getElementById('path-points'),
+                props: document.getElementById('props')
             },
 
-            create: function(type, x=40, y=40, w=10, h=10) {
-                const id = Date.now() + Math.random().toString(16).slice(2);
-                const obj = { id, type, x, y, w, h, r: 0, anim: '', next: 'menu', holdTime: 0, keyframes: [] };
-                if(type==='path') { obj.w=20; obj.h=14; }
-                this.objects.push(obj);
-                this.renderObjects();
-                this.select([obj.id]);
+            init() {
+                this.add('start', 10, 50, 5, 9);
+                window.onkeydown = e => { if(e.key==='Delete') this.del(); if(e.key==='v') this.setTool('select'); if(e.key==='p') this.setTool('path'); };
             },
 
-            renderObjects: function() {
-                this.objLayer.innerHTML = '';
-                this.objects.forEach(obj => {
-                    const el = document.createElement('div');
-                    el.className = `obj v-${obj.type}`;
-                    el.style.left = obj.x + '%'; el.style.top = obj.y + '%';
-                    el.style.width = obj.w + '%'; el.style.height = obj.h + '%';
-                    el.style.transform = `rotate(${obj.r}deg)`;
-                    el.dataset.id = obj.id;
-                    if(obj.type==='start') { el.style.borderRadius='50%'; el.innerHTML='<div style="width:100%;height:100%;border:2px solid lime;border-radius:50%;display:flex;justify-content:center;align-items:center;color:lime;font-size:10px;">S</div>'; }
-                    this.objLayer.appendChild(el);
+            add(type, x=40, y=40, w=10, h=10) {
+                if(type==='path') { w=20; h=14; }
+                const o = { id: Date.now()+Math.random(), type, x, y, w, h, r:0, anim:'', next:'menu', holdTime:0, kf:[] };
+                this.objs.push(o); this.render(); this.select([o.id]);
+            },
+
+            render() {
+                this.ui.objL.innerHTML = '';
+                this.objs.forEach(o => {
+                    const d = el('div', `obj v-${o.type}`, `left:${o.x}%;top:${o.y}%;width:${o.w}%;height:${o.h}%;transform:rotate(${o.r}deg)`);
+                    d.dataset.id = o.id;
+                    this.ui.objL.appendChild(d);
                 });
                 this.renderGizmos();
             },
 
-            renderGizmos: function() {
-                this.gizmoLayer.innerHTML = '';
-                if (this.tool !== 'select') return;
-                this.selection.forEach(id => {
-                    const obj = this.objects.find(o => o.id === id);
-                    if (!obj) return;
-                    const box = document.createElement('div');
-                    box.className = 'gizmo-box';
-                    box.style.left = obj.x + '%'; box.style.top = obj.y + '%';
-                    box.style.width = obj.w + '%'; box.style.height = obj.h + '%';
-                    box.style.transform = `rotate(${obj.r}deg)`;
-                    
-                    ['tl', 'tr', 'bl', 'br'].forEach(pos => {
-                        const h = document.createElement('div');
-                        h.className = `handle h-${pos}`;
-                        h.onmousedown = (e) => this.startDrag(e, 'scale', obj, pos);
-                        box.appendChild(h);
+            renderGizmos() {
+                this.ui.gizL.innerHTML = '';
+                if(this.tool !== 'select') return;
+                this.sel.forEach(id => {
+                    const o = this.objs.find(x=>x.id===id); if(!o) return;
+                    const b = el('div', 'gizmo-box', `left:${o.x}%;top:${o.y}%;width:${o.w}%;height:${o.h}%;transform:rotate(${o.r}deg)`);
+                    ['tl','tr','bl','br'].forEach(p => {
+                        const h = el('div', `handle h-${p}`);
+                        h.onmousedown = e => this.startDrag(e, 'scale', o, p);
+                        b.appendChild(h);
                     });
-                    
-                    const stem = document.createElement('div'); stem.className = 'rotate-stem';
-                    const knob = document.createElement('div'); knob.className = 'rotate-knob';
-                    knob.onmousedown = (e) => this.startDrag(e, 'rotate', obj);
-                    box.appendChild(stem); box.appendChild(knob);
-                    this.gizmoLayer.appendChild(box);
+                    const k = el('div', 'rot-knob');
+                    k.onmousedown = e => this.startDrag(e, 'rotate', o);
+                    b.appendChild(el('div', 'rot-stem')); b.appendChild(k);
+                    this.ui.gizL.appendChild(b);
                 });
             },
 
-            select: function(ids, add=false) {
-                if(add) ids.forEach(id => { if(!this.selection.includes(id)) this.selection.push(id); });
-                else this.selection = ids;
-                this.renderGizmos();
-                this.updatePropsPanel();
-                if (this.tool === 'path') this.renderPathEditor();
+            select(ids) {
+                this.sel = ids; this.renderGizmos(); this.updateUI();
+                if(this.tool==='path') this.renderPath();
             },
 
-            onCanvasDown: function(e) {
-                if (this.isPlaying) return;
-                const target = e.target.closest('.obj');
-                const rect = this.container.getBoundingClientRect();
-                const mx = (e.clientX - rect.left) / rect.width * 100;
-                const my = (e.clientY - rect.top) / rect.height * 100;
+            onDown(e) {
+                if(this.playing) return;
+                const t = e.target.closest('.obj');
+                const r = this.ui.cont.getBoundingClientRect();
+                const mx = (e.clientX - r.left)/r.width*100, my = (e.clientY - r.top)/r.height*100;
 
-                if (this.tool === 'path' && this.selection.length === 1) {
-                    this.addKeyframe(mx, my);
-                    return;
-                }
+                if(this.tool==='path' && this.sel.length===1) { Keyframes.addPoint(mx, my); return; }
 
-                if (target) {
-                    const id = target.dataset.id;
-                    const isMulti = document.getElementById('chk-multi').checked || e.shiftKey;
-                    if(!this.selection.includes(id) && !isMulti) this.select([id]);
-                    else if(isMulti && !this.selection.includes(id)) this.select([id], true);
-                    this.startDrag(e, 'move', this.objects.find(o => o.id === id));
-                } else if(this.tool === 'select') this.select([]);
+                if(t) {
+                    const id = parseFloat(t.dataset.id);
+                    if(!this.sel.includes(id)) this.select([id]);
+                    this.startDrag(e, 'move', this.objs.find(o=>o.id===id));
+                } else if(this.tool==='select') this.select([]);
             },
 
-            startDrag: function(e, mode, obj, handle) {
+            startDrag(e, mode, o, h) {
                 e.stopPropagation(); e.preventDefault();
-                this.dragState = {
-                    mode, objId: obj.id, handle, startX: e.clientX, startY: e.clientY,
-                    targets: this.selection.map(id => {
-                        const o = this.objects.find(x => x.id === id);
-                        return { id, ox: o.x, oy: o.y, ow: o.w, oh: o.h, or: o.r };
-                    })
-                };
+                this.drag = { mode, id: o.id, h, sx: e.clientX, sy: e.clientY, ox: o.x, oy: o.y, ow: o.w, oh: o.h, or: o.r };
             },
 
-            onCanvasMove: function(e) {
-                if (!this.dragState) return;
-                const rect = this.container.getBoundingClientRect();
-                const dX = (e.clientX - this.dragState.startX) / rect.width * 100;
-                const dY = (e.clientY - this.dragState.startY) / rect.height * 100;
+            onMove(e) {
+                if(!this.drag) return;
+                const r = this.ui.cont.getBoundingClientRect();
+                const dx = (e.clientX - this.drag.sx)/r.width*100, dy = (e.clientY - this.drag.sy)/r.height*100;
+                const o = this.objs.find(x=>x.id===this.drag.id);
                 const snap = document.getElementById('chk-snap').checked;
-
-                this.dragState.targets.forEach(t => {
-                    const obj = this.objects.find(o => o.id === t.id);
-                    if (this.dragState.mode === 'move') {
-                        let nx = t.ox + dX, ny = t.oy + dY;
-                        if (snap) { nx = Math.round(nx); ny = Math.round(ny); }
-                        obj.x = nx; obj.y = ny;
-                    } else if (this.dragState.mode === 'scale') {
-                        // FULL OMNIDIRECTIONAL SCALING
-                        let nw = t.ow, nh = t.oh, nx = t.ox, ny = t.oy;
-                        const h = this.dragState.handle;
-
-                        if (h.includes('r')) nw = Math.max(1, t.ow + dX);
-                        if (h.includes('l')) { nw = Math.max(1, t.ow - dX); nx = t.ox + (t.ow - nw); }
-                        if (h.includes('b')) nh = Math.max(1, t.oh + dY);
-                        if (h.includes('t')) { nh = Math.max(1, t.oh - dY); ny = t.oy + (t.oh - nh); }
-
-                        if (snap) { nw = Math.round(nw); nh = Math.round(nh); nx = Math.round(nx); ny = Math.round(ny); }
-                        obj.w = nw; obj.h = nh; obj.x = nx; obj.y = ny;
-                    } else if (this.dragState.mode === 'rotate') {
-                        let nr = t.or + (dX * 5);
-                        if (snap) nr = Math.round(nr / 15) * 15;
-                        obj.r = nr;
-                    }
-                });
-                this.renderObjects();
-                this.updatePropsPanel();
-            },
-
-            onCanvasUp: function() { this.dragState = null; },
-
-            updatePropsPanel: function() {
-                if (this.selection.length !== 1) { document.getElementById('props-panel').style.display='none'; document.getElementById('props-empty').style.display='block'; return; }
-                const obj = this.objects.find(o => o.id === this.selection[0]);
-                document.getElementById('props-panel').style.display='block';
-                document.getElementById('props-empty').style.display='none';
                 
-                document.getElementById('prop-id').innerText = obj.type.toUpperCase();
-                ['x','y','w','h','r'].forEach(k => document.getElementById('inp-'+k).value = Math.round(obj[k]*10)/10);
-                
-                document.getElementById('grp-anim').style.display = (['obs','goal'].includes(obj.type))?'block':'none';
-                document.getElementById('inp-anim').value = obj.anim;
-                
-                document.getElementById('grp-goal').style.display = (obj.type==='goal')?'block':'none';
-                document.getElementById('inp-next').value = obj.next;
-                document.getElementById('inp-hold').value = obj.holdTime;
-            },
-
-            setProp: function(key, val) {
-                if(this.selection.length!==1) return;
-                const obj = this.objects.find(o=>o.id===this.selection[0]);
-                obj[key] = isNaN(val) ? val : parseFloat(val);
-                this.renderObjects();
-            },
-
-            deleteSelection: function() {
-                this.objects = this.objects.filter(o => !this.selection.includes(o.id));
-                this.selection = [];
-                this.renderObjects();
-                this.updatePropsPanel();
-            },
-
-            setTool: function(t) {
-                this.tool = t;
-                document.querySelectorAll('#toolbar button').forEach(b => b.classList.remove('active'));
-                document.getElementById(t==='select'?'tool-select':'tool-path').classList.add('active');
-                if(t==='path') this.renderPathEditor(); else { this.pathOverlay.innerHTML=''; this.pathPoints.innerHTML=''; }
-            },
-            
-            enterPathMode: function() { this.setTool('path'); },
-
-            addKeyframe: function(mx, my) {
-                const obj = this.objects.find(o => o.id === this.selection[0]);
-                if (!obj) return;
-                const cssX = Math.round((mx - (obj.x + obj.w/2)) / obj.w * 100);
-                const cssY = Math.round((my - (obj.y + obj.h/2)) / obj.h * 100);
-                obj.keyframes.push({ x: cssX, y: cssY });
-                this.renderPathEditor();
-                this.generateAnimationString(obj);
-            },
-
-            renderPathEditor: function() {
-                this.pathOverlay.innerHTML = '';
-                this.pathPoints.innerHTML = '';
-                if (this.selection.length !== 1) return;
-                
-                const obj = this.objects.find(o => o.id === this.selection[0]);
-                if (!obj) return;
-
-                const startX = obj.x + obj.w/2;
-                const startY = obj.y + obj.h/2;
-                this.createPoint(startX, startY, -1, true);
-
-                let points = [];
-                points.push({x: startX, y: startY});
-
-                obj.keyframes.forEach((kf, i) => {
-                    const px = startX + (kf.x / 100 * obj.w);
-                    const py = startY + (kf.y / 100 * obj.h);
-                    this.createPoint(px, py, i);
-                    points.push({x: px, y: py});
-                });
-
-                if (points.length > 1) {
-                    let d = `M ${points[0].x} ${points[0].y}`;
-                    for(let i=1; i<points.length; i++) d += ` L ${points[i].x} ${points[i].y}`;
-                    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-                    path.setAttribute("d", d);
-                    path.setAttribute("class", "path-line");
-                    path.setAttribute("vector-effect", "non-scaling-stroke");
-                    this.pathOverlay.setAttribute("viewBox", "0 0 100 100");
-                    this.pathOverlay.appendChild(path);
-                }
-            },
-
-            createPoint: function(x, y, index, isStart=false) {
-                const el = document.createElement('div');
-                el.className = `path-point ${isStart ? 'start-node' : ''}`;
-                el.style.left = x + '%';
-                el.style.top = y + '%';
-                this.pathPoints.appendChild(el);
-            },
-
-            generateAnimationString: function(obj) {
-                const name = "anim_" + obj.id.substr(0,4);
-                obj.anim = `${name} ${Math.max(1, obj.keyframes.length)}s linear infinite`;
-                this.updatePropsPanel();
-            },
-
-            exportCode: function() {
-                let css = "";
-                let js = `// Level Code\n(draw) => {\n`;
-                
-                this.objects.forEach(o => {
-                    if (o.keyframes && o.keyframes.length > 0) {
-                        const name = "anim_" + o.id.substr(0,4);
-                        css += `@keyframes ${name} { 0% { transform: translate(0,0); } `;
-                        o.keyframes.forEach((kf, i) => {
-                            css += `${Math.round(((i+1)/(o.keyframes.length+1))*100)}% { transform: translate(${kf.x}%, ${kf.y}%); } `;
-                        });
-                        css += `100% { transform: translate(0,0); } }\n`;
-                    }
-
-                    if (o.type === 'path') js += `    draw.path(${o.x}, ${o.y}, ${o.w}, ${o.h});\n`;
-                    if (o.type === 'goal') js += `    draw.goal(${o.x}, ${o.y}, ${o.w}, ${o.h}, "${o.next}", ${o.holdTime});\n`;
-                    if (o.type === 'obs')  js += `    draw.obstacle(${o.x}, ${o.y}, ${o.w}, ${o.h}, "${o.anim}");\n`;
-                    if (o.type === 'btn')  js += `    draw.button(${o.x}, ${o.y}, ${o.w}, ${o.h}, (b)=>{});\n`;
-                });
-                
-                js += `}`;
-                
-                console.log(css);
-                console.log(js);
-                alert("Code logged to console. Copy CSS and JS.");
-            },
-            
-            exportJson: function() {
-                const data = JSON.stringify(this.objects);
-                const hash = btoa(data);
-                prompt("Copy this Level Hash:", hash);
-            },
-
-            importJson: function() {
-                const hash = prompt("Paste Level Hash:");
-                if (hash) {
-                    try {
-                        this.objects = JSON.parse(atob(hash));
-                        this.renderObjects();
-                        this.select([]);
-                    } catch(e) { alert("Invalid Hash"); }
-                }
-            },
-            
-            clear: function() { if(confirm("Clear All?")) { this.objects=[]; this.renderObjects(); this.select([]); } },
-
-            togglePlay: function() {
-                this.isPlaying = !this.isPlaying;
-                document.body.classList.toggle('play-active', this.isPlaying);
-                document.getElementById('play-overlay').style.display = this.isPlaying ? 'block' : 'none';
-                
-                if (this.isPlaying) {
-                    this.objLayer.style.display = 'none';
-                    this.gizmoLayer.style.display = 'none';
-                    PlayEngine.start(this.objects);
+                if(this.drag.mode==='move') {
+                    o.x = this.drag.ox + dx; o.y = this.drag.oy + dy;
+                    if(snap) { o.x=Math.round(o.x); o.y=Math.round(o.y); }
+                } else if(this.drag.mode==='scale') {
+                    let nw=this.drag.ow, nh=this.drag.oh, nx=this.drag.ox, ny=this.drag.oy;
+                    if(this.drag.h.includes('r')) nw += dx;
+                    if(this.drag.h.includes('l')) { nw -= dx; nx += dx; }
+                    if(this.drag.h.includes('b')) nh += dy;
+                    if(this.drag.h.includes('t')) { nh -= dy; ny += dy; }
+                    if(snap) { nw=Math.round(nw); nh=Math.round(nh); nx=Math.round(nx); ny=Math.round(ny); }
+                    o.w=Math.max(1,nw); o.h=Math.max(1,nh); o.x=nx; o.y=ny;
                 } else {
-                    this.objLayer.style.display = 'block';
-                    this.gizmoLayer.style.display = 'block';
-                    PlayEngine.stop();
+                    o.r = this.drag.or + (dx*5);
+                    if(snap) o.r = Math.round(o.r/15)*15;
                 }
+                this.render(); this.updateUI();
+            },
+
+            onUp() { this.drag = null; },
+
+            updateUI() {
+                if(this.sel.length!==1) { this.ui.props.style.display='none'; return; }
+                const o = this.objs.find(x=>x.id===this.sel[0]);
+                this.ui.props.style.display='block';
+                ['x','y','w','h','r'].forEach(k => document.getElementById('p-'+k).value = Math.round(o[k]*10)/10);
+                document.getElementById('p-anim').value = o.anim;
+                document.getElementById('p-next').value = o.next;
+                document.getElementById('p-hold').value = o.holdTime;
+                document.getElementById('g-anim').style.display = ['obs','goal'].includes(o.type)?'block':'none';
+                document.getElementById('g-goal').style.display = o.type==='goal'?'block':'none';
+            },
+
+            set(k, v) {
+                const o = this.objs.find(x=>x.id===this.sel[0]);
+                if(o) { o[k] = isNaN(v)?v:parseFloat(v); this.render(); }
+            },
+
+            del() { this.objs = this.objs.filter(o=>!this.sel.includes(o.id)); this.select([]); this.render(); },
+
+            setTool(t) {
+                this.tool = t;
+                document.getElementById('t-sel').className = t==='select'?'active':'';
+                document.getElementById('t-path').className = t==='path'?'active':'';
+                if(t==='path') this.renderPath(); else { this.ui.pathL.innerHTML=''; this.ui.ptsL.innerHTML=''; }
+            },
+
+            renderPath() {
+                this.ui.pathL.innerHTML=''; this.ui.ptsL.innerHTML='';
+                const o = this.objs.find(x=>x.id===this.sel[0]);
+                if(!o) return;
+                const cx = o.x+o.w/2, cy = o.y+o.h/2;
+                let d = `M ${cx} ${cy}`;
+                o.kf.forEach(k => {
+                    const px = cx + (k.x/100*o.w), py = cy + (k.y/100*o.h);
+                    d += ` L ${px} ${py}`;
+                    this.ui.ptsL.appendChild(el('div', 'path-point', `left:${px}%;top:${py}%`));
+                });
+                const p = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                p.setAttribute("d", d); p.setAttribute("class", "path-line");
+                this.ui.pathL.setAttribute("viewBox", "0 0 100 100");
+                this.ui.pathL.appendChild(p);
+            },
+
+            exportCode() {
+                let css='', js='(draw) => {\n';
+                this.objs.forEach(o => {
+                    if(o.kf.length) {
+                        const n = "a"+Math.floor(o.id).toString(36);
+                        css += `@keyframes ${n} { 0% { transform:translate(0,0); } `;
+                        o.kf.forEach((k,i) => css += `${Math.round((i+1)/(o.kf.length+1)*100)}% { transform:translate(${k.x}%,${k.y}%); } `);
+                        css += `100% { transform:translate(0,0); } }\n`;
+                        o.anim = `${n} 2s linear infinite`;
+                    }
+                    if(o.type==='path') js += `  draw.path(${o.x},${o.y},${o.w},${o.h});\n`;
+                    if(o.type==='goal') js += `  draw.goal(${o.x},${o.y},${o.w},${o.h},"${o.next}",${o.holdTime});\n`;
+                    if(o.type==='obs') js += `  draw.obstacle(${o.x},${o.y},${o.w},${o.h},"${o.anim}");\n`;
+                });
+                console.log(css); console.log(js+'}'); alert("Code in Console");
+            },
+            exportJson() { prompt("Copy:", btoa(JSON.stringify(this.objs))); },
+            importJson() { try { this.objs=JSON.parse(atob(prompt("Paste:"))); this.render(); } catch(e){} },
+            clear() { if(confirm("Clear?")) { this.objs=[]; this.render(); } },
+
+            togglePlay() {
+                this.playing = !this.playing;
+                document.body.classList.toggle('play-active', this.playing);
+                document.getElementById('play-overlay').style.display = this.playing ? 'block' : 'none';
+                this.ui.objL.style.display = this.playing ? 'none' : 'block';
+                this.ui.gizL.style.display = this.playing ? 'none' : 'block';
+                if(this.playing) Play.start(this.objs); else Play.stop();
             }
         };
 
-        const KeyframeEditor = {
-            open: function() {
-                const obj = Editor.objects.find(o => o.id === Editor.selection[0]);
-                if(!obj) return;
-                document.getElementById('kf-modal').style.display = 'flex';
-                this.renderList();
+        const Keyframes = {
+            addPoint(mx, my) {
+                const o = Creator.objs.find(x=>x.id===Creator.sel[0]);
+                o.kf.push({ x: Math.round((mx-(o.x+o.w/2))/o.w*100), y: Math.round((my-(o.y+o.h/2))/o.h*100) });
+                Creator.renderPath(); Creator.updateUI();
             },
-            addStep: function() {
-                const obj = Editor.objects.find(o => o.id === Editor.selection[0]);
-                obj.keyframes.push({ x:0, y:0 });
-                this.renderList();
-                Editor.renderPathEditor();
-            },
-            renderList: function() {
-                const obj = Editor.objects.find(o => o.id === Editor.selection[0]);
-                const c = document.getElementById('kf-list');
-                c.innerHTML = '';
-                obj.keyframes.forEach((s, i) => {
-                    c.innerHTML += `
-                        <div class="kf-item">
-                            <input type="number" value="${s.x}" onchange="KeyframeEditor.update(${i}, 'x', this.value)">
-                            <input type="number" value="${s.y}" onchange="KeyframeEditor.update(${i}, 'y', this.value)">
-                            <button class="danger" onclick="KeyframeEditor.remove(${i})">X</button>
-                        </div>`;
+            open() { document.getElementById('kf-modal').style.display='flex'; this.render(); },
+            render() {
+                const o = Creator.objs.find(x=>x.id===Creator.sel[0]);
+                const c = document.getElementById('kf-list'); c.innerHTML='';
+                o.kf.forEach((k,i) => {
+                    c.innerHTML += `<div class="kf-item"><input type="number" value="${k.x}" onchange="Keyframes.set(${i},'x',this.value)"><input type="number" value="${k.y}" onchange="Keyframes.set(${i},'y',this.value)"><button class="danger" onclick="Keyframes.del(${i})">X</button></div>`;
                 });
             },
-            update: function(i, k, v) {
-                const obj = Editor.objects.find(o => o.id === Editor.selection[0]);
-                obj.keyframes[i][k] = parseFloat(v);
-                Editor.renderPathEditor();
-            },
-            remove: function(i) {
-                const obj = Editor.objects.find(o => o.id === Editor.selection[0]);
-                obj.keyframes.splice(i, 1);
-                this.renderList();
-                Editor.renderPathEditor();
-            },
-            save: function() {
-                const obj = Editor.objects.find(o => o.id === Editor.selection[0]);
-                Editor.generateAnimationString(obj);
-                document.getElementById('kf-modal').style.display = 'none';
+            set(i,k,v) { Creator.objs.find(x=>x.id===Creator.sel[0]).kf[i][k]=parseFloat(v); Creator.renderPath(); },
+            del(i) { Creator.objs.find(x=>x.id===Creator.sel[0]).kf.splice(i,1); this.render(); Creator.renderPath(); },
+            add() { Creator.objs.find(x=>x.id===Creator.sel[0]).kf.push({x:0,y:0}); this.render(); Creator.renderPath(); },
+            save() { 
+                const o = Creator.objs.find(x=>x.id===Creator.sel[0]);
+                const n = "a"+Math.floor(o.id).toString(36);
+                o.anim = `${n} 2s linear infinite`;
+                Creator.updateUI();
+                document.getElementById('kf-modal').style.display='none';
             }
         };
 
-        // --- PLAYTEST ENGINE (Integrated) ---
-        const PlayEngine = {
-            active: false, activeState: 'waiting', mouseX: 0, mouseY: 0,
-            
-            start: function(objects) {
-                this.active = true;
-                this.activeState = 'waiting';
-                const layer = document.getElementById('engine-layer');
-                layer.innerHTML = '';
+        const Play = {
+            active: false, state: 'wait', mx:0, my:0,
+            start(objs) {
+                this.active = true; this.state = 'wait';
+                const l = document.getElementById('engine-layer'); l.innerHTML='';
                 document.getElementById('play-overlay').innerText = "Move to Start...";
-
+                
                 // Inject CSS
                 let css = "";
-                objects.forEach(o => {
-                    if (o.keyframes && o.keyframes.length > 0) {
-                        const name = o.anim.split(' ')[0];
-                        css += `@keyframes ${name} { 0% { transform: translate(0,0); } `;
-                        o.keyframes.forEach((kf, i) => {
-                            css += `${Math.round(((i+1)/(o.keyframes.length+1))*100)}% { transform: translate(${kf.x}%, ${kf.y}%); } `;
-                        });
-                        css += `100% { transform: translate(0,0); } }\n`;
+                objs.forEach(o => {
+                    if(o.kf.length) {
+                        const n = o.anim.split(' ')[0];
+                        css += `@keyframes ${n} { 0% { transform:translate(0,0); } `;
+                        o.kf.forEach((k,i) => css += `${Math.round((i+1)/(o.kf.length+1)*100)}% { transform:translate(${k.x}%,${k.y}%); } `);
+                        css += `100% { transform:translate(0,0); } }\n`;
                     }
                 });
                 document.getElementById('dynamic-css').innerHTML = css;
 
-                // Create Game Objects
-                objects.forEach(o => {
-                    const el = document.createElement('div');
-                    const map = { 'path':'v-path', 'goal':'v-goal', 'obs':'v-obs', 'btn':'v-btn', 'start':'v-start', 'trig':'v-trig' };
-                    el.className = `obj ${map[o.type]}`;
-                    el.style.left = o.x + '%'; el.style.top = o.y + '%';
-                    el.style.width = o.w + '%'; el.style.height = o.h + '%';
-                    el.style.transform = `rotate(${o.r}deg)`;
-                    if(o.anim) el.style.animation = o.anim;
-                    layer.appendChild(el);
-                    o.el = el;
+                // Render Play Objects
+                objs.forEach(o => {
+                    const e = el('div', `obj v-${o.type}`, `left:${o.x}%;top:${o.y}%;width:${o.w}%;height:${o.h}%;transform:rotate(${o.r}deg)`);
+                    if(o.anim) e.style.animation = o.anim;
+                    l.appendChild(e);
+                    o.el = e; // Cache for collision
                 });
-                
                 requestAnimationFrame(this.loop.bind(this));
             },
-
-            stop: function() {
-                this.active = false;
-                document.getElementById('engine-layer').innerHTML = '';
-            },
-
-            loop: function() {
+            stop() { this.active = false; document.getElementById('engine-layer').innerHTML=''; },
+            loop() {
                 if(!this.active) return;
+                const r = document.getElementById('game-container').getBoundingClientRect();
+                const mx = (this.mx - r.left)/r.width*100, my = (this.my - r.top)/r.height*100;
                 
-                // Track Mouse %
-                const rect = document.getElementById('game-container').getBoundingClientRect();
-                const mx = ((this.mouseX - rect.left) / rect.width) * 100;
-                const my = ((this.mouseY - rect.top) / rect.height) * 100;
-                
-                // --- PHYSICS LOGIC ---
-                let onPath = false;
-                let onStart = false;
-                let dead = false;
-                let win = false;
+                let safe=false, start=false, dead=false, win=false;
 
-                // Check collisions using geometry
-                const objects = Creator.objects; // Use source data
-                
-                for(let o of objects) {
-                    if (o.type === 'trig' || o.type === 'btn') continue; // Ignored in simple playtest
-                    
-                    const el = o.el;
-                    if(!el) continue;
-                    
-                    const r = el.getBoundingClientRect();
-                    const bx = ((r.left - rect.left) / rect.width) * 100;
-                    const by = ((r.top - rect.top) / rect.height) * 100;
-                    const bw = (r.width / rect.width) * 100;
-                    const bh = (r.height / rect.height) * 100;
+                Creator.objs.forEach(o => {
+                    if(!o.el || ['trig','btn'].includes(o.type)) return;
+                    const b = o.el.getBoundingClientRect();
+                    const bx = (b.left-r.left)/r.width*100, by = (b.top-r.top)/r.height*100;
+                    const bw = b.width/r.width*100, bh = b.height/r.height*100;
 
-                    if (mx >= bx && mx <= bx+bw && my >= by && my <= by+bh) {
-                        if (o.type === 'path') onPath = true;
-                        if (o.type === 'goal') { onPath = true; win = true; }
-                        if (o.type === 'start') { onStart = true; onPath = true; } // Start is safe
-                        if (o.type === 'obs') dead = true;
+                    if(mx>=bx && mx<=bx+bw && my>=by && my<=by+bh) {
+                        if(o.type==='path' || o.type==='goal') safe=true;
+                        if(o.type==='start') { start=true; safe=true; }
+                        if(o.type==='goal') win=true;
+                        if(o.type==='obs') dead=true;
+                    }
+                });
+
+                const ov = document.getElementById('play-overlay');
+                if(this.state==='wait') {
+                    if(start) { this.state='play'; ov.style.display='none'; }
+                } else if(this.state==='play') {
+                    if(win) { alert("Win!"); this.state='wait'; ov.innerText="Win! Resetting..."; ov.style.display='block'; }
+                    else if(dead || !safe) {
+                        this.state='dead'; document.body.style.background='#500';
+                        setTimeout(()=>{ document.body.style.background='#222'; this.state='wait'; ov.innerText="Died. Move to Start"; ov.style.display='block'; }, 200);
                     }
                 }
-
-                if (this.activeState === 'waiting') {
-                    if (onStart) {
-                        this.activeState = 'playing';
-                        document.getElementById('play-overlay').style.display = 'none';
-                    }
-                } else if (this.activeState === 'playing') {
-                    if (win) {
-                        alert("Level Complete!");
-                        this.activeState = 'waiting';
-                        document.getElementById('play-overlay').innerText = "You Win! Move to Start to Retry";
-                        document.getElementById('play-overlay').style.display = 'block';
-                    }
-                    else if (dead || !onPath) {
-                        this.activeState = 'dead';
-                        document.body.style.backgroundColor = '#500';
-                        setTimeout(() => { 
-                            document.body.style.backgroundColor = '#222'; 
-                            this.activeState = 'waiting'; 
-                            document.getElementById('play-overlay').innerText = "Died. Move to Start";
-                            document.getElementById('play-overlay').style.display = 'block';
-                        }, 200);
-                    }
-                }
-
                 requestAnimationFrame(this.loop.bind(this));
             }
         };
-
-        window.addEventListener('mousemove', e => { PlayEngine.mouseX = e.clientX; PlayEngine.mouseY = e.clientY; });
-
+        window.onmousemove = e => { Play.mx=e.clientX; Play.my=e.clientY; };
         Creator.init();
     </script>
 </body>
