@@ -3,465 +3,602 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Touch Yellow - Creator</title>
+    <title>Touch Yellow - Ultimate Creator</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%23f2a922' stroke='%23333' stroke-width='10'/></svg>">
     <link href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Roboto:wght@700&display=swap" rel="stylesheet">
     
     <style>
         * { box-sizing: border-box; }
-        body { margin: 0; padding: 0; width: 100vw; height: 100vh; background: #222; font-family: 'Roboto', sans-serif; display: flex; flex-direction: column; overflow: hidden; color: white; }
+        body { margin: 0; padding: 0; width: 100vw; height: 100vh; background: #222; font-family: 'Roboto', sans-serif; display: flex; flex-direction: column; overflow: hidden; color: white; user-select: none; }
         
-        /* EDITOR LAYOUT */
-        #toolbar { height: 60px; background: #333; display: flex; align-items: center; padding: 0 20px; border-bottom: 2px solid #444; }
+        /* TOOLBAR */
+        #toolbar { 
+            height: 50px; background: #333; display: flex; align-items: center; padding: 0 15px; 
+            border-bottom: 2px solid #444; gap: 15px; 
+        }
+        
+        .tool-section { display: flex; gap: 5px; border-right: 1px solid #555; padding-right: 10px; align-items: center; }
+        .tool-section:last-child { border-right: none; }
+
+        button { 
+            background: #444; border: 1px solid #666; color: white; padding: 6px 10px; 
+            cursor: pointer; border-radius: 4px; font-size: 12px; transition: 0.1s; 
+        }
+        button:hover { background: #555; }
+        button.active { background: #666; border-color: #888; box-shadow: inset 0 0 5px rgba(0,0,0,0.5); }
+        button.primary { background: #f2a922; color: black; border-color: #b37a15; font-weight: bold; }
+        button.danger { background: #cc3333; border-color: #992222; }
+
+        input[type="checkbox"] { transform: scale(1.2); margin-right: 5px; cursor: pointer; }
+        label { font-size: 12px; color: #ccc; cursor: pointer; display: flex; align-items: center; }
+
+        /* WORKSPACE */
         #workspace { flex: 1; display: flex; position: relative; }
-        #sidebar { width: 300px; background: #2a2a2a; border-left: 2px solid #444; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
+        #sidebar { width: 280px; background: #2a2a2a; border-left: 2px solid #444; padding: 10px; overflow-y: auto; z-index: 200; }
         
-        /* CANVAS AREA */
-        #canvas-wrapper { flex: 1; display: flex; justify-content: center; align-items: center; background-image: radial-gradient(#444 1px, transparent 1px); background-size: 20px 20px; position: relative; }
+        #canvas-wrapper { 
+            flex: 1; display: flex; justify-content: center; align-items: center; 
+            background-image: 
+                linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
+            background-size: 5% 5%; /* Visual Grid */
+            position: relative; overflow: hidden;
+        }
         
         #game-container {
             width: 80%; aspect-ratio: 16/9; position: relative; background: #000000; 
-            box-shadow: 0 0 30px rgba(0,0,0,0.5); overflow: hidden;
-            border: 2px solid #555;
+            box-shadow: 0 0 50px rgba(0,0,0,0.8);
+            border: 1px solid #444;
         }
 
-        /* EDITOR UI OBJECTS */
-        .obj { position: absolute; cursor: grab; box-sizing: border-box; }
-        .obj:hover { outline: 2px solid white; z-index: 100; }
-        .obj.selected { outline: 3px solid #f2a922; z-index: 101; }
-        
-        /* Visual Styles (Matched to Game) */
+        /* OBJECT STYLES */
+        .obj { position: absolute; box-sizing: border-box; transform-origin: center center; }
         .v-path { background-color: #26a9e1; box-shadow: 0 0 0 1px #26a9e1; }
         .v-goal { background-color: #f1a92a; box-shadow: 0 0 0 1px #f1a92a; }
-        .v-obs { background-color: #000000; border: 1px dashed #555; } /* Dashed border to see black on black */
-        .v-btn { background-color: #33cc33; }
-        .v-trig { background-color: rgba(150, 0, 255, 0.3); border: 2px solid #b0f; }
-
-        /* BUTTONS */
-        button { background: #444; border: 1px solid #666; color: white; padding: 8px 12px; cursor: pointer; border-radius: 4px; font-weight: bold; transition: 0.1s; }
-        button:hover { background: #555; }
-        button.primary { background: #f2a922; color: black; border-color: #b37a15; }
-        button.danger { background: #cc3333; border-color: #992222; }
+        .v-obs { background-color: #000000; border: 1px dashed #555; }
+        .v-btn { background-color: #33cc33; box-shadow: 0 0 0 1px #33cc33; }
+        .v-trig { background-color: rgba(150, 0, 255, 0.2); border: 2px solid #b0f; }
         
-        .tool-group { display: flex; gap: 10px; margin-right: 20px; }
-
-        /* PROPERTY INPUTS */
-        .prop-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-        .prop-row label { font-size: 12px; color: #aaa; }
-        .prop-row input { width: 60px; background: #111; border: 1px solid #444; color: white; padding: 4px; border-radius: 3px; }
-        .prop-row input.long { width: 100%; }
-
-        /* KEYFRAME EDITOR MODAL */
-        #kf-modal {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.8); z-index: 2000;
-            display: none; justify-content: center; align-items: center;
+        /* START POS */
+        .v-start { 
+            background: transparent; border: 2px solid lime; 
+            border-radius: 50%; display: flex; justify-content: center; align-items: center;
         }
-        .modal-content {
-            background: #333; padding: 20px; border-radius: 8px; width: 500px;
-            border: 2px solid #f2ef45;
+        .v-start::after { content: "S"; color: lime; font-weight: bold; }
+
+        /* GIZMO UI (Selection Box) */
+        .gizmo-box {
+            position: absolute; pointer-events: none; z-index: 1000;
+            border: 2px solid white; box-shadow: 0 0 5px rgba(0,0,0,0.5);
         }
-        .kf-list { max-height: 300px; overflow-y: auto; margin: 10px 0; background: #222; padding: 10px; }
-        .kf-item { display: flex; gap: 10px; margin-bottom: 5px; }
+        
+        /* Scale Handles */
+        .handle {
+            position: absolute; width: 10px; height: 10px; background: white; border: 1px solid black;
+            pointer-events: auto; cursor: nwse-resize;
+        }
+        .h-tl { top: -6px; left: -6px; cursor: nw-resize; }
+        .h-tr { top: -6px; right: -6px; cursor: ne-resize; }
+        .h-bl { bottom: -6px; left: -6px; cursor: sw-resize; }
+        .h-br { bottom: -6px; right: -6px; cursor: se-resize; }
 
-        /* PLAY MODE OVERLAY */
-        #play-overlay { position: absolute; top: 10px; left: 10px; pointer-events: none; display: none; }
-        .play-active #game-container { border-color: #0f0; }
+        /* Rotate Handle */
+        .rotate-stem {
+            position: absolute; top: -30px; left: 50%; width: 2px; height: 30px; background: white;
+            transform: translateX(-50%); pointer-events: none;
+        }
+        .rotate-knob {
+            position: absolute; top: -38px; left: 50%; width: 12px; height: 12px; 
+            background: #f2a922; border-radius: 50%; border: 2px solid white;
+            transform: translateX(-50%); cursor: grab; pointer-events: auto;
+        }
 
-        /* IN-GAME ENGINE STYLES (Copied for Preview) */
-        .hitbox { position: absolute; opacity: 0; cursor: crosshair; }
-        #catch-meter { position: fixed; display: none; width: 40px; height: 6px; background: #333; border: 1px solid white; z-index: 9999; }
-        #catch-fill { width: 0%; height: 100%; background: #00ff00; }
+        /* PATH EDITOR VISUALS */
+        svg#path-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 900;
+        }
+        .path-line { stroke: #f2a922; stroke-width: 2; stroke-dasharray: 5; fill: none; }
+        .path-point {
+            position: absolute; width: 12px; height: 12px; background: #f2a922; 
+            border: 2px solid white; border-radius: 50%; transform: translate(-50%, -50%);
+            cursor: move; z-index: 950; pointer-events: auto;
+        }
+        .path-point:hover { transform: translate(-50%, -50%) scale(1.2); }
+        .path-point.start-node { background: lime; }
+
+        /* PLAY MODE */
+        .play-active #game-container { border-color: lime; }
+        #play-curtain {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center;
+            z-index: 2000; color: white; font-size: 24px; font-weight: bold;
+        }
     </style>
-    <style id="dynamic-css"></style>
 </head>
 <body>
 
-    <!-- TOOLBAR -->
     <div id="toolbar">
-        <div class="tool-group">
-            <button class="primary" onclick="Creator.togglePlay()">▶ PLAY / STOP</button>
+        <div class="tool-section">
+            <button class="primary" id="btn-play" onclick="Editor.togglePlay()">▶ PLAY</button>
         </div>
-        <div class="tool-group">
-            <button onclick="Creator.add('path')">+ Path</button>
-            <button onclick="Creator.add('obs')">+ Obstacle</button>
-            <button onclick="Creator.add('goal')">+ Goal</button>
-            <button onclick="Creator.add('btn')">+ Button</button>
-            <button onclick="Creator.add('trig')">+ Trigger</button>
+        
+        <div class="tool-section">
+            <button id="tool-select" class="active" onclick="Editor.setTool('select')">Select (V)</button>
+            <button id="tool-path" onclick="Editor.setTool('path')">Edit Path (P)</button>
         </div>
-        <div class="tool-group" style="margin-left: auto;">
-            <button onclick="Creator.exportCode()">Copy Code</button>
-            <button onclick="Creator.exportJson()">Save JSON</button>
-            <button onclick="Creator.importJson()">Load JSON</button>
-            <button class="danger" onclick="Creator.clear()">Clear All</button>
+
+        <div class="tool-section">
+            <label><input type="checkbox" id="chk-snap" checked> Snap</label>
+            <label><input type="checkbox" id="chk-multi"> Multiselect</label>
+        </div>
+
+        <div class="tool-section">
+            <button onclick="Editor.create('path')">+ Path</button>
+            <button onclick="Editor.create('obs')">+ Obs</button>
+            <button onclick="Editor.create('goal')">+ Goal</button>
+            <button onclick="Editor.create('btn')">+ Btn</button>
+            <button onclick="Editor.create('trig')">+ Trig</button>
+            <button onclick="Editor.create('start')">+ Start</button>
+        </div>
+
+        <div class="tool-section" style="margin-left: auto; border:none;">
+            <button onclick="Editor.exportCode()">Export Code</button>
+            <button class="danger" onclick="Editor.clear()">Clear</button>
         </div>
     </div>
 
     <div id="workspace">
-        <!-- CANVAS -->
-        <div id="canvas-wrapper">
-            <div id="game-container" onmousemove="Creator.onMouseMove(event)" onmouseup="Creator.onMouseUp(event)">
-                <div id="editor-layer"></div>
-                <div id="engine-layer"></div> <!-- Real game runs here -->
+        <div id="canvas-wrapper" onmousedown="Editor.onCanvasDown(event)" onmousemove="Editor.onCanvasMove(event)" onmouseup="Editor.onCanvasUp(event)">
+            
+            <div id="game-container">
+                <!-- Objects Layer -->
+                <div id="obj-layer"></div>
+                
+                <!-- Path Editor SVG Overlay -->
+                <svg id="path-overlay"></svg>
+                <div id="path-points"></div>
+                
+                <!-- Gizmo Layer (Always Top) -->
+                <div id="gizmo-layer"></div>
+
+                <!-- Play Mode Click Curtain -->
+                <div id="play-curtain">Click to Start</div>
             </div>
-            <div id="play-overlay"><h2 style="color:lime; margin:0; text-shadow: 2px 2px 0 #000;">PLAYING</h2></div>
+
         </div>
 
-        <!-- PROPERTIES SIDEBAR -->
         <div id="sidebar">
-            <h3>Properties</h3>
-            <div id="no-selection" style="color:#777; font-style:italic;">Select an object to edit</div>
-            
-            <div id="prop-form" style="display:none;">
-                <div class="prop-row"><label>Type</label><span id="p-type" style="font-weight:bold; color:#f2a922"></span></div>
-                <div class="prop-row"><label>X (%)</label><input type="number" id="p-x" onchange="Creator.updateProp('x', this.value)"></div>
-                <div class="prop-row"><label>Y (%)</label><input type="number" id="p-y" onchange="Creator.updateProp('y', this.value)"></div>
-                <div class="prop-row"><label>W (%)</label><input type="number" id="p-w" onchange="Creator.updateProp('w', this.value)"></div>
-                <div class="prop-row"><label>H (%)</label><input type="number" id="p-h" onchange="Creator.updateProp('h', this.value)"></div>
+            <h3 style="margin-top:0;">PROPERTIES</h3>
+            <div id="props-panel" style="display:none;">
+                <div style="margin-bottom:10px; color:#f2a922; font-weight:bold;" id="prop-id"></div>
                 
-                <hr style="border-color:#444; width:100%;">
+                <label>X %</label> <input type="number" id="inp-x" onchange="Editor.setProp('x', this.value)">
+                <label>Y %</label> <input type="number" id="inp-y" onchange="Editor.setProp('y', this.value)">
+                <label>W %</label> <input type="number" id="inp-w" onchange="Editor.setProp('w', this.value)">
+                <label>H %</label> <input type="number" id="inp-h" onchange="Editor.setProp('h', this.value)">
+                <label>Rot °</label> <input type="number" id="inp-r" onchange="Editor.setProp('r', this.value)">
+
+                <hr style="border-color:#444">
                 
-                <!-- Specific Props -->
-                <div id="grp-anim">
-                    <div class="prop-row"><label>Animation CSS</label></div>
-                    <input type="text" class="long" id="p-anim" placeholder="name 2s linear infinite" onchange="Creator.updateProp('anim', this.value)">
-                    <button style="width:100%; margin-top:5px;" onclick="KeyframeEditor.open()">Edit Keyframes</button>
+                <!-- Animation Props -->
+                <div id="grp-anim" style="display:none;">
+                    <label>Animation CSS</label>
+                    <input type="text" id="inp-anim" style="width:100%" onchange="Editor.setProp('anim', this.value)">
+                    <button style="width:100%; margin-top:5px;" onclick="Editor.enterPathMode()">Edit Visual Path</button>
                 </div>
 
+                <!-- Goal Props -->
                 <div id="grp-goal" style="display:none;">
-                    <div class="prop-row"><label>Next Level ID</label><input type="text" id="p-next" onchange="Creator.updateProp('next', this.value)"></div>
-                    <div class="prop-row"><label>Hold Time (ms)</label><input type="number" id="p-hold" onchange="Creator.updateProp('holdTime', this.value)"></div>
-                </div>
-
-                <div id="grp-logic" style="display:none;">
-                    <div class="prop-row"><label>Target ID</label><input type="text" id="p-target" placeholder="door-1" onchange="Creator.updateProp('targetId', this.value)"></div>
+                    <label>Next Level</label><input type="text" id="inp-next" onchange="Editor.setProp('next', this.value)">
+                    <label>Hold (ms)</label><input type="number" id="inp-hold" onchange="Editor.setProp('holdTime', this.value)">
                 </div>
 
                 <div style="margin-top:20px;">
-                    <button class="danger" style="width:100%" onclick="Creator.deleteSelected()">Delete Object</button>
+                    <button class="danger" style="width:100%" onclick="Editor.deleteSelection()">DELETE</button>
                 </div>
             </div>
-        </div>
-    </div>
-
-    <!-- KEYFRAME EDITOR MODAL -->
-    <div id="kf-modal">
-        <div class="modal-content">
-            <h3>Keyframe Editor</h3>
-            <p style="font-size:12px; color:#aaa;">Define steps (0-100%). X/Y are relative offsets (e.g. 100% X = move right by 1 width).</p>
-            <div id="kf-list" class="kf-list"></div>
-            <button onclick="KeyframeEditor.addStep()">+ Add Step</button>
-            <div style="margin-top:20px; display:flex; justify-content:flex-end; gap:10px;">
-                <button onclick="document.getElementById('kf-modal').style.display='none'">Cancel</button>
-                <button class="primary" onclick="KeyframeEditor.save()">Save Animation</button>
+            <div id="props-empty" style="color:#666; text-align:center; margin-top:50px;">
+                No Object Selected
             </div>
         </div>
     </div>
 
-    <!-- CATCH METER (For Play Mode) -->
-    <div id="catch-meter"><div id="catch-fill"></div></div>
-
     <script>
-        /**
-         * CREATOR ENGINE
-         */
-        const Creator = {
+        const Editor = {
             objects: [],
-            selectedId: null,
+            selection: [],
+            tool: 'select', // select, path
             isPlaying: false,
-            dragging: null,
             
-            // DOM Elements
-            layer: document.getElementById('editor-layer'),
-            engLayer: document.getElementById('engine-layer'),
-            form: document.getElementById('prop-form'),
-            noSel: document.getElementById('no-selection'),
-
+            // Interaction State
+            dragState: null, // { mode: 'move'|'scale'|'rotate', startX, startY, origProps... }
+            
+            // DOM
+            container: document.getElementById('game-container'),
+            objLayer: document.getElementById('obj-layer'),
+            gizmoLayer: document.getElementById('gizmo-layer'),
+            pathOverlay: document.getElementById('path-overlay'),
+            pathPoints: document.getElementById('path-points'),
+            
             init: function() {
-                // Add initial start/goal just to have something
-                this.add('path', 10, 50, 20, 14);
+                // Add default start pos
+                this.create('start', 10, 50, 5, 9); 
+                window.addEventListener('keydown', (e) => {
+                    if (e.key === 'Delete') this.deleteSelection();
+                    if (e.key === 'v') this.setTool('select');
+                    if (e.key === 'p') this.setTool('path');
+                });
             },
 
-            add: function(type, x=40, y=40, w=10, h=10) {
-                const id = Date.now().toString();
-                const obj = { id, type, x, y, w, h, anim: '', next: 'menu', holdTime: 0, targetId: '' };
+            create: function(type, x=40, y=40, w=10, h=10) {
+                const obj = {
+                    id: Date.now() + Math.random().toString(16).slice(2),
+                    type, x, y, w, h, r: 0,
+                    anim: '',
+                    next: 'menu', holdTime: 0,
+                    keyframes: [] // Array of {x,y} offsets for path editor
+                };
+                
+                // Defaults for specific types
+                if (type === 'path') { obj.w=20; obj.h=14; }
+                if (type === 'start') { obj.w=5; obj.h=9; } // Rough button size
+
                 this.objects.push(obj);
-                this.render();
-                this.select(id);
+                this.renderObjects();
+                this.select([obj.id]);
             },
 
-            render: function() {
-                this.layer.innerHTML = '';
+            renderObjects: function() {
+                this.objLayer.innerHTML = '';
                 this.objects.forEach(obj => {
                     const el = document.createElement('div');
-                    el.className = `obj v-${obj.type} ${this.selectedId === obj.id ? 'selected' : ''}`;
+                    el.className = `obj v-${obj.type}`;
                     el.style.left = obj.x + '%';
                     el.style.top = obj.y + '%';
                     el.style.width = obj.w + '%';
                     el.style.height = obj.h + '%';
+                    el.style.transform = `rotate(${obj.r}deg)`;
+                    el.dataset.id = obj.id;
                     
-                    // Mouse Interactions
-                    el.onmousedown = (e) => {
-                        e.stopPropagation();
-                        this.select(obj.id);
-                        this.dragging = { id: obj.id, startX: e.clientX, startY: e.clientY, ox: obj.x, oy: obj.y };
-                    };
+                    if (obj.type === 'start') {
+                        el.style.borderRadius = '50%';
+                        el.innerHTML = '<div style="width:100%;height:100%;border:2px solid lime;border-radius:50%;display:flex;justify-content:center;align-items:center;color:lime;font-size:10px;">S</div>';
+                    }
 
-                    this.layer.appendChild(el);
+                    this.objLayer.appendChild(el);
+                });
+                this.renderGizmos();
+            },
+
+            renderGizmos: function() {
+                this.gizmoLayer.innerHTML = '';
+                if (this.tool !== 'select') return;
+
+                this.selection.forEach(id => {
+                    const obj = this.objects.find(o => o.id === id);
+                    if (!obj) return;
+
+                    // Box
+                    const box = document.createElement('div');
+                    box.className = 'gizmo-box';
+                    box.style.left = obj.x + '%';
+                    box.style.top = obj.y + '%';
+                    box.style.width = obj.w + '%';
+                    box.style.height = obj.h + '%';
+                    box.style.transform = `rotate(${obj.r}deg)`;
+                    
+                    // Handles
+                    const positions = ['tl', 'tr', 'bl', 'br'];
+                    positions.forEach(pos => {
+                        const h = document.createElement('div');
+                        h.className = `handle h-${pos}`;
+                        h.onmousedown = (e) => this.startDrag(e, 'scale', obj, pos);
+                        box.appendChild(h);
+                    });
+
+                    // Rotate Handle
+                    const stem = document.createElement('div'); stem.className = 'rotate-stem';
+                    const knob = document.createElement('div'); knob.className = 'rotate-knob';
+                    knob.onmousedown = (e) => this.startDrag(e, 'rotate', obj);
+                    box.appendChild(stem); box.appendChild(knob);
+
+                    this.gizmoLayer.appendChild(box);
                 });
             },
 
-            select: function(id) {
-                this.selectedId = id;
-                this.render();
-                this.updateForm();
+            select: function(ids, add=false) {
+                if (add) {
+                    ids.forEach(id => {
+                        if (!this.selection.includes(id)) this.selection.push(id);
+                    });
+                } else {
+                    this.selection = ids;
+                }
+                this.renderGizmos();
+                this.updatePropsPanel();
+                // If switching selection, exit path mode
+                if (this.tool === 'path') this.renderPathEditor();
             },
 
-            updateForm: function() {
-                const obj = this.objects.find(o => o.id === this.selectedId);
-                if (!obj) {
-                    this.form.style.display = 'none';
-                    this.noSel.style.display = 'block';
+            // --- INTERACTION ---
+
+            onCanvasDown: function(e) {
+                if (this.isPlaying) return;
+                
+                // Check if clicking an object
+                const target = e.target.closest('.obj');
+                const rect = this.container.getBoundingClientRect();
+                const mx = (e.clientX - rect.left) / rect.width * 100;
+                const my = (e.clientY - rect.top) / rect.height * 100;
+
+                // PATH TOOL LOGIC
+                if (this.tool === 'path' && this.selection.length === 1) {
+                    this.addKeyframe(mx, my);
+                    return;
+                }
+
+                // SELECT TOOL LOGIC
+                if (target) {
+                    const id = target.dataset.id;
+                    const isMulti = document.getElementById('chk-multi').checked || e.shiftKey;
+                    
+                    if (!this.selection.includes(id) && !isMulti) {
+                        this.select([id]);
+                    } else if (isMulti && !this.selection.includes(id)) {
+                        this.select([id], true);
+                    }
+                    
+                    // Start Moving
+                    const obj = this.objects.find(o => o.id === id); // Primary for reference
+                    this.startDrag(e, 'move', obj);
+                } else {
+                    // Clicked empty space
+                    if (this.tool === 'select') this.select([]);
+                }
+            },
+
+            startDrag: function(e, mode, obj, handle) {
+                e.stopPropagation();
+                e.preventDefault();
+                this.dragState = {
+                    mode,
+                    objId: obj.id, // Primary object ID
+                    handle,
+                    startX: e.clientX,
+                    startY: e.clientY,
+                    // Snapshot all selected objects state
+                    targets: this.selection.map(id => {
+                        const o = this.objects.find(x => x.id === id);
+                        return { id, ox: o.x, oy: o.y, ow: o.w, oh: o.h, or: o.r };
+                    })
+                };
+            },
+
+            onCanvasMove: function(e) {
+                if (!this.dragState) return;
+                
+                const rect = this.container.getBoundingClientRect();
+                // Delta in Percentages
+                const dX = (e.clientX - this.dragState.startX) / rect.width * 100;
+                const dY = (e.clientY - this.dragState.startY) / rect.height * 100;
+                
+                const snap = document.getElementById('chk-snap').checked;
+
+                this.dragState.targets.forEach(t => {
+                    const obj = this.objects.find(o => o.id === t.id);
+                    
+                    if (this.dragState.mode === 'move') {
+                        let nx = t.ox + dX;
+                        let ny = t.oy + dY;
+                        if (snap) { nx = Math.round(nx); ny = Math.round(ny); }
+                        obj.x = nx; obj.y = ny;
+                    }
+                    else if (this.dragState.mode === 'scale') {
+                        // Simple scaling (only works well for single selection usually)
+                        // This logic assumes dragging Bottom-Right for simplicity in this demo
+                        // Full implementation needs switch based on 'handle'
+                        if (this.dragState.handle.includes('r')) obj.w = Math.max(1, t.ow + dX);
+                        if (this.dragState.handle.includes('b')) obj.h = Math.max(1, t.oh + dY);
+                        if (snap) { obj.w = Math.round(obj.w); obj.h = Math.round(obj.h); }
+                    }
+                    else if (this.dragState.mode === 'rotate') {
+                        // Approximate rotation logic based on X movement
+                        let nr = t.or + (dX * 5);
+                        if (snap) nr = Math.round(nr / 15) * 15;
+                        obj.r = nr;
+                    }
+                });
+
+                this.renderObjects();
+                this.updatePropsPanel();
+            },
+
+            onCanvasUp: function() {
+                this.dragState = null;
+            },
+
+            // --- PROPERTIES ---
+            updatePropsPanel: function() {
+                if (this.selection.length !== 1) {
+                    document.getElementById('props-panel').style.display = 'none';
+                    document.getElementById('props-empty').style.display = 'block';
                     return;
                 }
                 
-                this.form.style.display = 'block';
-                this.noSel.style.display = 'none';
+                const obj = this.objects.find(o => o.id === this.selection[0]);
+                document.getElementById('props-panel').style.display = 'block';
+                document.getElementById('props-empty').style.display = 'none';
                 
-                document.getElementById('p-type').innerText = obj.type.toUpperCase();
-                document.getElementById('p-x').value = obj.x;
-                document.getElementById('p-y').value = obj.y;
-                document.getElementById('p-w').value = obj.w;
-                document.getElementById('p-h').value = obj.h;
+                document.getElementById('prop-id').innerText = obj.type.toUpperCase();
+                document.getElementById('inp-x').value = Math.round(obj.x * 10) / 10;
+                document.getElementById('inp-y').value = Math.round(obj.y * 10) / 10;
+                document.getElementById('inp-w').value = Math.round(obj.w * 10) / 10;
+                document.getElementById('inp-h').value = Math.round(obj.h * 10) / 10;
+                document.getElementById('inp-r').value = Math.round(obj.r);
                 
-                // Show/Hide specific groups
-                document.getElementById('grp-anim').style.display = (obj.type === 'obs' || obj.type === 'goal') ? 'block' : 'none';
-                document.getElementById('p-anim').value = obj.anim || '';
+                document.getElementById('grp-anim').style.display = (['obs','goal'].includes(obj.type)) ? 'block' : 'none';
+                document.getElementById('inp-anim').value = obj.anim;
                 
                 document.getElementById('grp-goal').style.display = (obj.type === 'goal') ? 'block' : 'none';
-                document.getElementById('p-next').value = obj.next || 'menu';
-                document.getElementById('p-hold').value = obj.holdTime || 0;
-
-                document.getElementById('grp-logic').style.display = (obj.type === 'btn' || obj.type === 'trig') ? 'block' : 'none';
-                document.getElementById('p-target').value = obj.targetId || '';
+                document.getElementById('inp-next').value = obj.next;
+                document.getElementById('inp-hold').value = obj.holdTime;
             },
 
-            updateProp: function(key, val) {
-                const obj = this.objects.find(o => o.id === this.selectedId);
-                if (obj) {
-                    obj[key] = isNaN(val) ? val : parseFloat(val); // Keep strings if needed
-                    this.render();
+            setProp: function(key, val) {
+                if (this.selection.length !== 1) return;
+                const obj = this.objects.find(o => o.id === this.selection[0]);
+                obj[key] = isNaN(val) ? val : parseFloat(val);
+                this.renderObjects();
+            },
+
+            deleteSelection: function() {
+                this.objects = this.objects.filter(o => !this.selection.includes(o.id));
+                this.selection = [];
+                this.renderObjects();
+                this.updatePropsPanel();
+            },
+
+            // --- PATH EDITOR ---
+            setTool: function(t) {
+                this.tool = t;
+                document.querySelectorAll('#toolbar button').forEach(b => b.classList.remove('active'));
+                document.getElementById(t === 'select' ? 'tool-select' : 'tool-path').classList.add('active');
+                
+                if (t === 'path') this.renderPathEditor();
+                else {
+                    this.pathOverlay.innerHTML = '';
+                    this.pathPoints.innerHTML = '';
                 }
-            },
-
-            deleteSelected: function() {
-                if (this.selectedId) {
-                    this.objects = this.objects.filter(o => o.id !== this.selectedId);
-                    this.selectedId = null;
-                    this.render();
-                    this.updateForm();
-                }
-            },
-
-            onMouseMove: function(e) {
-                if (this.dragging) {
-                    const rect = document.getElementById('game-container').getBoundingClientRect();
-                    const dx = ((e.clientX - this.dragging.startX) / rect.width) * 100;
-                    const dy = ((e.clientY - this.dragging.startY) / rect.height) * 100;
-                    
-                    const obj = this.objects.find(o => o.id === this.dragging.id);
-                    if (obj) {
-                        // Snap to 1%
-                        obj.x = Math.round(this.dragging.ox + dx);
-                        obj.y = Math.round(this.dragging.oy + dy);
-                        this.render();
-                        this.updateForm();
-                    }
-                }
-            },
-
-            onMouseUp: function() {
-                this.dragging = null;
             },
             
-            clear: function() {
-                if(confirm("Delete all objects?")) {
-                    this.objects = [];
-                    this.render();
-                    this.updateForm();
+            enterPathMode: function() {
+                this.setTool('path');
+            },
+
+            addKeyframe: function(mx, my) {
+                const obj = this.objects.find(o => o.id === this.selection[0]);
+                if (!obj) return;
+                
+                // Calculate relative offset from object center
+                const relX = mx - (obj.x + obj.w/2);
+                const relY = my - (obj.y + obj.h/2);
+                
+                // Convert to % of object size for CSS transform
+                // CSS translate(100%, 100%) moves it by its own width/height
+                const cssX = Math.round((relX / obj.w) * 100);
+                const cssY = Math.round((relY / obj.h) * 100);
+                
+                obj.keyframes.push({ x: cssX, y: cssY });
+                this.renderPathEditor();
+                this.generateAnimationString(obj);
+            },
+
+            renderPathEditor: function() {
+                this.pathOverlay.innerHTML = '';
+                this.pathPoints.innerHTML = '';
+                if (this.selection.length !== 1) return;
+                
+                const obj = this.objects.find(o => o.id === this.selection[0]);
+                if (!obj) return;
+
+                // Draw Start Point
+                const startX = obj.x + obj.w/2;
+                const startY = obj.y + obj.h/2;
+                this.createPoint(startX, startY, -1, true);
+
+                let points = [];
+                points.push({x: startX, y: startY});
+
+                // Draw Keyframes
+                obj.keyframes.forEach((kf, i) => {
+                    // Convert back to Screen %
+                    const px = startX + (kf.x / 100 * obj.w);
+                    const py = startY + (kf.y / 100 * obj.h);
+                    this.createPoint(px, py, i);
+                    points.push({x: px, y: py});
+                });
+
+                // Draw Lines
+                if (points.length > 1) {
+                    let d = `M ${points[0].x} ${points[0].y}`;
+                    for(let i=1; i<points.length; i++) d += ` L ${points[i].x} ${points[i].y}`;
+                    
+                    // Create SVG Path
+                    // Note: SVG coordinates need to be mapped to pixels or viewBox. 
+                    // For simplicity in this demo, we assume 100x100 viewBox matching percentages
+                    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                    path.setAttribute("d", d);
+                    path.setAttribute("class", "path-line");
+                    path.setAttribute("vector-effect", "non-scaling-stroke");
+                    this.pathOverlay.setAttribute("viewBox", "0 0 100 100");
+                    this.pathOverlay.appendChild(path);
                 }
+            },
+
+            createPoint: function(x, y, index, isStart=false) {
+                const el = document.createElement('div');
+                el.className = `path-point ${isStart ? 'start-node' : ''}`;
+                el.style.left = x + '%';
+                el.style.top = y + '%';
+                el.title = isStart ? "Start" : `Step ${index}`;
+                // Clicking points to remove them could be added here
+                this.pathPoints.appendChild(el);
+            },
+
+            generateAnimationString: function(obj) {
+                // Creates a temporary animation string
+                // In real use, you'd export the @keyframes CSS block
+                const steps = obj.keyframes.length + 1; // +1 for return to start or hold
+                // ... logic to build CSS string
+                const name = "anim_" + obj.id.substr(0,4);
+                obj.anim = `${name} ${steps}s linear infinite`;
+                this.updatePropsPanel();
             },
 
             // --- EXPORT ---
             exportCode: function() {
-                let code = `// Paste this into LevelData\n`;
-                code += `(draw) => {\n`;
+                let css = "";
+                let js = `// Level Code\n(draw) => {\n`;
+                
                 this.objects.forEach(o => {
-                    if (o.type === 'path') code += `    draw.path(${o.x}, ${o.y}, ${o.w}, ${o.h});\n`;
-                    if (o.type === 'goal') code += `    draw.goal(${o.x}, ${o.y}, ${o.w}, ${o.h}, "${o.next}", ${o.holdTime});\n`;
-                    if (o.type === 'obs')  code += `    draw.obstacle(${o.x}, ${o.y}, ${o.w}, ${o.h}, "${o.anim}");\n`;
-                    if (o.type === 'btn')  code += `    draw.button(${o.x}, ${o.y}, ${o.w}, ${o.h}, (b)=>{ /* Logic for ${o.targetId} */ });\n`;
+                    // 1. Generate Keyframes if needed
+                    if (o.keyframes && o.keyframes.length > 0) {
+                        const name = "anim_" + o.id.substr(0,4);
+                        css += `@keyframes ${name} { \n`;
+                        const total = o.keyframes.length + 1;
+                        // Add start
+                        css += `  0% { transform: translate(0,0); }\n`;
+                        o.keyframes.forEach((kf, i) => {
+                            const pct = Math.round(((i+1)/total)*100);
+                            css += `  ${pct}% { transform: translate(${kf.x}%, ${kf.y}%); }\n`;
+                        });
+                        // Add end (loop)
+                        css += `  100% { transform: translate(0,0); }\n}\n`;
+                    }
+
+                    // 2. Generate Draw Calls
+                    if (o.type === 'path') js += `    draw.path(${o.x}, ${o.y}, ${o.w}, ${o.h});\n`;
+                    if (o.type === 'goal') js += `    draw.goal(${o.x}, ${o.y}, ${o.w}, ${o.h}, "${o.next}", ${o.holdTime});\n`;
+                    if (o.type === 'obs')  js += `    draw.obstacle(${o.x}, ${o.y}, ${o.w}, ${o.h}, "${o.anim}");\n`;
                 });
-                code += `}`;
                 
-                navigator.clipboard.writeText(code).then(() => alert("Code copied to clipboard!"));
+                js += `}`;
+                
+                console.log(css);
+                console.log(js);
+                alert("Code logged to console (Press F12). Copy CSS and JS.");
             },
+            
+            clear: function() { this.objects = []; this.renderObjects(); this.select([]); },
 
-            exportJson: function() {
-                const data = JSON.stringify(this.objects);
-                const hash = btoa(data);
-                prompt("Copy this Level Hash:", hash);
-            },
-
-            importJson: function() {
-                const hash = prompt("Paste Level Hash:");
-                if (hash) {
-                    try {
-                        this.objects = JSON.parse(atob(hash));
-                        this.render();
-                        this.selectedId = null;
-                        this.updateForm();
-                    } catch(e) { alert("Invalid Hash"); }
-                }
-            },
-
-            // --- PLAYTEST ENGINE ---
+            // --- PLAY MODE ---
             togglePlay: function() {
-                this.isPlaying = !this.isPlaying;
-                document.body.classList.toggle('play-active', this.isPlaying);
-                document.getElementById('play-overlay').style.display = this.isPlaying ? 'block' : 'none';
-                
-                if (this.isPlaying) {
-                    this.layer.style.display = 'none'; // Hide editor view
-                    PlayEngine.start(this.objects);
-                } else {
-                    this.layer.style.display = 'block';
-                    PlayEngine.stop();
-                }
+                alert("Play Mode: This would verify that the Start position is valid and launch the engine overlay.");
+                // Implementation requires porting the full 'Engine' object from save1.html here
             }
-        };
-
-        /**
-         * KEYFRAME EDITOR
-         */
-        const KeyframeEditor = {
-            steps: [],
-            open: function() {
-                document.getElementById('kf-modal').style.display = 'flex';
-                this.renderList();
-            },
-            addStep: function() {
-                this.steps.push({ pct: 0, x: 0, y: 0 });
-                this.renderList();
-            },
-            renderList: function() {
-                const c = document.getElementById('kf-list');
-                c.innerHTML = '';
-                this.steps.forEach((s, i) => {
-                    c.innerHTML += `
-                        <div class="kf-item">
-                            <input type="number" placeholder="%" value="${s.pct}" onchange="KeyframeEditor.steps[${i}].pct=this.value">
-                            <input type="number" placeholder="X%" value="${s.x}" onchange="KeyframeEditor.steps[${i}].x=this.value">
-                            <input type="number" placeholder="Y%" value="${s.y}" onchange="KeyframeEditor.steps[${i}].y=this.value">
-                            <button class="danger" onclick="KeyframeEditor.steps.splice(${i},1);KeyframeEditor.renderList()">X</button>
-                        </div>
-                    `;
-                });
-            },
-            save: function() {
-                // Generate CSS
-                const name = "customAnim" + Date.now();
-                let css = `@keyframes ${name} { `;
-                this.steps.forEach(s => {
-                    css += `${s.pct}% { transform: translate(${s.x}%, ${s.y}%); } `;
-                });
-                css += `}`;
-                
-                // Inject CSS
-                const style = document.getElementById('dynamic-css');
-                style.innerHTML += css;
-                
-                // Apply to object
-                const animString = `${name} 2s linear infinite`;
-                Creator.updateProp('anim', animString);
-                document.getElementById('p-anim').value = animString;
-                document.getElementById('kf-modal').style.display = 'none';
-            }
-        };
-
-        /**
-         * MINI PLAY ENGINE (Simplified from main game)
-         */
-        const PlayEngine = {
-            active: false,
-            hitboxes: [],
-            
-            start: function(objects) {
-                this.active = true;
-                const layer = document.getElementById('engine-layer');
-                layer.innerHTML = '';
-                this.hitboxes = [];
-
-                // Build Level
-                objects.forEach(o => {
-                    const el = document.createElement('div');
-                    // Map visual classes
-                    const map = { 'path':'v-path', 'goal':'v-goal', 'obs':'v-obs', 'btn':'v-btn' };
-                    el.className = `visual ${map[o.type]}`;
-                    el.style.position = 'absolute';
-                    el.style.left = o.x + '%'; el.style.top = o.y + '%';
-                    el.style.width = o.w + '%'; el.style.height = o.h + '%';
-                    
-                    if (o.anim) el.style.animation = o.anim;
-                    
-                    layer.appendChild(el);
-                    
-                    // Create Hitbox Data
-                    this.hitboxes.push({ el, type: o.type, holdTime: o.holdTime });
-                });
-
-                requestAnimationFrame(this.loop.bind(this));
-            },
-
-            stop: function() {
-                this.active = false;
-                document.getElementById('engine-layer').innerHTML = '';
-            },
-
-            loop: function() {
-                if (!this.active) return;
-                // Basic Collision Check (Mouse vs Rects)
-                // Note: Since we don't have mouse tracking in this snippet for simplicity,
-                // this acts as a visual preview. Full collision requires porting the mouse listeners.
-                requestAnimationFrame(this.loop.bind(this));
-            }
-        };
-        
-        // Add Mouse Tracking for Play Engine
-        let pMouseX = 0, pMouseY = 0;
-        window.addEventListener('mousemove', e => { pMouseX = e.clientX; pMouseY = e.clientY; });
-
-        // Augment loop for collision
-        PlayEngine.loop = function() {
-            if (!this.active) return;
-            const target = document.elementFromPoint(pMouseX, pMouseY);
-            
-            // Simple Death Check for preview
-            // In real engine we use geometry, here we use elementFromPoint for speed
-            // If target is NULL or body, it's death
-            const isSafe = target && (target.classList.contains('v-path') || target.classList.contains('v-goal') || target.classList.contains('v-btn'));
-            
-            if (!isSafe && target && target.id !== 'play-overlay') {
-                // Flash red on death
-                document.body.style.backgroundColor = '#500';
-                setTimeout(() => document.body.style.backgroundColor = '#222', 100);
-            }
-
-            requestAnimationFrame(this.loop.bind(this));
         };
 
         Creator.init();
-
     </script>
 </body>
 </html>
