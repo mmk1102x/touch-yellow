@@ -3,215 +3,158 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Touch Yellow - Save 1</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%23f2a922' stroke='%23333' stroke-width='10'/></svg>">
-    <link href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Roboto:wght@700&display=swap" rel="stylesheet">
-    
+    <title>Touch Yellow - World 2</title>
     <style>
-        /* [COPY CSS FROM INDEX.HTML EXACTLY] */
-        /* ... Identical CSS block ... */
-        * { box-sizing: border-box; }
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; overflow: hidden; user-select: none; touch-action: none; font-family: 'Roboto', sans-serif; display: flex; justify-content: center; align-items: center; }
-        #game-container { width: 100%; max-width: 177.78vh; aspect-ratio: 16/9; position: relative; background: #000000; overflow: hidden; box-shadow: 0 0 50px rgba(0,0,0,0.5); transition: background-color 0.3s; cursor: default; }
-        .layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
-        #gfx-layer { z-index: 10; } #phy-layer { z-index: 20; } #ui-layer { z-index: 30; pointer-events: none; }
-        .visual-path { position: absolute; background-color: #26a9e1; box-shadow: 0 0 0 1px #26a9e1; }
-        .visual-goal { position: absolute; background-color: #f1a92a; box-shadow: 0 0 0 1px #f1a92a; }
-        .visual-obs { position: absolute; background-color: #000000; } 
-        .visual-btn { position: absolute; background-color: #33cc33; box-shadow: 0 0 0 1px #33cc33; } .visual-btn.activated { background-color: #228822; }
-        .hitbox { position: absolute; opacity: 0; cursor: crosshair; }
-        #game-container.debug { background-color: #330000; cursor: none; }
-        .debug .hitbox { display: block !important; opacity: 0.5; border: 2px solid; }
-        .debug .type-path { border-color: white; background: rgba(255,255,255,0.1); }
-        .debug .type-goal { border-color: lime; background: rgba(0,255,0,0.2); z-index: 100; }
-        .debug .type-obs { border-color: red; background: rgba(255,0,0,0.2); z-index: 100; }
-        .debug .type-trig { border-color: purple; background: rgba(255,0,255,0.2); z-index: 100; }
-        .debug .type-btn { border-color: green; background: rgba(0,255,0,0.4); z-index: 100; }
-        .menu { pointer-events: auto; text-align: center; width: 100%; height: 100%; background: #00b0f0; position: absolute; top:0; left:0; }
-        .title { position: absolute; width: 100%; top: 10%; font-family: 'Roboto'; font-weight: bold; color: black; font-size: 8cqi; }
-        .btn-wrap { position: absolute; display: flex; align-items: center; pointer-events: auto; cursor: pointer; transition: 0.1s; }
-        .btn-wrap:hover { transform: scale(1.1); filter: brightness(1.1); }
-        .circle { height: 100%; aspect-ratio: 1/1; background: #f2a922; border-radius: 50%; border: 0.5cqi solid #b37a15; }
-        .lbl { font-size: 4cqi; font-weight: 900; color: #000; margin: 0 2cqi; white-space: nowrap; }
-        #b-cont { left: 20%; bottom: 50%; height: 12%; } #b-menu { left: 20%; bottom: 30%; height: 12%; } #b-exit { left: 20%; bottom: 10%; height: 12%; }
-        #meter { position: fixed; display: none; width: 40px; height: 6px; background: #333; border: 1px solid white; z-index: 999; transform: translate(-50%, -20px); pointer-events: none; }
-        #fill { width: 0%; height: 100%; background: #0f0; }
-        #debug-ui { position: absolute; top: 10px; left: 10px; color: lime; font-family: monospace; background: rgba(0,0,0,0.8); padding: 5px; display: none; pointer-events: none; }
-        #noclip-ui { position: absolute; bottom: 10px; left: 10px; color: yellow; font-family: monospace; font-weight: bold; background: rgba(0,0,0,0.8); padding: 5px; border: 1px solid yellow; display: none; pointer-events: none; }
-        .db-line { position: fixed; background: cyan; pointer-events: none; z-index: 9999; display: none; }
-        @keyframes doorOpen { 0% { transform: translateY(0); } 100% { transform: translateY(-120%); } }
+        body { margin:0; background:#000; overflow:hidden; font-family:'Roboto',sans-serif; height:100vh; display:flex; justify-content:center; align-items:center; user-select:none; touch-action:none; }
+        #game { width:100%; max-width:177.7vh; aspect-ratio:16/9; position:relative; background:#000; box-shadow:0 0 50px #00b0f0; }
+        .layer { position:absolute; inset:0; pointer-events:none; }
+        #ui { z-index:50; pointer-events:auto; text-align:center; display:flex; flex-direction:column; justify-content:center; background:#00b0f0; }
+        /* OBJECTS */
+        .obj { position:absolute; transition:background 0.3s; }
+        .path { background:#26a9e1; } .goal { background:#f1a92a; } .obs { background:#000; } 
+        .btn { background:#33cc33; border:1px solid #fff; } .btn.on { background:#228822; }
+        /* DEBUG */
+        .hitbox { position:absolute; z-index:20; opacity:0; border:1px solid red; }
+        .debug .hitbox { opacity:0.5; background:rgba(255,0,0,0.2); } .debug .path { border-color:white; background:rgba(255,255,255,0.1); }
+        /* UI */
+        h1 { font-size:10vh; margin:0 0 5vh 0; text-transform:uppercase; color:#000; }
+        .circle { display:inline-flex; width:12vh; height:12vh; border-radius:50%; background:#f2a922; border:0.5vh solid #333; margin:2vh; cursor:pointer; font-weight:bold; align-items:center; justify-content:center; color:#000; transition:0.1s; }
+        .circle:active { transform:scale(0.9); }
+        /* ANIMATIONS */
+        @keyframes openDoor { 100% { transform:translateY(-150%); } }
     </style>
 </head>
-<body oncontextmenu="return false;">
-    <div id="meter"><div id="fill"></div></div>
-    <div id="db-x" class="db-line" style="width:100%;height:1px;"></div>
-    <div id="db-y" class="db-line" style="width:1px;height:100%;"></div>
-
-    <div id="game-container">
-        <div id="gfx-layer" class="layer"></div>
-        <div id="phy-layer" class="layer"></div>
-        <div id="ui-layer" class="layer">
-            <div id="debug-info">DEBUG</div>
-            <div id="noclip-ui">NOCLIP</div>
-            
-            <div id="menu" class="menu">
-                <h1 class="title">Got Save!</h1>
-                <div id="b-cont" class="btn-wrap" onclick="Engine.startLevel(6)"><div class="circle"></div><div class="lbl"><-Continue</div></div>
-                <div id="b-menu" class="btn-wrap" onclick="location.href='../index.html'"><div class="circle"></div><div class="lbl"><-Menu</div></div>
-                <div id="b-exit" class="btn-wrap" onclick="Engine.exit()"><div class="circle"></div><div class="lbl"><-Exit</div></div>
-            </div>
+<body>
+    <div id="game">
+        <div id="gfx" class="layer" style="z-index:10"></div>
+        <div id="phy" class="layer"></div>
+        <div id="ui" class="layer">
+            <h1>World 2</h1>
+            <div class="circle" onclick="Game.start(6)">CONT</div>
+            <div class="circle" onclick="location.href='../index.html'">EXIT</div>
         </div>
     </div>
 
-    <script>
-        const Levels = {
-            6: (b) => {
-                const T = 14, W = 7.875;
-                b.path(18, 38, 30, T*1.5); 
-                b.path(40, 20, W, 60); b.path(40, 20, 35, T); b.path(40, 66, 65, T);
-                b.btn(70, 20, W, T, (o) => {
-                    const d = Engine.ents['door'];
-                    if(d && !d.open) { d.open=true; d.gfx.style.animation=d.hit.style.animation="doorOpen 1s forwards"; o.gfx.classList.add('activated'); }
-                });
-                b.obs(60, 66, W, T, null, 'door');
-                b.goal(90, 66, W, T, 7);
-            },
-            7: (b) => {
-                b.path(10, 20, 10, 60); b.path(10, 80, 80, 14);
-                b.goal(80, 20, 7.875, 14, 6);
+<script>
+// --- LEVELS ---
+const LevelData = {
+    6: (d) => {
+        // The Button Puzzle
+        d.path(18, 38, 30, 20); 
+        d.path(40, 20, 8, 60);
+        d.path(40, 20, 35, 14);
+        d.path(40, 66, 65, 14);
+        d.goal(90, 66, 8, 14, 7);
+        
+        // Door Mechanism
+        const door = d.obs(60, 66, 8, 14); 
+        d.btn(70, 20, 8, 14, (btn) => {
+            if(btn.triggered) return;
+            btn.triggered = true;
+            btn.vis.classList.add('on'); // Visual feedback
+            // Animate Visual AND Hitbox to open path
+            door.vis.style.animation = "openDoor 1s forwards";
+            door.hit.style.animation = "openDoor 1s forwards";
+        });
+    },
+    7: (d) => {
+        d.path(10, 20, 10, 60);
+        d.path(10, 80, 80, 14);
+        d.goal(80, 20, 8, 14, 'win'); 
+    }
+};
+
+const Game = {
+    active: false, mx:0, my:0, mobile:false, holding:false, hitboxes:[],
+    els: { gfx:document.getElementById('gfx'), phy:document.getElementById('phy'), ui:document.getElementById('ui') },
+
+    init() {
+        this.mobile = 'ontouchstart' in window;
+        const move = (x,y) => { this.mx=x; this.my=y; };
+        
+        window.addEventListener('mousemove', e => move(e.clientX, e.clientY));
+        window.addEventListener('touchmove', e => { e.preventDefault(); move(e.touches[0].clientX, e.touches[0].clientY); }, {passive:false});
+        
+        // Hold/Tap Logic
+        const down = () => this.holding=true;
+        const up = () => { this.holding=false; if(this.active && this.mobile) this.die(); };
+        window.addEventListener('mousedown', down); window.addEventListener('touchstart', down);
+        window.addEventListener('mouseup', up); window.addEventListener('touchend', up);
+
+        // Mark save file
+        localStorage.setItem('touchYellow_save1', 'true');
+        this.loop();
+    },
+
+    start(id) {
+        this.reset();
+        this.active = true; this.els.ui.style.display='none';
+        
+        // Builder
+        const builder = {
+            path: (x,y,w,h) => this.spawn(x,y,w,h,'path'),
+            obs: (x,y,w,h) => this.spawn(x,y,w,h,'obs'),
+            goal: (x,y,w,h,n) => this.spawn(x,y,w,h,'goal',n),
+            btn: (x,y,w,h,cb) => this.spawn(x,y,w,h,'btn',null,cb)
+        };
+
+        if(LevelData[id]) LevelData[id](builder);
+        else { alert("World 2 Complete!"); location.href='../index.html'; }
+    },
+
+    spawn(x,y,w,h,type,next,cb) {
+        const s = {left:x+'%', top:y+'%', width:w+'%', height:h+'%'};
+        
+        const v = document.createElement('div'); v.className=`obj ${type}`; Object.assign(v.style, s);
+        this.els.gfx.appendChild(v);
+        
+        const p = document.createElement('div'); p.className=`hitbox ${type}`; Object.assign(p.style, s);
+        this.els.phy.appendChild(p);
+
+        const obj = { vis:v, hit:p, type, next, cb, triggered:false };
+        this.hitboxes.push(obj);
+        return obj; // Return reference for scripts
+    },
+
+    loop() {
+        requestAnimationFrame(()=>this.loop());
+        if(!this.active) return;
+        
+        const r = document.getElementById('game').getBoundingClientRect();
+        const mx = (this.mx - r.left)/r.width*100;
+        const my = (this.my - r.top)/r.height*100;
+        
+        if(mx<0||mx>100||my<0||my>100) return this.die();
+        if(this.mobile && !this.holding) return;
+
+        let safe = false;
+        
+        for(let hb of this.hitboxes) {
+            const hr = hb.hit.getBoundingClientRect();
+            // Collision Check
+            const bx=(hr.left-r.left)/r.width*100, by=(hr.top-r.top)/r.height*100;
+            const bw=hr.width/r.width*100, bh=hr.height/r.height*100;
+
+            if(mx>bx && mx<bx+bw && my>by && my<by+bh) {
+                if(hb.type === 'obs') return this.die();
+                if(hb.type === 'path') safe = true;
+                if(hb.type === 'goal') { safe=true; this.start(hb.next); }
+                if(hb.type === 'btn') { safe=true; if(hb.cb) hb.cb(hb); }
             }
-        };
+        }
+        if(!safe) this.die();
+    },
 
-        const Engine = {
-            act: false, drag: false, hold: false, dbg: false, noclip: false, lvl: 6, mx: 0, my: 0, time: 0,
-            con: document.getElementById('game-container'),
-            l_gfx: document.getElementById('gfx-layer'),
-            l_phy: document.getElementById('phy-layer'),
-            hitboxes: [], ents: {},
+    die() {
+        this.active = false;
+        document.body.style.background = '#500';
+        setTimeout(() => { document.body.style.background = '#000'; this.start(6); }, 200);
+    },
+    reset() { this.active=false; this.hitboxes=[]; this.els.gfx.innerHTML=''; this.els.phy.innerHTML=''; }
+};
 
-            init() {
-                localStorage.setItem('touchYellow_save1', 'true');
-                this.hold = localStorage.getItem('ty_hold') === 'true';
-                if(/Mobi/.test(navigator.userAgent)) this.hold=true;
-                
-                const p = new URLSearchParams(location.search);
-                if(p.get('loadCheckpoint')) setTimeout(()=>this.startLevel(6), 500);
-
-                window.onmousemove = e => { this.mx=e.clientX; this.my=e.clientY; if(this.dbg) this.drawDb(); };
-                window.ontouchmove = e => { if(this.act) { e.preventDefault(); this.mx=e.touches[0].clientX; this.my=e.touches[0].clientY; } };
-                window.onmousedown = e => { if(e.button===2 && this.act) this.die("Panic"); };
-                window.onmouseup = e => { if(e.button!==2 && this.act && this.hold) this.die("Release"); };
-                window.onblur = () => { if(this.act && !this.noclip) this.die("Blur"); };
-
-                requestAnimationFrame(this.loop.bind(this));
-            },
-
-            startLevel(n) {
-                if(!document.fullscreenElement) document.documentElement.requestFullscreen().catch(()=>{});
-                this.lvl = n; this.hitboxes = []; this.ents = {}; this.l_gfx.innerHTML=''; this.l_phy.innerHTML='';
-                document.getElementById('menu').style.display='none'; this.drag = true; this.time = 0; document.getElementById('meter').style.display='none';
-                
-                let gr = null;
-                const b = {
-                    path: (x,y,w,h) => this.spawn(x,y,w,h,'path'),
-                    goal: (x,y,w,h,nxt,ht=0) => { gr=this.spawn(x,y,w,h,'goal',{nxt,ht}); return gr; },
-                    obs: (x,y,w,h,an,id) => { const o=this.spawn(x,y,w,h,'obs'); if(an) o.gfx.style.animation=o.hit.style.animation=an; if(id) this.ents[id]=o; },
-                    btn: (x,y,w,h,cb) => { const o=this.spawn(x,y,w,h,'btn'); o.touch=()=>cb(o); },
-                    trig: (x,y,w,h,cb) => { const t=this.spawn(x,y,w,h,'trig'); t.touch=()=>cb(gr); }
-                };
-                
-                if(Levels[n]) Levels[n](b);
-                if(this.dbg) this.toggleDebug(true);
-                setTimeout(()=>this.act=true, 50);
-            },
-
-            spawn(x,y,w,h,type,data={}) {
-                const gfx = document.createElement('div'); gfx.className = `visual-${type}`;
-                gfx.style.cssText = `left:${x}%;top:${y}%;width:${w}%;height:${h}%`;
-                this.l_gfx.appendChild(gfx);
-
-                const hit = document.createElement('div'); hit.className = `hitbox type-${type}`;
-                hit.style.cssText = `left:${x}%;top:${y}%;width:${w}%;height:${h}%`;
-                this.l_phy.appendChild(hit);
-
-                const obj = { x,y,w,h,type,gfx,hit, ...data };
-                this.hitboxes.push(obj);
-                return obj;
-            },
-
-            loop() {
-                if(this.act) {
-                    if(this.hold && !this.drag) return;
-                    const r = this.con.getBoundingClientRect();
-                    const mx = (this.mx - r.left)/r.width*100;
-                    const my = (this.my - r.top)/r.height*100;
-                    
-                    let safe = false, goal = null;
-                    if(mx<0||mx>100||my<0||my>100) return this.die("Out");
-
-                    for(let o of this.hitboxes) {
-                        const b = o.hit.getBoundingClientRect();
-                        const bx=(b.left-r.left)/r.width*100, by=(b.top-r.top)/r.height*100, bw=b.width/r.width*100, bh=b.height/r.height*100;
-                        
-                        if(mx>=bx && mx<=bx+bw && my>=by && my<=by+bh) {
-                            if(o.type==='path' || o.type==='btn') safe=true;
-                            if(o.type==='goal') { safe=true; goal=o; }
-                            if(o.type==='trig') { safe=true; if(o.touch) o.touch(); }
-                            if(o.type==='btn' && o.touch) o.touch();
-                            if(o.type==='obs') return this.die("Obs");
-                        }
-                    }
-
-                    if(!safe && !this.noclip) this.die("Void");
-                    
-                    if(goal) {
-                        if(goal.ht === 0) this.win(goal.nxt);
-                        else {
-                            this.time += 16;
-                            const p = Math.min(100, (this.time/goal.ht)*100);
-                            document.getElementById('meter').style.display='block';
-                            document.getElementById('meter').style.left=this.mx+'px';
-                            document.getElementById('meter').style.top=(this.my-20)+'px';
-                            document.getElementById('fill').style.width=p+'%';
-                            if(this.time >= goal.ht) this.win(goal.nxt);
-                        }
-                    } else { this.time=0; document.getElementById('meter').style.display='none'; }
-                }
-                requestAnimationFrame(this.loop.bind(this));
-            },
-
-            win(nxt) {
-                this.act=false;
-                this.startLevel(nxt);
-            },
-
-            die(msg) {
-                if(this.noclip) return;
-                console.log("Died: "+msg);
-                this.act=false; 
-                this.startLevel(6);
-            },
-
-            exit() { if(document.fullscreenElement) document.exitFullscreen(); document.getElementById('menu').style.display='block'; },
-            
-            toggleDebug(v) {
-                this.dbg = v!==undefined?v:!this.dbg;
-                this.con.classList.toggle('debug', this.dbg);
-                document.getElementById('debug-info').style.display=this.dbg?'block':'none';
-                document.querySelectorAll('.db-line').forEach(e=>e.style.display=this.dbg?'block':'none');
-            },
-            drawDb() {
-                document.getElementById('db-x').style.top=this.my+'px';
-                document.getElementById('db-y').style.left=this.mx+'px';
-            }
-        };
-
-        Engine.init();
-        window.cmd = c => {
-            if(c==='hitbox') Engine.toggleDebug();
-            if(c==='noclip') { Engine.noclip=!Engine.noclip; document.getElementById('noclip-ui').style.display=Engine.noclip?'block':'none'; }
-            if(c==='clear') localStorage.clear();
-        };
-    </script>
+Game.init();
+window.cmd = (c) => { if(c==='hitbox') document.getElementById('game').classList.toggle('debug'); };
+</script>
 </body>
 </html>
