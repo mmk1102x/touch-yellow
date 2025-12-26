@@ -39,9 +39,8 @@
         .row label { color:#888; }
         input[type=number], input[type=text] { width:50px; background:#111; border:1px solid #444; color:#fff; padding:3px; border-radius:2px; }
         input[type=text] { width: 80px; }
-        hr { border-color:#333; width:100%; margin:8px 0; }
         
-        /* GD STYLE Z-LAYER CONTROL */
+        /* Z-LAYER CONTROL */
         .z-ctrl { display:flex; gap:2px; background:#111; border-radius:3px; padding:2px; }
         .z-ctrl button { padding:2px 8px; font-weight:bold; background:#333; border:none; }
         .z-ctrl input { text-align:center; width:30px; border:none; background:transparent; font-weight:bold; }
@@ -66,6 +65,9 @@
         <button onclick="Ed.add('trig')">+Trig</button>
         <button onclick="Ed.add('start')">+Start</button>
         <span style="flex:1"></span>
+        <button onclick="HistorySys.undo()">Undo</button>
+        <button onclick="HistorySys.redo()">Redo</button>
+        <div style="width:1px; height:20px; background:#444; margin:0 5px;"></div>
         <button class="prm" onclick="CookieSys.save()">SAVE</button>
         <button onclick="CookieSys.load()">LOAD</button>
         <button onclick="Ed.clear()" style="background:#922; border-color:#500">CLR</button>
@@ -90,7 +92,6 @@
                     <div class="row"><label>W</label> <input type="number" id="v-w" onchange="Ed.set('w',this.value)"></div>
                     <div class="row"><label>H</label> <input type="number" id="v-h" onchange="Ed.set('h',this.value)"></div>
                     
-                    <!-- Z LAYER -->
                     <div class="row" style="margin-top:5px;">
                         <label>Z-Order</label>
                         <div class="z-ctrl">
@@ -102,7 +103,7 @@
                 </div>
 
                 <div class="panel">
-                    <div class="row" style="font-weight:bold; color:#ddd">Logic / Group</div>
+                    <div class="row" style="font-weight:bold; color:#ddd">Logic</div>
                     <div class="row"><label>Tag</label> <input type="text" id="v-tag" onchange="Ed.setStr('tag',this.value)" placeholder="Group ID"></div>
                     <div class="row"><label>Link</label> <input type="text" id="v-link" onchange="Ed.setStr('link',this.value)" placeholder="Target ID"></div>
                 </div>
@@ -124,22 +125,52 @@
     </div>
 
 <script>
+// --- HISTORY SYSTEM (UNDO/REDO) ---
+const HistorySys = {
+    stack: [], future: [],
+    push: function() {
+        if(this.stack.length > 50) this.stack.shift();
+        this.stack.push(JSON.parse(JSON.stringify(Ed.objs)));
+        this.future = [];
+    },
+    undo: function() {
+        if(this.stack.length === 0) return;
+        this.future.push(JSON.parse(JSON.stringify(Ed.objs)));
+        Ed.objs = this.stack.pop();
+        Ed.sel = null; Ed.drag = null; Ed.render();
+    },
+    redo: function() {
+        if(this.future.length === 0) return;
+        this.stack.push(JSON.parse(JSON.stringify(Ed.objs)));
+        Ed.objs = this.future.pop();
+        Ed.sel = null; Ed.drag = null; Ed.render();
+    }
+};
+
+window.addEventListener('keydown', (e) => {
+    if(e.target.tagName === 'INPUT') return;
+    if(e.ctrlKey || e.metaKey) {
+        if(e.key === 'z') { e.preventDefault(); HistorySys.undo(); }
+        if(e.key === 'y') { e.preventDefault(); HistorySys.redo(); }
+    }
+});
+
+// --- COOKIE SYSTEM ---
 const CookieSys = {
     save: () => {
         try {
-            // Updated Schema: [Type, X, Y, W, H, KFS, Tag, Link, Wait, Duration, Z-Index]
+            // [Type, X, Y, W, H, KFS, Tag, Link, Wait, Duration, Z-Index]
             const data = Ed.objs.map(o => {
                 let t = ['path','obs','goal','start','btn','trig'].indexOf(o.type);
                 const f = n => Number(Number(n).toFixed(2));
                 return [
                     t, f(o.x), f(o.y), f(o.w), f(o.h), 
                     o.kfs.map(k=>[f(k.x),f(k.y)]),
-                    o.tag, o.link, o.wait?1:0, f(o.dur),
-                    parseInt(o.z || 10) // Index 10: Z-Layer
+                    o.tag, o.link, o.wait?1:0, f(o.dur), parseInt(o.z||10)
                 ];
             });
             const str = btoa(JSON.stringify(data));
-            if(str.length > 4000) return alert(`Limit: ${str.length}/4000. Use less animations.`);
+            if(str.length > 4000) return alert(`Limit: ${str.length}/4000`);
             const exp = new Date(); exp.setFullYear(exp.getFullYear()+1);
             document.cookie = `ty_level=${str};expires=${exp.toUTCString()};path=/`;
             alert("Level Saved!");
@@ -155,21 +186,22 @@ const CookieSys = {
                 type: ['path','obs','goal','start','btn','trig'][d[0]],
                 x:d[1], y:d[2], w:d[3], h:d[4],
                 kfs: (d[5]||[]).map(k=>({x:k[0],y:k[1]})),
-                tag: d[6]||"", link: d[7]||"", wait: !!d[8], dur: d[9]||2,
-                z: d[10] || 10 // Load Z
+                tag: d[6]||"", link: d[7]||"", wait: !!d[8], dur: d[9]||2, z: d[10]||10
             }));
             Ed.render();
         } catch(e) { alert("Corrupt Save"); }
     }
 };
 
+// --- EDITOR ENGINE ---
 const Ed = {
     objs: [], sel: null, tool: 'sel', drag: null, playing: false,
     els: { obj:document.getElementById('l-obj'), giz:document.getElementById('l-giz'), svg:document.getElementById('l-svg'), pts:document.getElementById('l-pts'), props:document.getElementById('props') },
 
     init() { this.add('start', 5, 50, 6, 10); },
+    
     add(type,x=40,y=40,w=10,h=10) { 
-        // Default Z: Obs=20, Path=10, BG=5
+        HistorySys.push(); // HISTORY
         let z = 10; if(type==='obs') z=20; if(type==='btn') z=15;
         this.objs.push({id:Math.random(), type, x, y, w, h, kfs:[], tag:"", link:"", wait:false, dur:2, z }); 
         this.render(); 
@@ -179,13 +211,12 @@ const Ed = {
         if(this.playing) return;
         ['obj','giz','pts'].forEach(k=>this.els[k].innerHTML=''); this.els.svg.innerHTML='';
         
-        // Sort by Z for proper editor layering
+        // Z-Sort
         const sorted = [...this.objs].sort((a,b) => (a.z||10) - (b.z||10));
 
         sorted.forEach(o => {
             const el = document.createElement('div');
             el.className = `obj t-${o.type}`;
-            // Apply Z-Index
             Object.assign(el.style, {left:o.x+'%', top:o.y+'%', width:o.w+'%', height:o.h+'%', zIndex: o.z||10 });
             el.onmousedown = (e) => this.startDrag(e, o, 'move');
             this.els.obj.appendChild(el);
@@ -220,7 +251,11 @@ const Ed = {
     startDrag(e, o, mode) {
         e.stopPropagation();
         if(this.tool === 'path' && mode === 'move') { this.addKf(e, o); return; }
-        this.sel = o; this.render();
+        
+        this.sel = o; 
+        this.render();
+        
+        HistorySys.push(); // HISTORY SNAPSHOT
         this.drag = { mode, o, sx:e.clientX, sy:e.clientY, ox:o.x, oy:o.y, ow:o.w, oh:o.h };
     },
 
@@ -251,15 +286,35 @@ const Ed = {
         this.sel.kfs.forEach((k,i) => list.innerHTML += `<div class="row">#${i} <input value="${k.x}" onchange="Ed.setKf(${i},'x',this.value)"> <input value="${k.y}" onchange="Ed.setKf(${i},'y',this.value)"></div>`);
     },
 
-    set(k,v) { if(this.sel) { this.sel[k]=parseFloat(v); this.render(); } },
-    setStr(k,v) { if(this.sel) { this.sel[k]=v; } },
-    setBool(k,v) { if(this.sel) { this.sel[k]=v; } },
-    modZ(dir) { if(this.sel) { this.sel.z = (this.sel.z||10) + dir; this.render(); } },
-    setKf(i,k,v) { if(this.sel) { this.sel.kfs[i][k]=parseFloat(v); this.render(); } },
-    del() { this.objs = this.objs.filter(o=>o!==this.sel); this.sel=null; this.render(); },
-    clear() { if(confirm("Clear?")) { this.objs=[]; this.render(); } },
-    addKf(e,o) { (o||this.sel).kfs.push({x:10,y:10}); this.render(); },
-    clearKf() { if(this.sel) { this.sel.kfs=[]; this.render(); } },
+    set(k,v) { 
+        if(this.sel) { HistorySys.push(); this.sel[k]=parseFloat(v); this.render(); } 
+    },
+    setStr(k,v) { 
+        if(this.sel) { HistorySys.push(); this.sel[k]=v; } 
+    },
+    setBool(k,v) { 
+        if(this.sel) { HistorySys.push(); this.sel[k]=v; } 
+    },
+    modZ(dir) { 
+        if(this.sel) { HistorySys.push(); this.sel.z = (this.sel.z||10) + dir; this.render(); } 
+    },
+    setKf(i,k,v) { 
+        if(this.sel) { HistorySys.push(); this.sel.kfs[i][k]=parseFloat(v); this.render(); } 
+    },
+    del() { 
+        HistorySys.push(); // HISTORY
+        this.objs = this.objs.filter(o=>o!==this.sel); this.sel=null; this.render(); 
+    },
+    clear() { 
+        if(confirm("Clear?")) { HistorySys.push(); this.objs=[]; this.render(); } 
+    },
+    addKf(e,o) { 
+        HistorySys.push(); // HISTORY
+        (o||this.sel).kfs.push({x:10,y:10}); this.render(); 
+    },
+    clearKf() { 
+        if(this.sel) { HistorySys.push(); this.sel.kfs=[]; this.render(); } 
+    },
 
     togglePlay() {
         this.playing = !this.playing;
