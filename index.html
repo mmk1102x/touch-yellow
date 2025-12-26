@@ -8,15 +8,15 @@
         body { margin:0; background:#000; overflow:hidden; font-family:'Roboto',sans-serif; height:100vh; display:flex; justify-content:center; align-items:center; user-select:none; touch-action:none; }
         #game { width:100%; max-width:177.7vh; aspect-ratio:16/9; position:relative; background:#000; box-shadow:0 0 50px #333; }
         .layer { position:absolute; inset:0; pointer-events:none; }
-        #ui { z-index:50; pointer-events:auto; text-align:center; display:flex; flex-direction:column; justify-content:center; }
+        #ui { z-index:500; pointer-events:auto; text-align:center; display:flex; flex-direction:column; justify-content:center; }
         /* ENTITIES */
         .obj { position:absolute; }
         .path { background:#26a9e1; } .goal { background:#f1a92a; } .obs { background:#000; } 
         .btn { background:#33cc33; border:1px solid #fff; } .btn.on { background:#228822; }
-        /* HITBOX */
-        .hitbox { position:absolute; z-index:20; opacity:0; border:1px solid red; }
+        /* HITBOXES */
+        .hitbox { position:absolute; z-index:400; opacity:0; border:1px solid red; }
         .debug .hitbox { opacity:0.5; background:rgba(255,0,0,0.2); } .debug .path { border-color:white; background:rgba(255,255,255,0.1); }
-        /* MENU */
+        /* UI */
         h1 { color:#f2ef45; font-size:10vh; margin:0 0 5vh 0; text-transform:uppercase; text-shadow:4px 4px 0 #000; }
         .btn-ui { display:inline-flex; width:12vh; height:12vh; border-radius:50%; background:#f2a922; border:0.5vh solid #333; margin:2vh; cursor:pointer; font-weight:bold; align-items:center; justify-content:center; }
         .btn-ui:active { transform:scale(0.9); }
@@ -42,7 +42,6 @@
     </div>
 
 <script>
-// --- OFFICIAL LEVELS (Samples) ---
 const LevelData = {
     1: (d) => { d.path(0,40,60,20); d.goal(50,45,8,10,2); },
     2: (d) => { d.path(10,10,80,80); d.obs(40,10,20,80,'slicer 2s'); d.goal(80,80,10,10,3); },
@@ -108,16 +107,14 @@ const Game = {
                     anim = `${nm} ${o[9]||2}s linear infinite`;
                 }
 
-                // Generic Spawn with Extra Props
+                // Spawn with Z-Index (o[10])
                 const obj = this.spawn(o[1],o[2],o[3],o[4], t, anim, (t==='goal'?'menu':null));
                 
-                // Extra Props (Tag, Link, Wait)
-                if(o[6]) obj.tag = o[6]; // Tag
-                if(o[7]) obj.link = o[7]; // Link
-                if(o[8]) { // Wait
-                    obj.vis.classList.add('paused'); 
-                    obj.hit.classList.add('paused');
-                }
+                // Logic Props
+                if(o[6]) obj.tag = o[6];
+                if(o[7]) obj.link = o[7];
+                if(o[8]) { obj.vis.classList.add('paused'); obj.hit.classList.add('paused'); }
+                if(o[10]) obj.vis.style.zIndex = o[10]; // Apply Z-Layer
             });
             this.els.css.innerHTML += css;
         } catch(e) { console.error(e); alert("Load Error"); this.toMenu(); }
@@ -160,17 +157,9 @@ const Game = {
                 if(hb.type === 'obs') return this.die();
                 if(hb.type === 'path' || hb.type === 'start') safe = true;
                 if(hb.type === 'goal') { safe=true; this.win(hb.next); }
-                
-                // LOGIC LINKS (Triggers/Buttons)
                 if((hb.type==='btn' || hb.type==='trig') && hb.link) {
                     safe=true;
-                    // Activate Linked Objects
-                    this.hitboxes.forEach(t => {
-                        if(t.tag === hb.link) {
-                            t.vis.classList.remove('paused');
-                            t.hit.classList.remove('paused');
-                        }
-                    });
+                    this.hitboxes.forEach(t => { if(t.tag === hb.link) { t.vis.classList.remove('paused'); t.hit.classList.remove('paused'); }});
                     if(hb.type==='btn') hb.vis.classList.add('on');
                 }
             }

@@ -4,36 +4,49 @@
     <meta charset="UTF-8">
     <title>Touch Yellow - Creator</title>
     <style>
-        body { margin:0; background:#222; font-family:sans-serif; color:white; height:100vh; display:flex; flex-direction:column; overflow:hidden; user-select:none; }
-        /* TOOLBAR */
-        #toolbar { height:40px; background:#333; display:flex; align-items:center; padding:0 10px; gap:8px; border-bottom:1px solid #555; }
-        button { background:#444; border:1px solid #666; color:#ddd; padding:4px 8px; cursor:pointer; font-size:12px; }
-        button:hover { background:#555; } button.active { background:#666; border-color:#999; }
-        button.prm { background:#f2a922; color:#000; font-weight:bold; }
-        /* WORKSPACE */
+        body { margin:0; background:#222; font-family:'Segoe UI', sans-serif; color:white; height:100vh; display:flex; flex-direction:column; overflow:hidden; user-select:none; }
+        
+        /* HEADER */
+        #toolbar { height:44px; background:#1a1a1a; display:flex; align-items:center; padding:0 10px; gap:6px; border-bottom:1px solid #444; }
+        button { background:#444; border:1px solid #222; color:#eee; padding:6px 10px; cursor:pointer; font-size:12px; border-radius:4px; transition:0.1s; }
+        button:hover { background:#555; transform:translateY(-1px); } 
+        button:active { transform:translateY(0); }
+        button.active { background:#666; border-color:#999; box-shadow:inset 0 0 4px #000; }
+        button.prm { background:#f2a922; color:#000; font-weight:bold; border-color:#b37a15; }
+        
+        /* LAYOUT */
         #workspace { flex:1; display:flex; }
-        #sidebar { width:220px; background:#2a2a2a; border-left:1px solid #444; padding:10px; display:flex; flex-direction:column; gap:8px; font-size:12px; }
+        #sidebar { width:240px; background:#222; border-left:1px solid #333; padding:10px; display:flex; flex-direction:column; gap:10px; font-size:12px; overflow-y:auto; }
         #canvas { flex:1; position:relative; overflow:hidden; background-image:radial-gradient(#444 1px, transparent 1px); background-size:20px 20px; display:flex; justify-content:center; align-items:center; }
-        #game-container { width:80%; aspect-ratio:16/9; position:relative; background:#000; box-shadow:0 0 40px #000; border:1px solid #444; }
+        #game-container { width:80%; aspect-ratio:16/9; position:relative; background:#000; box-shadow:0 0 50px #000; border:1px solid #333; }
+        
         /* OBJECTS */
         .obj { position:absolute; box-sizing:border-box; }
         .t-path { background:#26a9e1; } .t-goal { background:#f1a92a; } .t-obs { background:#000; border:1px dashed #555; }
         .t-btn { background:#33cc33; } .t-trig { background:rgba(150,0,255,0.3); border:1px solid #b0f; }
         .t-start { border:2px solid lime; border-radius:50%; } .t-start::after { content:"S"; color:lime; display:flex; justify-content:center; align-items:center; height:100%; }
-        /* GIZMOS */
-        .gizmo { position:absolute; border:1px solid #fff; pointer-events:none; z-index:100; }
+        
+        /* GIZMOS & PATHS */
+        .gizmo { position:absolute; border:1px solid #fff; pointer-events:none; z-index:999 !important; }
         .handle { position:absolute; width:8px; height:8px; background:#fff; border:1px solid #000; pointer-events:auto; bottom:-5px; right:-5px; cursor:se-resize; }
-        /* SVG & KEYFRAMES */
-        svg { position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:90; }
+        svg { position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:900; }
         path { stroke:#f2a922; stroke-width:2; fill:none; stroke-dasharray:5; }
-        .kf-node { position:absolute; width:10px; height:10px; background:#f2a922; border:2px solid #fff; border-radius:50%; transform:translate(-50%,-50%); z-index:95; }
-        /* UI HELPERS */
-        .row { display:flex; justify-content:space-between; align-items:center; }
-        input[type=number], input[type=text] { width:50px; background:#111; border:1px solid #444; color:#fff; padding:2px; }
-        input[type=text] { width: 70px; }
-        hr { border-color:#444; width:100%; margin:0; }
+        .kf-node { position:absolute; width:10px; height:10px; background:#f2a922; border:2px solid #fff; border-radius:50%; transform:translate(-50%,-50%); z-index:950; }
+        
+        /* UI COMPONENTS */
+        .panel { background:#2a2a2a; border:1px solid #333; padding:8px; border-radius:4px; }
+        .row { display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; }
+        .row label { color:#888; }
+        input[type=number], input[type=text] { width:50px; background:#111; border:1px solid #444; color:#fff; padding:3px; border-radius:2px; }
+        input[type=text] { width: 80px; }
+        hr { border-color:#333; width:100%; margin:8px 0; }
+        
+        /* GD STYLE Z-LAYER CONTROL */
+        .z-ctrl { display:flex; gap:2px; background:#111; border-radius:3px; padding:2px; }
+        .z-ctrl button { padding:2px 8px; font-weight:bold; background:#333; border:none; }
+        .z-ctrl input { text-align:center; width:30px; border:none; background:transparent; font-weight:bold; }
+
         #play-layer { position:absolute; inset:0; pointer-events:none; z-index:200; display:none; }
-        .animating { animation-timing-function:linear; animation-iteration-count:infinite; }
         .paused { animation-play-state: paused !important; }
         #style-dump { display:none; }
     </style>
@@ -42,10 +55,11 @@
 <body>
     <div id="toolbar">
         <button class="prm" onclick="Ed.togglePlay()">▶ PLAY</button>
+        <div style="width:1px; height:20px; background:#444; margin:0 5px;"></div>
         <button id="t-sel" class="active" onclick="Ed.tool='sel'; Ed.render()">Select</button>
-        <button id="t-path" onclick="Ed.tool='path'; Ed.render()">Path Tool</button>
-        <span style="width:10px"></span>
-        <button onclick="Ed.add('path')">+Path</button>
+        <button id="t-path" onclick="Ed.tool='path'; Ed.render()">Edit Path</button>
+        <div style="width:1px; height:20px; background:#444; margin:0 5px;"></div>
+        <button onclick="Ed.add('path')">+Blk</button>
         <button onclick="Ed.add('obs')">+Obs</button>
         <button onclick="Ed.add('goal')">+Goal</button>
         <button onclick="Ed.add('btn')">+Btn</button>
@@ -54,7 +68,7 @@
         <span style="flex:1"></span>
         <button class="prm" onclick="CookieSys.save()">SAVE</button>
         <button onclick="CookieSys.load()">LOAD</button>
-        <button onclick="Ed.clear()">Clear</button>
+        <button onclick="Ed.clear()" style="background:#922; border-color:#500">CLR</button>
     </div>
 
     <div id="workspace">
@@ -69,22 +83,42 @@
         </div>
         <div id="sidebar">
             <div id="props" style="display:none">
-                <div class="row" style="color:#f2a922; font-weight:bold"><span id="p-id">TYPE</span></div>
-                <div class="row">X% <input type="number" id="v-x" onchange="Ed.set('x',this.value)"></div>
-                <div class="row">Y% <input type="number" id="v-y" onchange="Ed.set('y',this.value)"></div>
-                <div class="row">W% <input type="number" id="v-w" onchange="Ed.set('w',this.value)"></div>
-                <div class="row">H% <input type="number" id="v-h" onchange="Ed.set('h',this.value)"></div>
-                <hr>
-                <div class="row" title="Name of this object">Tag: <input type="text" id="v-tag" onchange="Ed.setStr('tag',this.value)"></div>
-                <div class="row" title="Name of object to activate">Link: <input type="text" id="v-link" onchange="Ed.setStr('link',this.value)"></div>
-                <hr>
-                <div class="row"><b>Animation</b></div>
-                <div class="row">Wait? <input type="checkbox" id="v-wait" onchange="Ed.setBool('wait',this.checked)"></div>
-                <div class="row">Dur(s) <input type="number" id="v-dur" value="2" onchange="Ed.set('dur',this.value)"></div>
-                <div class="row"><button onclick="Ed.addKf()">+ Step</button> <button onclick="Ed.clearKf()">Reset</button></div>
-                <div id="kf-list" style="max-height:100px; overflow-y:auto; margin-top:5px;"></div>
-                <hr>
-                <button style="width:100%; margin-top:10px; background:#922" onclick="Ed.del()">DELETE</button>
+                <div class="panel" style="border-top: 3px solid #f2a922;">
+                    <div class="row" style="color:#f2a922; font-weight:bold; font-size:14px;"><span id="p-id">OBJECT</span></div>
+                    <div class="row"><label>X</label> <input type="number" id="v-x" onchange="Ed.set('x',this.value)"></div>
+                    <div class="row"><label>Y</label> <input type="number" id="v-y" onchange="Ed.set('y',this.value)"></div>
+                    <div class="row"><label>W</label> <input type="number" id="v-w" onchange="Ed.set('w',this.value)"></div>
+                    <div class="row"><label>H</label> <input type="number" id="v-h" onchange="Ed.set('h',this.value)"></div>
+                    
+                    <!-- Z LAYER -->
+                    <div class="row" style="margin-top:5px;">
+                        <label>Z-Order</label>
+                        <div class="z-ctrl">
+                            <button onclick="Ed.modZ(-1)">-</button>
+                            <input type="number" id="v-z" onchange="Ed.set('z',this.value)" value="10">
+                            <button onclick="Ed.modZ(1)">+</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="row" style="font-weight:bold; color:#ddd">Logic / Group</div>
+                    <div class="row"><label>Tag</label> <input type="text" id="v-tag" onchange="Ed.setStr('tag',this.value)" placeholder="Group ID"></div>
+                    <div class="row"><label>Link</label> <input type="text" id="v-link" onchange="Ed.setStr('link',this.value)" placeholder="Target ID"></div>
+                </div>
+
+                <div class="panel">
+                    <div class="row" style="font-weight:bold; color:#ddd">Animation</div>
+                    <div class="row"><label>Wait Trig</label> <input type="checkbox" id="v-wait" onchange="Ed.setBool('wait',this.checked)"></div>
+                    <div class="row"><label>Duration</label> <input type="number" id="v-dur" value="2" onchange="Ed.set('dur',this.value)">s</div>
+                    <div style="display:flex; gap:5px; margin-top:5px;">
+                        <button style="flex:1" onclick="Ed.addKf()">+ Keyframe</button>
+                        <button style="width:30px" onclick="Ed.clearKf()">X</button>
+                    </div>
+                    <div id="kf-list" style="max-height:100px; overflow-y:auto; margin-top:5px;"></div>
+                </div>
+                
+                <button style="width:100%; margin-top:10px; background:#922; border-color:#600; padding:10px;" onclick="Ed.del()">DELETE OBJECT</button>
             </div>
         </div>
     </div>
@@ -93,22 +127,23 @@
 const CookieSys = {
     save: () => {
         try {
-            // Schema: [Type, X, Y, W, H, KFS, Tag, Link, Wait, Duration]
+            // Updated Schema: [Type, X, Y, W, H, KFS, Tag, Link, Wait, Duration, Z-Index]
             const data = Ed.objs.map(o => {
                 let t = ['path','obs','goal','start','btn','trig'].indexOf(o.type);
                 const f = n => Number(Number(n).toFixed(2));
                 return [
                     t, f(o.x), f(o.y), f(o.w), f(o.h), 
                     o.kfs.map(k=>[f(k.x),f(k.y)]),
-                    o.tag, o.link, o.wait?1:0, f(o.dur)
+                    o.tag, o.link, o.wait?1:0, f(o.dur),
+                    parseInt(o.z || 10) // Index 10: Z-Layer
                 ];
             });
             const str = btoa(JSON.stringify(data));
-            if(str.length > 4000) return alert(`Size Limit: ${str.length}/4000 bytes.`);
+            if(str.length > 4000) return alert(`Limit: ${str.length}/4000. Use less animations.`);
             const exp = new Date(); exp.setFullYear(exp.getFullYear()+1);
             document.cookie = `ty_level=${str};expires=${exp.toUTCString()};path=/`;
-            alert("Saved!");
-        } catch(e) { alert("Error saving"); console.error(e); }
+            alert("Level Saved!");
+        } catch(e) { alert("Save Error"); console.error(e); }
     },
     load: () => {
         const m = document.cookie.match(/ty_level=([^;]+)/);
@@ -120,7 +155,8 @@ const CookieSys = {
                 type: ['path','obs','goal','start','btn','trig'][d[0]],
                 x:d[1], y:d[2], w:d[3], h:d[4],
                 kfs: (d[5]||[]).map(k=>({x:k[0],y:k[1]})),
-                tag: d[6]||"", link: d[7]||"", wait: !!d[8], dur: d[9]||2
+                tag: d[6]||"", link: d[7]||"", wait: !!d[8], dur: d[9]||2,
+                z: d[10] || 10 // Load Z
             }));
             Ed.render();
         } catch(e) { alert("Corrupt Save"); }
@@ -133,7 +169,9 @@ const Ed = {
 
     init() { this.add('start', 5, 50, 6, 10); },
     add(type,x=40,y=40,w=10,h=10) { 
-        this.objs.push({id:Math.random(), type, x, y, w, h, kfs:[], tag:"", link:"", wait:false, dur:2 }); 
+        // Default Z: Obs=20, Path=10, BG=5
+        let z = 10; if(type==='obs') z=20; if(type==='btn') z=15;
+        this.objs.push({id:Math.random(), type, x, y, w, h, kfs:[], tag:"", link:"", wait:false, dur:2, z }); 
         this.render(); 
     },
     
@@ -141,10 +179,14 @@ const Ed = {
         if(this.playing) return;
         ['obj','giz','pts'].forEach(k=>this.els[k].innerHTML=''); this.els.svg.innerHTML='';
         
-        this.objs.forEach(o => {
+        // Sort by Z for proper editor layering
+        const sorted = [...this.objs].sort((a,b) => (a.z||10) - (b.z||10));
+
+        sorted.forEach(o => {
             const el = document.createElement('div');
             el.className = `obj t-${o.type}`;
-            Object.assign(el.style, {left:o.x+'%', top:o.y+'%', width:o.w+'%', height:o.h+'%'});
+            // Apply Z-Index
+            Object.assign(el.style, {left:o.x+'%', top:o.y+'%', width:o.w+'%', height:o.h+'%', zIndex: o.z||10 });
             el.onmousedown = (e) => this.startDrag(e, o, 'move');
             this.els.obj.appendChild(el);
 
@@ -199,7 +241,7 @@ const Ed = {
         const p = this.els.props;
         if(!this.sel) { p.style.display='none'; return; }
         p.style.display='block';
-        ['x','y','w','h','dur'].forEach(k => document.getElementById('v-'+k).value = this.sel[k]);
+        ['x','y','w','h','dur','z'].forEach(k => document.getElementById('v-'+k).value = this.sel[k]||(k==='z'?10:0));
         document.getElementById('p-id').innerText = this.sel.type.toUpperCase();
         document.getElementById('v-tag').value = this.sel.tag;
         document.getElementById('v-link').value = this.sel.link;
@@ -212,6 +254,7 @@ const Ed = {
     set(k,v) { if(this.sel) { this.sel[k]=parseFloat(v); this.render(); } },
     setStr(k,v) { if(this.sel) { this.sel[k]=v; } },
     setBool(k,v) { if(this.sel) { this.sel[k]=v; } },
+    modZ(dir) { if(this.sel) { this.sel.z = (this.sel.z||10) + dir; this.render(); } },
     setKf(i,k,v) { if(this.sel) { this.sel.kfs[i][k]=parseFloat(v); this.render(); } },
     del() { this.objs = this.objs.filter(o=>o!==this.sel); this.sel=null; this.render(); },
     clear() { if(confirm("Clear?")) { this.objs=[]; this.render(); } },
@@ -227,8 +270,8 @@ const Ed = {
             this.objs.forEach(o => {
                 const el = document.createElement('div');
                 el.className = `obj t-${o.type} ${o.wait?'paused':''}`;
-                if(o.tag) el.id = "run-" + o.tag; // ID for linking
-                Object.assign(el.style, {left:o.x+'%', top:o.y+'%', width:o.w+'%', height:o.h+'%'});
+                if(o.tag) el.id = "run-" + o.tag;
+                Object.assign(el.style, {left:o.x+'%', top:o.y+'%', width:o.w+'%', height:o.h+'%', zIndex:o.z||10});
                 
                 if(o.kfs.length) {
                     const nm = `a-${Math.random().toString(36).substr(2)}`;
@@ -237,14 +280,9 @@ const Ed = {
                     css += `100%{transform:translate(0,0)} } `;
                     el.style.animation = `${nm} ${o.dur}s linear infinite`;
                 }
-                
-                // Simulator Logic
                 if(o.type==='btn' || o.type==='trig') {
                     el.onmouseenter = () => {
-                        if(o.link) {
-                            const target = document.getElementById("run-"+o.link);
-                            if(target) target.classList.remove('paused');
-                        }
+                        if(o.link) { const t = document.getElementById("run-"+o.link); if(t) t.classList.remove('paused'); }
                     };
                     el.style.pointerEvents = "auto";
                 }
