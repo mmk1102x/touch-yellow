@@ -20,7 +20,7 @@
         h1 { font-size:10vh; margin:0 0 5vh 0; text-transform:uppercase; color:#000; }
         .circle { display:inline-flex; width:12vh; height:12vh; border-radius:50%; background:#f2a922; border:0.5vh solid #333; margin:2vh; cursor:pointer; font-weight:bold; align-items:center; justify-content:center; color:#000; transition:0.1s; }
         .circle:active { transform:scale(0.9); }
-        /* ANIMATIONS */
+        .paused { animation-play-state: paused !important; }
         @keyframes openDoor { 100% { transform:translateY(-150%); } }
     </style>
 </head>
@@ -36,31 +36,23 @@
     </div>
 
 <script>
-// --- LEVELS ---
 const LevelData = {
     6: (d) => {
-        // The Button Puzzle
-        d.path(18, 38, 30, 20); 
-        d.path(40, 20, 8, 60);
-        d.path(40, 20, 35, 14);
-        d.path(40, 66, 65, 14);
-        d.goal(90, 66, 8, 14, 7);
+        const H = 14; const W = 7.875;
+        d.path(18, 38, 30, 20); d.path(40, 20, 8, 60);
+        d.path(40, 20, 35, 14); d.path(40, 66, 65, 14);
         
-        // Door Mechanism
-        const door = d.obs(60, 66, 8, 14); 
-        d.btn(70, 20, 8, 14, (btn) => {
-            if(btn.triggered) return;
-            btn.triggered = true;
-            btn.vis.classList.add('on'); // Visual feedback
-            // Animate Visual AND Hitbox to open path
-            door.vis.style.animation = "openDoor 1s forwards";
-            door.hit.style.animation = "openDoor 1s forwards";
-        });
+        const door = d.obs(60, 66, 8, 14, "openDoor 1s forwards"); 
+        door.vis.classList.add('paused'); door.hit.classList.add('paused'); 
+        door.tag = "gate";
+
+        const btn = d.btn(70, 20, 8, 14);
+        btn.link = "gate"; 
+
+        d.goal(90, 66, 8, 14, 7);
     },
     7: (d) => {
-        d.path(10, 20, 10, 60);
-        d.path(10, 80, 80, 14);
-        d.goal(80, 20, 8, 14, 'win'); 
+        d.path(10, 20, 10, 60); d.path(10, 80, 80, 14); d.goal(80, 20, 8, 14, 'win'); 
     }
 };
 
@@ -71,18 +63,14 @@ const Game = {
     init() {
         this.mobile = 'ontouchstart' in window;
         const move = (x,y) => { this.mx=x; this.my=y; };
-        
         window.addEventListener('mousemove', e => move(e.clientX, e.clientY));
         window.addEventListener('touchmove', e => { e.preventDefault(); move(e.touches[0].clientX, e.touches[0].clientY); }, {passive:false});
         
-        // Hold/Tap Logic
         const down = () => this.holding=true;
         const up = () => { this.holding=false; if(this.active && this.mobile) this.die(); };
         window.addEventListener('mousedown', down); window.addEventListener('touchstart', down);
         window.addEventListener('mouseup', up); window.addEventListener('touchend', up);
 
-        // Mark save file
-        localStorage.setItem('touchYellow_save1', 'true');
         this.loop();
     },
 
@@ -90,30 +78,30 @@ const Game = {
         this.reset();
         this.active = true; this.els.ui.style.display='none';
         
-        // Builder
         const builder = {
             path: (x,y,w,h) => this.spawn(x,y,w,h,'path'),
-            obs: (x,y,w,h) => this.spawn(x,y,w,h,'obs'),
+            obs: (x,y,w,h,a) => this.spawn(x,y,w,h,'obs',a),
             goal: (x,y,w,h,n) => this.spawn(x,y,w,h,'goal',n),
-            btn: (x,y,w,h,cb) => this.spawn(x,y,w,h,'btn',null,cb)
+            btn: (x,y,w,h) => this.spawn(x,y,w,h,'btn')
         };
 
         if(LevelData[id]) LevelData[id](builder);
         else { alert("World 2 Complete!"); location.href='../index.html'; }
     },
 
-    spawn(x,y,w,h,type,next,cb) {
+    spawn(x,y,w,h,type,anim,next) {
         const s = {left:x+'%', top:y+'%', width:w+'%', height:h+'%'};
-        
         const v = document.createElement('div'); v.className=`obj ${type}`; Object.assign(v.style, s);
+        if(anim) v.style.animation = anim;
         this.els.gfx.appendChild(v);
         
         const p = document.createElement('div'); p.className=`hitbox ${type}`; Object.assign(p.style, s);
+        if(anim) p.style.animation = anim;
         this.els.phy.appendChild(p);
 
-        const obj = { vis:v, hit:p, type, next, cb, triggered:false };
+        const obj = { vis:v, hit:p, type, next, tag:"", link:"" };
         this.hitboxes.push(obj);
-        return obj; // Return reference for scripts
+        return obj;
     },
 
     loop() {
@@ -131,15 +119,18 @@ const Game = {
         
         for(let hb of this.hitboxes) {
             const hr = hb.hit.getBoundingClientRect();
-            // Collision Check
             const bx=(hr.left-r.left)/r.width*100, by=(hr.top-r.top)/r.height*100;
             const bw=hr.width/r.width*100, bh=hr.height/r.height*100;
 
             if(mx>bx && mx<bx+bw && my>by && my<by+bh) {
                 if(hb.type === 'obs') return this.die();
-                if(hb.type === 'path') safe = true;
+                if(hb.type === 'path' || hb.type === 'start') safe = true;
                 if(hb.type === 'goal') { safe=true; this.start(hb.next); }
-                if(hb.type === 'btn') { safe=true; if(hb.cb) hb.cb(hb); }
+                if(hb.type === 'btn' && hb.link) {
+                    safe=true;
+                    this.hitboxes.forEach(t => { if(t.tag === hb.link) { t.vis.classList.remove('paused'); t.hit.classList.remove('paused'); }});
+                    hb.vis.classList.add('on');
+                }
             }
         }
         if(!safe) this.die();
