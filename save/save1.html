@@ -10,9 +10,11 @@
         .layer { position:absolute; inset:0; pointer-events:none; }
         #ui { z-index:50; pointer-events:auto; text-align:center; display:flex; flex-direction:column; justify-content:center; background:#00b0f0; }
         /* OBJECTS */
-        .obj { position:absolute; transition:background 0.3s; }
-        .path { background:#26a9e1; } .goal { background:#f1a92a; } .obs { background:#000; } 
-        .btn { background:#33cc33; border:1px solid #fff; } .btn.on { background:#228822; }
+        .obj { position:absolute; transition:background 0.3s; box-shadow: 0 0 0 1px currentColor; }
+        .path { background:#26a9e1; color:#26a9e1; } 
+        .goal { background:#f1a92a; color:#f1a92a; } 
+        .obs { background:#000; color:transparent; } 
+        .btn { background:#33cc33; color:#33cc33; } .btn.on { background:#228822; color:#228822; }
         /* DEBUG */
         .hitbox { position:absolute; z-index:20; opacity:0; border:1px solid red; }
         .debug .hitbox { opacity:0.5; background:rgba(255,0,0,0.2); } .debug .path { border-color:white; background:rgba(255,255,255,0.1); }
@@ -124,7 +126,7 @@ const Game = {
 
             if(mx>bx && mx<bx+bw && my>by && my<by+bh) {
                 if(hb.type === 'obs') return this.die();
-                if(hb.type === 'path' || hb.type === 'start') safe = true;
+                if(hb.type === 'path') safe = true;
                 if(hb.type === 'goal') { safe=true; this.start(hb.next); }
                 if(hb.type === 'btn' && hb.link) {
                     safe=true;
@@ -138,8 +140,7 @@ const Game = {
 
     die() {
         this.active = false;
-        document.body.style.background = '#500';
-        setTimeout(() => { document.body.style.background = '#000'; this.start(6); }, 200);
+        this.start(6); // Checkpoint Reset
     },
     reset() { this.active=false; this.hitboxes=[]; this.els.gfx.innerHTML=''; this.els.phy.innerHTML=''; }
 };

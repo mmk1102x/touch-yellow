@@ -11,18 +11,18 @@
         .layer { position:absolute; inset:0; pointer-events:none; }
         #ui { z-index:500; pointer-events:auto; }
 
-        /* MENU STYLES */
+        /* MENU */
         .menu-bg { background-color:#4d4d4d; width:100%; height:100%; position:absolute; top:0; left:0; pointer-events:auto; }
         .grid-line { position:absolute; border:1px dashed rgba(255,255,255,0.3); pointer-events:none; }
         .grid-x { width:100%; height:0; top:50%; left:0; }
         .grid-y { width:0; height:100%; top:0; left:50%; }
 
         /* TITLE */
-        #title-wrapper { position:absolute; top:5%; width:100%; display:flex; justify-content:center; pointer-events:none; z-index:100; line-height:0.8; }
-        #t-left { flex:1; text-align:right; padding-right:1vh; font-family:'Luckiest Guy',cursive; font-size:13vh; color:#ffff00; text-shadow:0.6vh 0.6vh 0 #000; transform:scaleY(1.1); }
-        #t-right { flex:1; text-align:left; padding-left:1vh; display:flex; flex-direction:column; align-items:flex-start; }
-        .text-yellow { font-family:'Luckiest Guy',cursive; font-size:13vh; color:#ffff00; text-shadow:0.6vh 0.6vh 0 #000; transform:scaleY(1.1); }
-        .text-web { font-family:'Luckiest Guy',cursive; font-size:6vh; color:#fca503; text-shadow:0.4vh 0.4vh 0 #000; align-self:flex-start; margin-left:18vh; margin-top:-1vh; }
+        #title-wrapper { position:absolute; top:5%; width:100%; display:flex; justify-content:center; align-items:flex-start; pointer-events:none; z-index:100; line-height:0.85; }
+        #t-left { flex:1; text-align:right; padding-right:0.5vh; }
+        #t-right { flex:1; text-align:left; padding-left:0.5vh; position:relative; }
+        .title-text { font-family:'Luckiest Guy',cursive; font-size:14vh; color:#ffff00; text-transform:uppercase; text-shadow:0.8vh 0.8vh 0 #000; letter-spacing:-0.5vh; display:inline-block; }
+        .title-sub { font-family:'Luckiest Guy',cursive; font-size:5vh; color:#ff9900; text-transform:uppercase; text-shadow:0.4vh 0.4vh 0 #000; position:absolute; top:10.5vh; left:14vh; transform:rotate(-3deg); }
 
         /* BUTTONS */
         .btn-group { position:absolute; display:flex; align-items:center; gap:15px; cursor:pointer; transition:transform 0.1s; }
@@ -40,23 +40,30 @@
         .sz-lrg { width:12vh; height:12vh; }
 
         /* GAME ELEMENTS */
-        .obj { position:absolute; }
-        .path { background:#26a9e1; } .goal { background:#f1a92a; } .obs { background:#000; } 
-        .btn { background:#33cc33; border:1px solid #fff; } .btn.on { background:#228822; }
+        .obj { position:absolute; box-shadow: 0 0 0 1px currentColor; } /* Restored box-shadow */
+        .path { background:#26a9e1; color:#26a9e1; } 
+        .goal { background:#f1a92a; color:#f1a92a; } 
+        .obs { background:#000; color:transparent; } 
+        .btn { background:#33cc33; color:#33cc33; } .btn.on { background:#228822; color:#228822; }
         .hitbox { position:absolute; z-index:400; opacity:0; border:1px solid red; }
         .debug .hitbox { opacity:0.5; background:rgba(255,0,0,0.2); }
         .paused { animation-play-state: paused !important; }
-        #hud { display:none; color:white; font-weight:bold; font-size:2vh; margin-top:45%; text-align:center; }
-        #cheat-ind { position:absolute; bottom:10px; left:10px; color:yellow; font-weight:bold; display:none; }
+        #cheat-ind { position:absolute; bottom:10px; left:10px; color:yellow; font-weight:bold; display:none; z-index:999; }
         #dynamic-css { display:none; }
+        
+        /* CATCH METER */
+        #catch-meter { position:fixed; display:none; width:40px; height:6px; background:#333; border:1px solid white; border-radius:3px; pointer-events:none; z-index:9999; transform:translate(-50%,-20px); }
+        #catch-fill { width:0%; height:100%; background:#00ff00; transition:width 0.05s linear; }
 
         @keyframes slicerMove { 0% { transform: translateY(0%); } 50% { transform: translateY(200%); } 100% { transform: translateY(0%); } }
         @keyframes waterfallDrop { 0% { transform: translateY(-250%); } 100% { transform: translateY(250%); } }
+        @keyframes crazyMove { 0% { transform: translate(0, 0); } 20% { transform: translate(250%, -350%); } 40% { transform: translate(250%, 0%); } 60% { transform: translate(120%, -150%); } 80% { transform: translate(0, -350%); } 100% { transform: translate(0, 0); } }
         @keyframes safeRoomPatrol { 0% {transform:translate(0,0)} 25%{transform:translate(1000%,-20%)} 50%{transform:translate(500%,20%)} 75%{transform:translate(1000%,20%)} 90%{transform:translate(500%,-20%)} 100%{transform:translate(0,0)} }
+        @keyframes superCrazyMove { 0% { transform: translate(0,0); } 10% { transform: translate(800%, 200%); } 20% { transform: translate(200%, 400%); } 30% { transform: translate(600%, 0%); } 40% { transform: translate(0%, 300%); } 50% { transform: translate(900%, 300%); } 60% { transform: translate(400%, 100%); } 70% { transform: translate(100%, 0%); } 80% { transform: translate(700%, 400%); } 90% { transform: translate(300%, 100%); } 100% { transform: translate(0,0); } }
     </style>
-    <style id="dynamic-css"></style>
 </head>
 <body>
+    <div id="catch-meter"><div id="catch-fill"></div></div>
     <div id="game">
         <div id="gfx" class="layer" style="z-index:10"></div>
         <div id="phy" class="layer"></div>
@@ -67,8 +74,8 @@
                 <div class="grid-line grid-y"></div>
                 
                 <div id="title-wrapper">
-                    <div id="t-left">Touch</div>
-                    <div id="t-right"><span class="text-yellow">yellow</span><span class="text-web">Web</span></div>
+                    <div id="t-left"><span class="title-text">Touch</span></div>
+                    <div id="t-right"><span class="title-text">Yellow</span><div class="title-sub">Web</div></div>
                 </div>
 
                 <div id="grp-saves" class="btn-group" onclick="location.href='save/save1.html'"><span class="btn-label">Saves -&gt;</span><div class="circle-btn sz-med"></div></div>
@@ -77,16 +84,17 @@
                 <div id="grp-exit" class="btn-group" onclick="alert('Use Browser Close')"><div class="circle-btn sz-lrg"></div><span class="btn-label">&lt;- Exit</span></div>
             </div>
 
-            <div id="hud">Move to Start</div>
             <div id="cheat-ind">NOCLIP ON</div>
         </div>
     </div>
 
 <script>
+// --- ORIGINAL LAYOUT HELPER ---
 const DrawStandard = (d) => {
     const H = 14; const W = 7.875; const sY = 62;
     const p2X = 55 - W; const p2Y = sY - 20;
     const p4X = p2X + 35 - W; const p4Y = p2Y - 24; const topX = p4X - 45 + W;
+    // Snake Path
     d.path(0, sY, 55, H); d.path(p2X, p2Y, W, 20 + H); d.path(p2X, p2Y, 35, H);
     d.path(p4X, p4Y, W, 24 + H); d.path(topX, p4Y, 45, H);
     return { topX, p4Y, W, H, sY, midY: p2Y };
@@ -110,14 +118,20 @@ const LevelData = {
         const enemy = d.obs(25, 60, 2, 30, "safeRoomPatrol 4s");
         enemy.vis.classList.add('paused'); enemy.hit.classList.add('paused'); enemy.tag = "patrol";
         const t = d.trig(80, 20, 10, 40); t.link = "patrol";
-        d.goal(10, 65, W, H, 5); 
+        d.goal(10, 65, W, H, 5, 500); // 500ms Hold
     },
-    5: (d) => { d.path(5, 5, 90, 90); d.goal(45, 45, 10, 10, "redirect_save1"); }
+    5: (d) => { 
+        d.path(5, 5, 90, 90); 
+        const g = d.goal(10, 10, 10, 10, "redirect_save1");
+        g.vis.style.animation = "superCrazyMove 4s linear infinite"; g.hit.style.animation = "superCrazyMove 4s linear infinite";
+        g.vis.classList.add('paused'); g.hit.classList.add('paused'); g.tag="run";
+        const t = d.trig(5,5,90,90); t.link="run";
+    }
 };
 
 const Game = {
-    active: false, mx:0, my:0, mobile:false, holding:false, hitboxes:[], noclip: false,
-    els: { gfx:document.getElementById('gfx'), phy:document.getElementById('phy'), menu:document.getElementById('menu'), hud:document.getElementById('hud'), css:document.getElementById('dynamic-css') },
+    active: false, state: 'menu', mx:0, my:0, mobile:false, holding:false, hitboxes:[], noclip: false, goalTimer:0,
+    els: { gfx:document.getElementById('gfx'), phy:document.getElementById('phy'), menu:document.getElementById('menu'), hud:document.getElementById('catch-meter'), fill:document.getElementById('catch-fill'), css:document.getElementById('dynamic-css') },
 
     init() {
         this.mobile = 'ontouchstart' in window;
@@ -126,7 +140,7 @@ const Game = {
         window.addEventListener('touchmove', e => { e.preventDefault(); move(e.touches[0].clientX, e.touches[0].clientY); }, {passive:false});
         
         const down = () => this.holding=true;
-        const up = () => { this.holding=false; if(this.active && this.mobile) this.die(); };
+        const up = () => { this.holding=false; if(this.state==='playing' && this.mobile) this.die(); };
         window.addEventListener('mousedown', down); window.addEventListener('touchstart', down);
         window.addEventListener('mouseup', up); window.addEventListener('touchend', up);
         
@@ -137,12 +151,16 @@ const Game = {
         if(id === "redirect_save1") { localStorage.setItem('touchYellow_save1','true'); location.href='save/save1.html'; return; }
         this.reset();
         this.active = true;
-        this.els.menu.style.display='none'; this.els.hud.style.display='block';
+        this.els.menu.style.display='none';
+        
+        // Official Levels Start Immediately (NO GHOST)
+        // Custom Levels Wait for Start
+        this.state = (id==='custom') ? 'waiting' : 'playing';
         
         const builder = {
             path: (x,y,w,h) => this.spawn(x,y,w,h,'path'),
             obs: (x,y,w,h,a) => this.spawn(x,y,w,h,'obs',a),
-            goal: (x,y,w,h,n) => this.spawn(x,y,w,h,'goal',null,n),
+            goal: (x,y,w,h,n,t) => this.spawn(x,y,w,h,'goal',null,n,t),
             trig: (x,y,w,h) => this.spawn(x,y,w,h,'trig')
         };
 
@@ -165,7 +183,6 @@ const Game = {
                 const types = ['path','obs','goal','start','btn','trig'];
                 const t = types[o[0]];
                 let anim = null;
-
                 if(o[5] && o[5].length) {
                     const nm = `a-${Math.random().toString(36).substr(2)}`;
                     css += `@keyframes ${nm} { 0%{transform:translate(0,0)} `;
@@ -173,10 +190,8 @@ const Game = {
                     css += `100%{transform:translate(0,0)} } `;
                     anim = `${nm} ${o[9]||2}s linear infinite`;
                 }
-
                 const obj = this.spawn(o[1],o[2],o[3],o[4], t, anim, (t==='goal'?'menu':null));
-                if(o[6]) obj.tag = o[6];
-                if(o[7]) obj.link = o[7];
+                if(o[6]) obj.tag = o[6]; if(o[7]) obj.link = o[7];
                 if(o[8]) { obj.vis.classList.add('paused'); obj.hit.classList.add('paused'); }
                 if(o[10]) obj.vis.style.zIndex = o[10];
             });
@@ -184,7 +199,7 @@ const Game = {
         } catch(e) { console.error(e); alert("Load Error"); this.toMenu(); }
     },
 
-    spawn(x,y,w,h,type,anim,next) {
+    spawn(x,y,w,h,type,anim,next,holdTime) {
         const s = {left:x+'%', top:y+'%', width:w+'%', height:h+'%'};
         const v = document.createElement('div'); v.className=`obj ${type}`; Object.assign(v.style, s);
         if(anim) v.style.animation = anim;
@@ -194,7 +209,7 @@ const Game = {
         if(anim) p.style.animation = anim;
         this.els.phy.appendChild(p);
 
-        const obj = { vis:v, hit:p, type, next, tag:"", link:"" };
+        const obj = { vis:v, hit:p, type, next, tag:"", link:"", hold:holdTime||0 };
         this.hitboxes.push(obj);
         return obj;
     },
@@ -207,10 +222,11 @@ const Game = {
         const mx = (this.mx - r.left)/r.width*100;
         const my = (this.my - r.top)/r.height*100;
         
-        if(mx<0||mx>100||my<0||my>100) return this.die();
+        if((mx<0||mx>100||my<0||my>100) && this.state==='playing') return this.die();
         if(this.mobile && !this.holding) return;
 
         let safe = false;
+        let touchingGoal = false;
         
         for(let hb of this.hitboxes) {
             const hr = hb.hit.getBoundingClientRect();
@@ -218,9 +234,27 @@ const Game = {
             const bw=hr.width/r.width*100, bh=hr.height/r.height*100;
 
             if(mx>bx && mx<bx+bw && my>by && my<by+bh) {
-                if(hb.type === 'obs') return this.die();
-                if(hb.type === 'path' || hb.type === 'start') safe = true;
-                if(hb.type === 'goal') { safe=true; this.win(hb.next); }
+                if(hb.type === 'obs' && this.state==='playing') return this.die();
+                
+                if(hb.type === 'path') safe = true;
+                
+                if(hb.type === 'start') {
+                    safe = true;
+                    if(this.state === 'waiting') { this.state = 'playing'; console.log("START"); }
+                }
+
+                if(hb.type === 'goal') { 
+                    safe=true; touchingGoal=true; 
+                    if(hb.hold > 0) {
+                        this.goalTimer += 16;
+                        this.els.hud.style.display='block';
+                        this.els.hud.style.left = this.mx+'px'; this.els.hud.style.top = (this.my-20)+'px';
+                        this.els.fill.style.width = (this.goalTimer/hb.hold*100)+'%';
+                        if(this.goalTimer >= hb.hold) this.win(hb.next);
+                    } else {
+                        this.win(hb.next); 
+                    }
+                }
                 
                 if((hb.type==='btn' || hb.type==='trig') && hb.link) {
                     safe=true;
@@ -229,17 +263,18 @@ const Game = {
                 }
             }
         }
-        if(!safe) this.die();
+        
+        if(!touchingGoal) { this.goalTimer=0; this.els.hud.style.display='none'; }
+        if(this.state === 'playing' && !safe) this.die();
     },
 
     win(next) { if(next==='menu') { alert("Complete!"); this.toMenu(); } else this.start(next); },
     die() {
         if(this.noclip) return;
-        this.active = false; document.body.style.background='#500'; 
-        setTimeout(()=>{document.body.style.background='#000'; this.start(1);},200); 
+        this.active = false; this.toMenu(); // Instant Menu
     },
     reset() { this.active=false; this.hitboxes=[]; this.els.gfx.innerHTML=''; this.els.phy.innerHTML=''; },
-    toMenu() { this.reset(); this.els.menu.style.display='block'; this.els.hud.style.display='none'; }
+    toMenu() { this.reset(); this.els.menu.style.display='block'; }
 };
 
 Game.init();
