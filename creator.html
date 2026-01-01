@@ -6,37 +6,60 @@
     <style>
         body { margin:0; background:#222; font-family:'Segoe UI', sans-serif; color:white; height:100vh; display:flex; flex-direction:column; overflow:hidden; user-select:none; }
         
+        /* --- TOOLBAR --- */
         #toolbar { height:44px; background:#1a1a1a; display:flex; align-items:center; padding:0 10px; gap:6px; border-bottom:1px solid #444; }
-        button { background:#444; border:1px solid #222; color:#eee; padding:6px 10px; cursor:pointer; font-size:12px; border-radius:4px; }
-        button:hover { background:#555; } button.active { background:#666; border-color:#999; box-shadow:inset 0 0 4px #000; }
+        button { background:#444; border:1px solid #222; color:#eee; padding:6px 12px; cursor:pointer; font-size:12px; border-radius:4px; transition:0.1s; }
+        button:hover { background:#555; transform:translateY(-1px); } 
+        button:active { transform:translateY(0); }
+        button.active { background:#666; border-color:#999; box-shadow:inset 0 0 4px #000; }
         button.prm { background:#f2a922; color:#000; font-weight:bold; border-color:#b37a15; }
-        
+        button.danger { background:#922; border-color:#500; }
+        .sep { width:1px; height:20px; background:#444; margin:0 5px; }
+
+        /* --- LAYOUT --- */
         #workspace { flex:1; display:flex; }
-        #sidebar { width:240px; background:#222; border-left:1px solid #333; padding:10px; display:flex; flex-direction:column; gap:10px; font-size:12px; overflow-y:auto; }
+        #sidebar { width:260px; background:#222; border-left:1px solid #333; padding:10px; display:flex; flex-direction:column; gap:10px; font-size:12px; overflow-y:auto; }
         #canvas { flex:1; position:relative; overflow:hidden; background-image:radial-gradient(#444 1px, transparent 1px); background-size:20px 20px; display:flex; justify-content:center; align-items:center; }
         #game-container { width:80%; aspect-ratio:16/9; position:relative; background:#000; box-shadow:0 0 50px #000; border:1px solid #333; }
         
-        .obj { position:absolute; box-sizing:border-box; box-shadow: 0 0 0 1px currentColor; }
-        .t-path { background-color:#26a9e1; color:#26a9e1; } 
-        .t-goal { background-color:#f1a92a; color:#f1a92a; } 
-        .t-obs { background-color:#000; border:1px dashed #555; color:transparent; }
-        .t-btn { background-color:#33cc33; color:#33cc33; } 
-        .t-trig { background:rgba(150,0,255,0.3); border:1px solid #b0f; }
-        .t-start { border:2px solid lime; border-radius:50%; } .t-start::after { content:"S"; color:lime; display:flex; justify-content:center; align-items:center; height:100%; }
+        /* --- GAME OBJECTS --- */
+        .obj { position:absolute; box-sizing:border-box; cursor:move; }
+        .t-path { background-color:#26a9e1; opacity:0.8; } 
+        .t-goal { background-color:#f1a92a; opacity:0.8; } 
+        .t-obs { background-color:#000; border:1px dashed #555; opacity:0.8; }
+        .t-btn { background-color:#33cc33; opacity:0.8; } 
+        .t-trig { background:rgba(150,0,255,0.3); border:2px solid #b0f; }
+        .t-start { border:2px solid lime; border-radius:50%; background:transparent; display:flex; justify-content:center; align-items:center; } 
+        .t-start::after { content:"S"; color:lime; font-weight:bold; }
         
-        .gizmo { position:absolute; border:1px solid #fff; pointer-events:none; z-index:9999 !important; }
-        .handle { position:absolute; width:8px; height:8px; background:#fff; border:1px solid #000; pointer-events:auto; bottom:-5px; right:-5px; cursor:se-resize; }
+        /* --- GIZMOS (Selection Box) --- */
+        .gizmo { position:absolute; border:2px solid #fff; pointer-events:none; z-index:9999 !important; box-shadow: 0 0 5px rgba(0,0,0,0.5); }
+        .handle { position:absolute; width:10px; height:10px; background:#fff; border:1px solid #000; pointer-events:auto; }
+        .h-br { bottom:-6px; right:-6px; cursor:se-resize; }
+        
+        /* --- PATH EDITOR (SVG) --- */
         svg { position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:9000; }
         path { stroke:#f2a922; stroke-width:2; fill:none; stroke-dasharray:5; }
-        .kf-node { position:absolute; width:10px; height:10px; background:#f2a922; border:2px solid #fff; border-radius:50%; transform:translate(-50%,-50%); z-index:9500; }
-        
-        .row { display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; }
-        input[type=number], input[type=text] { width:50px; background:#111; border:1px solid #444; color:#fff; padding:3px; border-radius:2px; }
-        input[type=text] { width: 80px; }
-        .z-ctrl { display:flex; gap:2px; background:#111; border-radius:3px; padding:2px; }
-        .z-ctrl button { padding:2px 8px; font-weight:bold; background:#333; border:none; }
-        .z-ctrl input { text-align:center; width:30px; border:none; background:transparent; font-weight:bold; }
+        .kf-node { position:absolute; width:10px; height:10px; background:#f2a922; border:2px solid #fff; border-radius:50%; transform:translate(-50%,-50%); z-index:9500; cursor:grab; }
 
+        /* --- PROPERTIES PANEL --- */
+        .panel { background:#2a2a2a; border:1px solid #333; padding:8px; border-radius:4px; }
+        .row { display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; }
+        .row label { color:#888; width: 60px; }
+        input[type=number], input[type=text] { flex:1; background:#111; border:1px solid #444; color:#fff; padding:4px; border-radius:2px; }
+        input[type=checkbox] { flex:0; transform:scale(1.2); }
+        
+        /* Z-Control */
+        .z-ctrl { display:flex; gap:2px; background:#111; border-radius:3px; padding:2px; flex:1; }
+        .z-ctrl button { padding:2px 8px; font-weight:bold; background:#333; border:none; width:auto; }
+        .z-ctrl input { text-align:center; border:none; background:transparent; font-weight:bold; width:100%; }
+
+        /* Keyframe List */
+        #kf-list { max-height:150px; overflow-y:auto; border:1px solid #333; padding:5px; margin-top:5px; }
+        .kf-item { display:flex; gap:5px; margin-bottom:4px; align-items:center; font-family:monospace; }
+        .kf-idx { color:#f2a922; font-weight:bold; width:20px; }
+
+        /* Play Mode */
         #play-layer { position:absolute; inset:0; pointer-events:none; z-index:200; display:none; }
         .paused { animation-play-state: paused !important; }
         #style-dump { display:none; }
@@ -46,23 +69,23 @@
 <body>
     <div id="toolbar">
         <button class="prm" onclick="Ed.togglePlay()">▶ PLAY</button>
-        <div style="width:1px; height:20px; background:#444; margin:0 5px;"></div>
+        <div class="sep"></div>
         <button id="t-sel" class="active" onclick="Ed.tool='sel'; Ed.render()">Select</button>
         <button id="t-path" onclick="Ed.tool='path'; Ed.render()">Edit Path</button>
-        <div style="width:1px; height:20px; background:#444; margin:0 5px;"></div>
+        <div class="sep"></div>
         <button onclick="Ed.add('path')">+Blk</button>
         <button onclick="Ed.add('obs')">+Obs</button>
         <button onclick="Ed.add('goal')">+Goal</button>
         <button onclick="Ed.add('btn')">+Btn</button>
         <button onclick="Ed.add('trig')">+Trig</button>
         <button onclick="Ed.add('start')">+Start</button>
-        <span style="flex:1"></span>
+        <div class="sep"></div>
         <button onclick="HistorySys.undo()">Undo (Ctrl+Z)</button>
         <button onclick="HistorySys.redo()">Redo (Ctrl+Y)</button>
-        <div style="width:1px; height:20px; background:#444; margin:0 5px;"></div>
+        <div style="flex:1"></div>
         <button class="prm" onclick="CookieSys.save()">SAVE</button>
         <button onclick="CookieSys.load()">LOAD</button>
-        <button onclick="Ed.clear()" style="background:#922; border-color:#500">CLR</button>
+        <button class="danger" onclick="Ed.clear()">CLR</button>
     </div>
 
     <div id="workspace">
@@ -77,26 +100,58 @@
         </div>
         <div id="sidebar">
             <div id="props" style="display:none">
-                <div class="row" style="color:#f2a922; font-weight:bold"><span id="p-id">OBJECT</span></div>
-                <div class="row">X <input type="number" id="v-x" onchange="Ed.set('x',this.value)"></div>
-                <div class="row">Y <input type="number" id="v-y" onchange="Ed.set('y',this.value)"></div>
-                <div class="row">W <input type="number" id="v-w" onchange="Ed.set('w',this.value)"></div>
-                <div class="row">H <input type="number" id="v-h" onchange="Ed.set('h',this.value)"></div>
-                <div class="row">Z <div class="z-ctrl"><button onclick="Ed.modZ(-1)">-</button><input type="number" id="v-z" onchange="Ed.set('z',this.value)" value="10"><button onclick="Ed.modZ(1)">+</button></div></div>
-                <hr style="width:100%;border-color:#444">
-                <div class="row">Tag <input type="text" id="v-tag" onchange="Ed.setStr('tag',this.value)"></div>
-                <div class="row">Link <input type="text" id="v-link" onchange="Ed.setStr('link',this.value)"></div>
-                <hr style="width:100%;border-color:#444">
-                <div class="row">Wait <input type="checkbox" id="v-wait" onchange="Ed.setBool('wait',this.checked)"></div>
-                <div class="row">Dur <input type="number" id="v-dur" value="2" onchange="Ed.set('dur',this.value)"></div>
-                <div class="row"><button onclick="Ed.addKf()">+ KF</button> <button onclick="Ed.clearKf()">Reset</button></div>
-                <div id="kf-list" style="max-height:100px; overflow-y:auto;"></div>
-                <button style="width:100%; margin-top:10px; background:#922" onclick="Ed.del()">DELETE</button>
+                
+                <!-- GEOMETRY -->
+                <div class="panel" style="border-top: 3px solid #f2a922;">
+                    <div class="row" style="color:#f2a922; font-weight:bold; font-size:14px; text-transform:uppercase; margin-bottom:10px;"><span id="p-id">OBJECT</span></div>
+                    <div class="row"><label>X %</label> <input type="number" id="v-x" onchange="Ed.set('x',this.value)"></div>
+                    <div class="row"><label>Y %</label> <input type="number" id="v-y" onchange="Ed.set('y',this.value)"></div>
+                    <div class="row"><label>W %</label> <input type="number" id="v-w" onchange="Ed.set('w',this.value)"></div>
+                    <div class="row"><label>H %</label> <input type="number" id="v-h" onchange="Ed.set('h',this.value)"></div>
+                    <div class="row">
+                        <label>Z-Idx</label> 
+                        <div class="z-ctrl">
+                            <button onclick="Ed.modZ(-1)">-</button>
+                            <input type="number" id="v-z" onchange="Ed.set('z',this.value)" value="10">
+                            <button onclick="Ed.modZ(1)">+</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- LOGIC -->
+                <div class="panel">
+                    <div class="row" style="font-weight:bold; color:#ddd; margin-bottom:8px;">Logic & Links</div>
+                    <div class="row"><label>Tag</label> <input type="text" id="v-tag" onchange="Ed.setStr('tag',this.value)" placeholder="Name me..."></div>
+                    <div class="row"><label>Link</label> <input type="text" id="v-link" onchange="Ed.setStr('link',this.value)" placeholder="Target..."></div>
+                </div>
+
+                <!-- ANIMATION -->
+                <div class="panel">
+                    <div class="row" style="font-weight:bold; color:#ddd; margin-bottom:8px;">Animation</div>
+                    <div class="row"><label>Wait?</label> <input type="checkbox" id="v-wait" onchange="Ed.setBool('wait',this.checked)"></div>
+                    <div class="row"><label>Dur(s)</label> <input type="number" id="v-dur" value="2" onchange="Ed.set('dur',this.value)"></div>
+                    
+                    <div style="display:flex; gap:5px; margin-top:10px;">
+                        <button style="flex:1" onclick="Ed.addKf()">+ Keyframe</button>
+                        <button style="width:30px" class="danger" onclick="Ed.clearKf()">X</button>
+                    </div>
+                    
+                    <div id="kf-list">
+                        <!-- Keyframes generated here -->
+                    </div>
+                </div>
+                
+                <button class="danger" style="width:100%; margin-top:20px; padding:10px;" onclick="Ed.del()">DELETE SELECTED</button>
+            </div>
+            
+            <div id="no-sel" style="text-align:center; color:#666; margin-top:50px;">
+                Select an object to edit properties.
             </div>
         </div>
     </div>
 
 <script>
+// --- HISTORY SYSTEM ---
 const HistorySys = {
     stack: [], future: [],
     push: function() {
@@ -105,129 +160,391 @@ const HistorySys = {
         this.future = [];
     },
     undo: function() {
-        if(this.stack.length===0) return;
+        if(this.stack.length === 0) return;
         this.future.push(JSON.parse(JSON.stringify(Ed.objs)));
         Ed.objs = this.stack.pop();
-        Ed.sel=null; Ed.drag=null; Ed.render();
+        Ed.sel = null; Ed.drag = null; Ed.render();
     },
     redo: function() {
-        if(this.future.length===0) return;
+        if(this.future.length === 0) return;
         this.stack.push(JSON.parse(JSON.stringify(Ed.objs)));
         Ed.objs = this.future.pop();
-        Ed.sel=null; Ed.drag=null; Ed.render();
+        Ed.sel = null; Ed.drag = null; Ed.render();
     }
 };
+
+// Keyboard Shortcuts
 window.addEventListener('keydown', (e) => {
-    if(e.target.tagName==='INPUT') return;
-    if(e.ctrlKey||e.metaKey) {
-        if(e.key==='z'){e.preventDefault();HistorySys.undo();}
-        if(e.key==='y'){e.preventDefault();HistorySys.redo();}
-    }
+    if(e.target.tagName === 'INPUT') return;
+    if((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); HistorySys.undo(); }
+    if((e.ctrlKey || e.metaKey) && e.key === 'y') { e.preventDefault(); HistorySys.redo(); }
+    if(e.key === 'Delete') Ed.del();
 });
 
+// --- COOKIE SYSTEM ---
 const CookieSys = {
     save: () => {
         try {
             const data = Ed.objs.map(o => {
                 let t = ['path','obs','goal','start','btn','trig'].indexOf(o.type);
-                const f = n => Number(Number(n).toFixed(2));
-                return [t, f(o.x), f(o.y), f(o.w), f(o.h), o.kfs.map(k=>[f(k.x),f(k.y)]), o.tag, o.link, o.wait?1:0, f(o.dur), parseInt(o.z||10)];
+                const fix = n => Number(parseFloat(n).toFixed(2));
+                return [
+                    t, 
+                    fix(o.x), fix(o.y), fix(o.w), fix(o.h), 
+                    o.kfs.map(k => [fix(k.x), fix(k.y)]),
+                    o.tag, o.link, o.wait ? 1 : 0, fix(o.dur), parseInt(o.z || 10)
+                ];
             });
             const str = btoa(JSON.stringify(data));
-            if(str.length>4000) return alert(`Size: ${str.length}/4000`);
-            document.cookie = `ty_level=${str};expires=${new Date(9999,0,1).toUTCString()};path=/`;
-            alert("Saved!");
-        } catch(e){ alert("Error"); }
+            if(str.length > 4090) return alert(`Level too big! (${str.length}/4096 bytes)`);
+            
+            const d = new Date(); d.setTime(d.getTime() + (365*24*60*60*1000));
+            document.cookie = `ty_level=${str};expires=${d.toUTCString()};path=/`;
+            alert("Level Saved Successfully!");
+        } catch(e) { alert("Save Error"); console.error(e); }
     },
     load: () => {
         const m = document.cookie.match(/ty_level=([^;]+)/);
-        if(!m) return alert("No save.");
+        if(!m) return alert("No saved level found.");
         try {
-            Ed.objs = JSON.parse(atob(m[1])).map(d => ({
-                id:Math.random(), type:['path','obs','goal','start','btn','trig'][d[0]],
-                x:d[1], y:d[2], w:d[3], h:d[4], kfs:(d[5]||[]).map(k=>({x:k[0],y:k[1]})),
-                tag:d[6]||"", link:d[7]||"", wait:!!d[8], dur:d[9]||2, z:d[10]||10
+            const raw = JSON.parse(atob(m[1]));
+            Ed.objs = raw.map(d => ({
+                id: Math.random().toString(36),
+                type: ['path','obs','goal','start','btn','trig'][d[0]],
+                x: d[1], y: d[2], w: d[3], h: d[4],
+                kfs: (d[5]||[]).map(k => ({ x: k[0], y: k[1] })),
+                tag: d[6]||"", link: d[7]||"", wait: !!d[8], dur: d[9]||2, z: d[10]||10
             }));
             Ed.render();
-        } catch(e){ alert("Corrupt"); }
+        } catch(e) { alert("Save file is corrupt."); }
     }
 };
 
+// --- EDITOR CORE ---
 const Ed = {
     objs: [], sel: null, tool: 'sel', drag: null, playing: false,
-    els: { obj:document.getElementById('l-obj'), giz:document.getElementById('l-giz'), svg:document.getElementById('l-svg'), pts:document.getElementById('l-pts'), props:document.getElementById('props') },
-    init() { this.add('start', 5, 50, 6, 10); },
-    add(type,x=40,y=40,w=10,h=10) { HistorySys.push(); let z=10; if(type==='obs') z=20; if(type==='btn') z=15; this.objs.push({id:Math.random(), type, x, y, w, h, kfs:[], tag:"", link:"", wait:false, dur:2, z }); this.render(); },
+    els: { 
+        obj: document.getElementById('l-obj'), 
+        giz: document.getElementById('l-giz'), 
+        svg: document.getElementById('l-svg'), 
+        pts: document.getElementById('l-pts'), 
+        props: document.getElementById('props'),
+        noSel: document.getElementById('no-sel')
+    },
+
+    init() { 
+        // Default start object
+        this.add('start', 5, 50, 6, 10); 
+    },
+
+    add(type, x=40, y=40, w=10, h=10) { 
+        HistorySys.push(); 
+        let z = 10; 
+        if(type === 'obs') z = 20; 
+        if(type === 'btn') z = 15;
+        
+        this.objs.push({
+            id: Math.random().toString(36),
+            type, x, y, w, h, z,
+            kfs: [], tag: "", link: "", wait: false, dur: 2
+        });
+        this.render(); 
+    },
+    
     render() {
         if(this.playing) return;
-        ['obj','giz','pts'].forEach(k=>this.els[k].innerHTML=''); this.els.svg.innerHTML='';
-        [...this.objs].sort((a,b)=>(a.z||10)-(b.z||10)).forEach(o => {
-            const el = document.createElement('div'); el.className = `obj t-${o.type}`;
-            Object.assign(el.style, {left:o.x+'%', top:o.y+'%', width:o.w+'%', height:o.h+'%', zIndex:o.z||10});
+        
+        // Clear Layers
+        this.els.obj.innerHTML = '';
+        this.els.giz.innerHTML = '';
+        this.els.pts.innerHTML = '';
+        this.els.svg.innerHTML = '';
+        
+        // Sort by Z for proper visual stacking
+        const sorted = [...this.objs].sort((a,b) => (a.z||10) - (b.z||10));
+
+        sorted.forEach(o => {
+            // 1. Draw Object
+            const el = document.createElement('div');
+            el.className = `obj t-${o.type}`;
+            Object.assign(el.style, {
+                left: o.x + '%', top: o.y + '%', 
+                width: o.w + '%', height: o.h + '%', 
+                zIndex: o.z || 10
+            });
+            
+            // Interaction
             el.onmousedown = (e) => this.startDrag(e, o, 'move');
             this.els.obj.appendChild(el);
+
+            // 2. Draw Gizmo (if selected)
             if(this.sel === o) {
-                const g = document.createElement('div'); g.className='gizmo';
-                Object.assign(g.style, {left:o.x+'%', top:o.y+'%', width:o.w+'%', height:o.h+'%'});
-                const h = document.createElement('div'); h.className='handle';
+                const g = document.createElement('div'); 
+                g.className = 'gizmo';
+                Object.assign(g.style, {
+                    left: o.x + '%', top: o.y + '%', 
+                    width: o.w + '%', height: o.h + '%',
+                    zIndex: 9999
+                });
+                
+                // Resize Handle
+                const h = document.createElement('div'); 
+                h.className = 'handle h-br';
                 h.onmousedown = (e) => this.startDrag(e, o, 'scale');
-                g.appendChild(h); this.els.giz.appendChild(g);
+                
+                g.appendChild(h); 
+                this.els.giz.appendChild(g);
+                
+                // Draw Path if selected
                 this.renderPath(o);
             }
         });
         this.updateUI();
     },
+
     renderPath(o) {
-        if(!o.kfs.length && this.tool!=='path') return;
-        let d = `M ${o.x+o.w/2} ${o.y+o.h/2}`;
-        o.kfs.forEach(k => { d += ` L ${o.x+o.w/2 + (k.x/100*o.w)} ${o.y+o.h/2 + (k.y/100*o.h)}`; const pt=document.createElement('div'); pt.className='kf-node'; pt.style.left=(o.x+o.w/2 + (k.x/100*o.w))+'%'; pt.style.top=(o.y+o.h/2 + (k.y/100*o.h))+'%'; this.els.pts.appendChild(pt); });
-        const path = document.createElementNS("http://www.w3.org/2000/svg", "path"); path.setAttribute("d", d); this.els.svg.appendChild(path);
+        if (!o.kfs.length && this.tool !== 'path') return;
+        
+        // SVG Path Line
+        let d = `M ${o.x + o.w/2} ${o.y + o.h/2}`;
+        
+        o.kfs.forEach((k, i) => {
+            const ax = o.x + o.w/2 + (k.x/100 * o.w);
+            const ay = o.y + o.h/2 + (k.y/100 * o.h);
+            d += ` L ${ax} ${ay}`;
+            
+            // Draw Point
+            const pt = document.createElement('div'); 
+            pt.className = 'kf-node';
+            pt.style.left = ax + '%'; 
+            pt.style.top = ay + '%';
+            this.els.pts.appendChild(pt);
+        });
+
+        const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        path.setAttribute("d", d); 
+        this.els.svg.appendChild(path);
     },
-    startDrag(e, o, mode) { e.stopPropagation(); if(this.tool==='path' && mode==='move') { this.addKf(e, o); return; } this.sel = o; this.render(); HistorySys.push(); this.drag = { mode, o, sx:e.clientX, sy:e.clientY, ox:o.x, oy:o.y, ow:o.w, oh:o.h }; },
-    move(e) { if(!this.drag) return; const r=document.getElementById('game-container').getBoundingClientRect(); const dx=(e.clientX-this.drag.sx)/r.width*100; const dy=(e.clientY-this.drag.sy)/r.height*100; if(this.drag.mode==='move'){this.drag.o.x=this.drag.ox+dx; this.drag.o.y=this.drag.oy+dy;} else {this.drag.o.w=Math.max(1,this.drag.ow+dx); this.drag.o.h=Math.max(1,this.drag.oh+dy);} this.render(); this.updateUI(); },
-    up() { this.drag=null; }, down(e) { if(e.target.id==='game-container') { this.sel=null; this.render(); } },
+
+    startDrag(e, o, mode) {
+        e.stopPropagation();
+        
+        // Special Path Tool Logic
+        if(this.tool === 'path' && mode === 'move') { 
+            this.addKf(e, o); 
+            return; 
+        }
+        
+        this.sel = o; 
+        this.render();
+        HistorySys.push(); // Save state before drag starts
+        
+        this.drag = { 
+            mode, o, 
+            sx: e.clientX, sy: e.clientY, 
+            ox: o.x, oy: o.y, ow: o.w, oh: o.h 
+        };
+    },
+
+    move(e) {
+        if(!this.drag) return;
+        
+        const rect = document.getElementById('game-container').getBoundingClientRect();
+        const dx = (e.clientX - this.drag.sx) / rect.width * 100; 
+        const dy = (e.clientY - this.drag.sy) / rect.height * 100;
+        const o = this.drag.o;
+
+        if(this.drag.mode === 'move') { 
+            o.x = this.drag.ox + dx; 
+            o.y = this.drag.oy + dy; 
+        } else { 
+            o.w = Math.max(1, this.drag.ow + dx); 
+            o.h = Math.max(1, this.drag.oh + dy); 
+        }
+        
+        this.render(); 
+        this.updateUI(); // Live update input numbers
+    },
+
+    up() { this.drag = null; },
+    down(e) { 
+        if(e.target.id === 'game-container') { 
+            this.sel = null; 
+            this.render(); 
+        } 
+    },
+
+    // --- PROPERTY MANAGEMENT ---
     updateUI() {
-        if(!this.sel) { this.els.props.style.display='none'; return; }
-        this.els.props.style.display='block';
-        ['x','y','w','h','dur','z'].forEach(k => document.getElementById('v-'+k).value = this.sel[k]||(k==='z'?10:0));
-        document.getElementById('p-id').innerText = this.sel.type.toUpperCase();
-        document.getElementById('v-tag').value = this.sel.tag; document.getElementById('v-link').value = this.sel.link; document.getElementById('v-wait').checked = this.sel.wait;
-        const list = document.getElementById('kf-list'); list.innerHTML='';
-        this.sel.kfs.forEach((k,i) => list.innerHTML += `<div class="row">#${i} <input value="${k.x}" onchange="Ed.setKf(${i},'x',this.value)"> <input value="${k.y}" onchange="Ed.setKf(${i},'y',this.value)"></div>`);
+        if(!this.sel) { 
+            this.els.props.style.display = 'none'; 
+            this.els.noSel.style.display = 'block';
+            return; 
+        }
+        this.els.props.style.display = 'block';
+        this.els.noSel.style.display = 'none';
+
+        // Update Inputs
+        ['x','y','w','h','dur','z'].forEach(k => {
+            const el = document.getElementById('v-'+k);
+            if(el) el.value = Math.round((this.sel[k] || (k==='z'?10:0)) * 100) / 100;
+        });
+        
+        document.getElementById('p-id').innerText = this.sel.type;
+        document.getElementById('v-tag').value = this.sel.tag;
+        document.getElementById('v-link').value = this.sel.link;
+        document.getElementById('v-wait').checked = this.sel.wait;
+        
+        // Keyframe List
+        const list = document.getElementById('kf-list'); 
+        list.innerHTML = '';
+        this.sel.kfs.forEach((k, i) => {
+            list.innerHTML += `
+                <div class="kf-item">
+                    <span class="kf-idx">#${i+1}</span>
+                    X: <input type="number" value="${Math.round(k.x)}" onchange="Ed.setKf(${i},'x',this.value)">
+                    Y: <input type="number" value="${Math.round(k.y)}" onchange="Ed.setKf(${i},'y',this.value)">
+                </div>`;
+        });
     },
-    set(k,v) { if(this.sel) { HistorySys.push(); this.sel[k]=parseFloat(v); this.render(); } },
-    setStr(k,v) { if(this.sel) { HistorySys.push(); this.sel[k]=v; } },
-    setBool(k,v) { if(this.sel) { HistorySys.push(); this.sel[k]=v; } },
-    modZ(dir) { if(this.sel) { HistorySys.push(); this.sel.z = (this.sel.z||10)+dir; this.render(); } },
-    setKf(i,k,v) { if(this.sel) { HistorySys.push(); this.sel.kfs[i][k]=parseFloat(v); this.render(); } },
-    del() { HistorySys.push(); this.objs=this.objs.filter(o=>o!==this.sel); this.sel=null; this.render(); },
-    clear() { if(confirm("Clear?")) { HistorySys.push(); this.objs=[]; this.render(); } },
-    addKf(e,o) { HistorySys.push(); (o||this.sel).kfs.push({x:10,y:10}); this.render(); },
-    clearKf() { if(this.sel) { HistorySys.push(); this.sel.kfs=[]; this.render(); } },
+
+    set(k, v) { 
+        if(this.sel) { 
+            HistorySys.push(); 
+            this.sel[k] = parseFloat(v); 
+            this.render(); 
+        } 
+    },
+    setStr(k, v) { 
+        if(this.sel) { 
+            HistorySys.push(); 
+            this.sel[k] = v; 
+        } 
+    },
+    setBool(k, v) { 
+        if(this.sel) { 
+            HistorySys.push(); 
+            this.sel[k] = v; 
+        } 
+    },
+    modZ(dir) { 
+        if(this.sel) { 
+            HistorySys.push(); 
+            this.sel.z = (this.sel.z || 10) + dir; 
+            this.render(); 
+        } 
+    },
+    setKf(i, k, v) { 
+        if(this.sel) { 
+            HistorySys.push(); 
+            this.sel.kfs[i][k] = parseFloat(v); 
+            this.render(); 
+        } 
+    },
+    
+    // --- ACTIONS ---
+    del() { 
+        if(this.sel) {
+            HistorySys.push(); 
+            this.objs = this.objs.filter(o => o !== this.sel); 
+            this.sel = null; 
+            this.render(); 
+        }
+    },
+    clear() { 
+        if(confirm("Clear Everything?")) { 
+            HistorySys.push(); 
+            this.objs = []; 
+            this.render(); 
+        } 
+    },
+    addKf(e, o) { 
+        const target = o || this.sel;
+        if(target) {
+            HistorySys.push(); 
+            target.kfs.push({x: 10, y: 10}); 
+            this.render(); 
+        }
+    },
+    clearKf() { 
+        if(this.sel) { 
+            HistorySys.push(); 
+            this.sel.kfs = []; 
+            this.render(); 
+        } 
+    },
+
+    // --- PREVIEW MODE ---
     togglePlay() {
         this.playing = !this.playing;
         const pl = document.getElementById('play-layer');
+        const dump = document.getElementById('style-dump');
+        
         if(this.playing) {
-            pl.style.display='block'; pl.innerHTML=''; this.els.obj.style.display='none'; this.els.giz.style.display='none';
+            // Enter Play Mode
+            pl.style.display = 'block'; 
+            pl.innerHTML = '';
+            this.els.obj.style.display = 'none'; 
+            this.els.giz.style.display = 'none';
+            
             let css = "";
+            
+            // Build Preview Objects
             this.objs.forEach(o => {
-                const el = document.createElement('div'); el.className = `obj t-${o.type} ${o.wait?'paused':''}`;
+                const el = document.createElement('div');
+                el.className = `obj t-${o.type} ${o.wait ? 'paused' : ''}`;
+                
+                // Logic Linking ID
                 if(o.tag) el.id = "run-" + o.tag;
-                Object.assign(el.style, {left:o.x+'%', top:o.y+'%', width:o.w+'%', height:o.h+'%', zIndex:o.z||10});
+                
+                Object.assign(el.style, {
+                    left: o.x + '%', top: o.y + '%', 
+                    width: o.w + '%', height: o.h + '%', 
+                    zIndex: o.z || 10
+                });
+                
+                // Generate CSS Animation on the fly
                 if(o.kfs.length) {
-                    const nm = `a-${Math.random().toString(36).substr(2)}`;
-                    css += `@keyframes ${nm} { 0%{transform:translate(0,0)} `;
-                    o.kfs.forEach((k,i) => css += `${Math.round((i+1)/(o.kfs.length+1)*100)}%{transform:translate(${k.x}%,${k.y}%)} `);
-                    css += `100%{transform:translate(0,0)} } `;
+                    const nm = `anim-${Math.random().toString(36).substr(2, 5)}`;
+                    
+                    css += `@keyframes ${nm} { 
+                        0% { transform: translate(0,0); } `;
+                    
+                    o.kfs.forEach((k, i) => {
+                        const pct = Math.round((i + 1) / (o.kfs.length + 1) * 100);
+                        css += `${pct}% { transform: translate(${k.x}%, ${k.y}%); } `;
+                    });
+                    
+                    css += `100% { transform: translate(0,0); } } `;
                     el.style.animation = `${nm} ${o.dur}s linear infinite`;
                 }
-                if(o.type==='btn' || o.type==='trig') { el.onmouseenter = () => { if(o.link) { const t=document.getElementById("run-"+o.link); if(t) t.classList.remove('paused'); } }; el.style.pointerEvents = "auto"; }
+                
+                // Simple Logic Simulation (Hover = Activate)
+                if(o.type === 'btn' || o.type === 'trig') {
+                    el.onmouseenter = () => {
+                        if(o.link) { 
+                            const t = document.getElementById("run-" + o.link);
+                            if(t) t.classList.remove('paused'); 
+                        }
+                    };
+                    el.style.pointerEvents = "auto";
+                }
+                
                 pl.appendChild(el);
             });
-            document.getElementById('style-dump').innerHTML = css;
-        } else { pl.style.display='none'; this.els.obj.style.display='block'; this.els.giz.style.display='block'; this.render(); }
+            
+            dump.innerHTML = css;
+            
+        } else {
+            // Exit Play Mode
+            pl.style.display = 'none'; 
+            this.els.obj.style.display = 'block'; 
+            this.els.giz.style.display = 'block'; 
+            this.render();
+        }
     }
 };
+
 Ed.init();
 </script>
 </body>
