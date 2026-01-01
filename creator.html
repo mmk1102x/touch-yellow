@@ -10,37 +10,19 @@
         
         /* --- TOOLBAR --- */
         #toolbar { height:50px; background:#1a1a1a; display:flex; align-items:center; padding:0 15px; gap:8px; border-bottom:1px solid #444; }
-        
         button { background:#444; border:1px solid #222; color:#eee; padding:6px 12px; cursor:pointer; font-size:13px; border-radius:4px; transition:0.1s; font-weight:bold; }
         button:hover { background:#555; transform:translateY(-1px); } 
         button:active { transform:translateY(0); }
-        
         button.active { background:#666; border-color:#999; box-shadow:inset 0 0 4px #000; }
         button.prm { background:#f2a922; color:#000; border-color:#b37a15; }
         button.danger { background:#a33; border-color:#600; }
-        
         .sep { width:1px; height:24px; background:#444; margin:0 5px; }
 
         /* --- WORKSPACE --- */
         #workspace { flex:1; display:flex; }
-        
-        #sidebar { 
-            width:280px; background:#222; border-left:1px solid #333; 
-            padding:15px; display:flex; flex-direction:column; gap:15px; 
-            font-size:12px; overflow-y:auto; 
-        }
-        
-        #canvas { 
-            flex:1; position:relative; overflow:hidden; 
-            background-image:radial-gradient(#444 1px, transparent 1px); 
-            background-size:20px 20px; 
-            display:flex; justify-content:center; align-items:center; 
-        }
-        
-        #game-container { 
-            width:80%; aspect-ratio:16/9; position:relative; 
-            background:#000; box-shadow:0 0 50px #000; border:1px solid #333; 
-        }
+        #sidebar { width:280px; background:#222; border-left:1px solid #333; padding:15px; display:flex; flex-direction:column; gap:15px; font-size:12px; overflow-y:auto; }
+        #canvas { flex:1; position:relative; overflow:hidden; background-image:radial-gradient(#444 1px, transparent 1px); background-size:20px 20px; display:flex; justify-content:center; align-items:center; }
+        #game-container { width:80%; aspect-ratio:16/9; position:relative; background:#000; box-shadow:0 0 50px #000; border:1px solid #333; }
         
         /* --- GAME OBJECTS --- */
         .obj { position:absolute; box-sizing:border-box; cursor:move; box-shadow: 0 0 0 1px rgba(0,0,0,0.2); }
@@ -49,56 +31,35 @@
         .t-obs { background-color:#000; border:1px dashed #555; opacity:0.8; }
         .t-btn { background-color:#33cc33; opacity:0.9; } 
         .t-trig { background:rgba(150,0,255,0.3); border:2px solid #b0f; }
-        .t-start { 
-            border:2px solid lime; border-radius:50%; background:transparent; 
-            display:flex; justify-content:center; align-items:center; 
-        } 
+        .t-start { border:2px solid lime; border-radius:50%; background:transparent; display:flex; justify-content:center; align-items:center; } 
         .t-start::after { content:"S"; color:lime; font-weight:bold; }
         
-        /* --- EDITOR GIZMOS --- */
-        .gizmo { 
-            position:absolute; border:2px solid #fff; pointer-events:none; 
-            z-index:9999 !important; box-shadow: 0 0 5px rgba(0,0,0,0.5); 
-        }
-        .handle { 
-            position:absolute; width:12px; height:12px; background:#fff; 
-            border:1px solid #000; pointer-events:auto; 
-        }
+        /* --- GIZMOS --- */
+        .gizmo { position:absolute; border:2px solid #fff; pointer-events:none; z-index:9999 !important; box-shadow: 0 0 5px rgba(0,0,0,0.5); }
+        .handle { position:absolute; width:12px; height:12px; background:#fff; border:1px solid #000; pointer-events:auto; }
         .h-br { bottom:-7px; right:-7px; cursor:se-resize; }
         
-        /* --- PATH VISUALIZER --- */
+        /* --- PATHS --- */
         svg { position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:9000; }
         path { stroke:#f2a922; stroke-width:2; fill:none; stroke-dasharray:5; }
-        .kf-node { 
-            position:absolute; width:10px; height:10px; background:#f2a922; 
-            border:2px solid #fff; border-radius:50%; 
-            transform:translate(-50%,-50%); z-index:9500; cursor:grab; 
-        }
+        .kf-node { position:absolute; width:10px; height:10px; background:#f2a922; border:2px solid #fff; border-radius:50%; transform:translate(-50%,-50%); z-index:9500; cursor:grab; }
 
-        /* --- SIDEBAR PANELS --- */
+        /* --- UI PANELS --- */
         .panel { background:#2a2a2a; border:1px solid #333; padding:10px; border-radius:6px; }
         .panel-title { color:#f2a922; font-weight:bold; font-size:14px; text-transform:uppercase; margin-bottom:10px; border-bottom: 1px solid #333; padding-bottom: 5px; }
-        
         .row { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
         .row label { color:#888; width: 70px; }
-        
-        input[type=number], input[type=text] { 
-            flex:1; background:#111; border:1px solid #444; color:#fff; 
-            padding:5px; border-radius:3px; font-family: monospace;
-        }
+        input[type=number], input[type=text] { flex:1; background:#111; border:1px solid #444; color:#fff; padding:5px; border-radius:3px; font-family: monospace; }
         input[type=checkbox] { flex:0; transform:scale(1.3); }
         
-        /* Z-Control */
         .z-ctrl { display:flex; gap:2px; background:#111; border-radius:3px; padding:2px; flex:1; }
         .z-ctrl button { padding:2px 8px; font-weight:bold; background:#333; border:none; width:auto; }
         .z-ctrl input { text-align:center; border:none; background:transparent; font-weight:bold; width:100%; }
-
-        /* Keyframe List */
+        
         #kf-list { max-height:120px; overflow-y:auto; border:1px solid #333; padding:5px; margin-top:5px; background: #1a1a1a; }
         .kf-item { display:flex; gap:5px; margin-bottom:4px; align-items:center; font-family:monospace; font-size: 11px; }
         .kf-idx { color:#f2a922; font-weight:bold; width:20px; text-align: right;}
-
-        /* Play Mode Overlay */
+        
         #play-layer { position:absolute; inset:0; pointer-events:none; z-index:200; display:none; }
         .paused { animation-play-state: paused !important; }
         #style-dump { display:none; }
@@ -106,7 +67,6 @@
     <style id="style-dump"></style>
 </head>
 <body>
-    <!-- TOOLBAR -->
     <div id="toolbar">
         <button class="prm" onclick="Ed.togglePlay()">▶ PLAY</button>
         <div class="sep"></div>
@@ -128,35 +88,22 @@
         <button class="danger" onclick="Ed.clear()">CLR</button>
     </div>
 
-    <!-- MAIN AREA -->
     <div id="workspace">
         <div id="canvas" onmousedown="Ed.canvasDown(event)" onmousemove="Ed.canvasMove(event)" onmouseup="Ed.canvasUp(event)">
             <div id="game-container">
-                <!-- Object Layer -->
-                <div id="l-obj"></div>
-                <!-- Selection Layer -->
-                <div id="l-giz"></div>
-                <!-- Path Layer -->
-                <svg id="l-svg"></svg>
-                <div id="l-pts"></div>
-                <!-- Play Preview Layer -->
-                <div id="play-layer"></div>
+                <div id="l-obj"></div><div id="l-giz"></div><svg id="l-svg"></svg><div id="l-pts"></div><div id="play-layer"></div>
             </div>
         </div>
-
-        <!-- PROPERTIES SIDEBAR -->
         <div id="sidebar">
             <div id="props" style="display:none">
                 
-                <!-- 1. Geometry Panel -->
+                <!-- Geometry -->
                 <div class="panel" style="border-top: 3px solid #f2a922;">
                     <div class="panel-title"><span id="p-id">OBJECT</span></div>
-                    
                     <div class="row"><label>X %</label> <input type="number" id="v-x" onchange="Ed.set('x',this.value)"></div>
                     <div class="row"><label>Y %</label> <input type="number" id="v-y" onchange="Ed.set('y',this.value)"></div>
                     <div class="row"><label>W %</label> <input type="number" id="v-w" onchange="Ed.set('w',this.value)"></div>
                     <div class="row"><label>H %</label> <input type="number" id="v-h" onchange="Ed.set('h',this.value)"></div>
-                    
                     <div class="row">
                         <label>Layer</label> 
                         <div class="z-ctrl">
@@ -167,33 +114,28 @@
                     </div>
                 </div>
 
-                <!-- 2. Logic Panel -->
+                <!-- Logic -->
                 <div class="panel">
                     <div class="panel-title" style="color:#ddd">Logic & Links</div>
                     <div class="row"><label>Tag</label> <input type="text" id="v-tag" onchange="Ed.setStr('tag',this.value)" placeholder="Name me..."></div>
                     <div class="row"><label>Link</label> <input type="text" id="v-link" onchange="Ed.setStr('link',this.value)" placeholder="Target ID..."></div>
                 </div>
 
-                <!-- 3. Animation Panel -->
+                <!-- Animation -->
                 <div class="panel">
                     <div class="panel-title" style="color:#ddd">Animation</div>
                     <div class="row"><label>Wait Trig</label> <input type="checkbox" id="v-wait" onchange="Ed.setBool('wait',this.checked)"></div>
                     <div class="row"><label>Duration</label> <input type="number" id="v-dur" value="2" onchange="Ed.set('dur',this.value)"></div>
-                    
                     <div style="display:flex; gap:5px; margin-top:10px;">
                         <button style="flex:1" onclick="Ed.addKf()">+ Keyframe</button>
                         <button style="width:30px" class="danger" onclick="Ed.clearKf()">X</button>
                     </div>
-                    
-                    <div id="kf-list">
-                        <!-- Keyframes generated here via JS -->
-                    </div>
+                    <div id="kf-list"></div>
                 </div>
                 
                 <button class="danger" style="width:100%; margin-top:20px; padding:12px;" onclick="Ed.del()">DELETE SELECTED</button>
             </div>
             
-            <!-- Empty State -->
             <div id="no-sel" style="text-align:center; color:#666; margin-top:100px;">
                 Select an object to<br>edit properties.
             </div>
@@ -201,29 +143,21 @@
     </div>
 
 <script>
-/**
- * HISTORY SYSTEM
- * Handles Undo/Redo by snapshotting the entire object array.
- */
+// --- HISTORY SYSTEM (UNDO/REDO) ---
 const HistorySys = {
-    stack: [], 
-    future: [],
+    stack: [], future: [],
     
     push: function() {
         if(this.stack.length > 50) this.stack.shift();
-        // Deep copy objects to disconnect references
         this.stack.push(JSON.parse(JSON.stringify(Ed.objs)));
         this.future = [];
     },
-    
     undo: function() {
         if(this.stack.length === 0) return;
         this.future.push(JSON.parse(JSON.stringify(Ed.objs)));
         Ed.objs = this.stack.pop();
-        // Clear selection to avoid ghost handles
         Ed.sel = null; Ed.drag = null; Ed.render();
     },
-    
     redo: function() {
         if(this.future.length === 0) return;
         this.stack.push(JSON.parse(JSON.stringify(Ed.objs)));
@@ -232,28 +166,17 @@ const HistorySys = {
     }
 };
 
-// Key Bindings
 window.addEventListener('keydown', (e) => {
-    if(e.target.tagName === 'INPUT') return; // Don't trigger if typing
-    
-    if((e.ctrlKey || e.metaKey) && e.key === 'z') { 
-        e.preventDefault(); HistorySys.undo(); 
-    }
-    if((e.ctrlKey || e.metaKey) && e.key === 'y') { 
-        e.preventDefault(); HistorySys.redo(); 
-    }
+    if(e.target.tagName === 'INPUT') return;
+    if((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); HistorySys.undo(); }
+    if((e.ctrlKey || e.metaKey) && e.key === 'y') { e.preventDefault(); HistorySys.redo(); }
     if(e.key === 'Delete') Ed.del();
 });
 
-/**
- * COOKIE STORAGE SYSTEM
- * Compresses level data to fit in 4KB browser cookies.
- */
+// --- COOKIE SYSTEM ---
 const CookieSys = {
     save: () => {
         try {
-            // Compress Object -> Minified Array
-            // Format: [TypeIdx, X, Y, W, H, Keyframes, Tag, Link, Wait, Duration, Z-Index]
             const data = Ed.objs.map(o => {
                 let t = ['path','obs','goal','start','btn','trig'].indexOf(o.type);
                 const fix = n => Number(parseFloat(n).toFixed(2));
@@ -264,26 +187,18 @@ const CookieSys = {
                     o.tag, o.link, o.wait ? 1 : 0, fix(o.dur), parseInt(o.z || 10)
                 ];
             });
-            
             const str = btoa(JSON.stringify(data));
-            if(str.length > 4000) return alert(`Level is too complex for Cookie Save!\nSize: ${str.length}/4000 bytes.`);
-            
-            // Save for 1 year
+            if(str.length > 4090) return alert(`Level too big! (${str.length}/4096 bytes)`);
             const d = new Date(); d.setTime(d.getTime() + (365*24*60*60*1000));
             document.cookie = `ty_level=${str};expires=${d.toUTCString()};path=/`;
             alert("Level Saved Successfully!");
-        } catch(e) { 
-            alert("Save Error: " + e); 
-        }
+        } catch(e) { alert("Save Error: " + e); }
     },
-    
     load: () => {
         const m = document.cookie.match(/ty_level=([^;]+)/);
         if(!m) return alert("No saved level found.");
-        
         try {
             const raw = JSON.parse(atob(m[1]));
-            // Rehydrate Objects
             Ed.objs = raw.map(d => ({
                 id: Math.random().toString(36),
                 type: ['path','obs','goal','start','btn','trig'][d[0]],
@@ -292,24 +207,13 @@ const CookieSys = {
                 tag: d[6]||"", link: d[7]||"", wait: !!d[8], dur: d[9]||2, z: d[10]||10
             }));
             Ed.render();
-        } catch(e) { 
-            alert("Save file is corrupt."); 
-        }
+        } catch(e) { alert("Save file is corrupt."); }
     }
 };
 
-/**
- * EDITOR CORE
- * Main application logic.
- */
+// --- EDITOR ENGINE ---
 const Ed = {
-    objs: [], 
-    sel: null, 
-    tool: 'sel', 
-    drag: null, 
-    playing: false,
-    
-    // DOM Cache
+    objs: [], sel: null, tool: 'sel', drag: null, playing: false,
     els: { 
         obj: document.getElementById('l-obj'), 
         giz: document.getElementById('l-giz'), 
@@ -319,18 +223,13 @@ const Ed = {
         noSel: document.getElementById('no-sel')
     },
 
-    init() { 
-        // Start with a basic level
-        this.add('start', 5, 50, 6, 10); 
-    },
+    init() { this.add('start', 5, 50, 6, 10); },
 
-    // --- CREATION ---
     add(type, x=40, y=40, w=10, h=10) { 
         HistorySys.push(); 
         let z = 10; 
         if(type === 'obs') z = 20; 
         if(type === 'btn') z = 15;
-        
         this.objs.push({
             id: Math.random().toString(36),
             type, x, y, w, h, z,
@@ -346,21 +245,14 @@ const Ed = {
         this.render();
     },
 
-    // --- RENDERING ---
     render() {
         if(this.playing) return;
+        this.els.obj.innerHTML = ''; this.els.giz.innerHTML = '';
+        this.els.pts.innerHTML = ''; this.els.svg.innerHTML = '';
         
-        // Reset Layers
-        this.els.obj.innerHTML = '';
-        this.els.giz.innerHTML = '';
-        this.els.pts.innerHTML = '';
-        this.els.svg.innerHTML = '';
-        
-        // Sort objects by Z-Index so they stack visually correct
         const sorted = [...this.objs].sort((a,b) => (a.z||10) - (b.z||10));
 
         sorted.forEach(o => {
-            // 1. Create Element
             const el = document.createElement('div');
             el.className = `obj t-${o.type}`;
             Object.assign(el.style, {
@@ -368,116 +260,67 @@ const Ed = {
                 width: o.w + '%', height: o.h + '%', 
                 zIndex: o.z || 10
             });
-            
-            // 2. Attach Events
             el.onmousedown = (e) => this.startDrag(e, o, 'move');
             this.els.obj.appendChild(el);
 
-            // 3. Selection Logic
             if(this.sel === o) {
-                // Gizmo Box
-                const g = document.createElement('div'); 
-                g.className = 'gizmo';
+                const g = document.createElement('div'); g.className = 'gizmo';
                 Object.assign(g.style, {
                     left: o.x + '%', top: o.y + '%', 
                     width: o.w + '%', height: o.h + '%',
                     zIndex: 9999
                 });
-                
-                // Resize Handle
-                const h = document.createElement('div'); 
-                h.className = 'handle h-br';
+                const h = document.createElement('div'); h.className = 'handle h-br';
                 h.onmousedown = (e) => this.startDrag(e, o, 'scale');
-                
-                g.appendChild(h); 
-                this.els.giz.appendChild(g);
-                
-                // Render Path if selected
+                g.appendChild(h); this.els.giz.appendChild(g);
                 this.renderPath(o);
             }
         });
-        
         this.updateUI();
     },
 
     renderPath(o) {
-        // Only show paths if selected OR if tool is Path Tool
         if (!o.kfs.length && this.tool !== 'path') return;
-        
         let d = `M ${o.x + o.w/2} ${o.y + o.h/2}`;
-        
         o.kfs.forEach((k, i) => {
-            // Calculate absolute position based on offset
             const ax = o.x + o.w/2 + (k.x/100 * o.w);
             const ay = o.y + o.h/2 + (k.y/100 * o.h);
             d += ` L ${ax} ${ay}`;
-            
-            const pt = document.createElement('div'); 
-            pt.className = 'kf-node';
-            pt.style.left = ax + '%'; 
-            pt.style.top = ay + '%';
+            const pt = document.createElement('div'); pt.className = 'kf-node';
+            pt.style.left = ax + '%'; pt.style.top = ay + '%';
             this.els.pts.appendChild(pt);
         });
-
         const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
         path.setAttribute("d", d); 
         this.els.svg.appendChild(path);
     },
 
-    // --- INTERACTION ---
     startDrag(e, o, mode) {
         e.stopPropagation();
-        
-        // If in Path Mode, clicking an object adds a keyframe instead of moving
-        if(this.tool === 'path' && mode === 'move') { 
-            this.addKf(e, o); 
-            return; 
-        }
-        
-        this.sel = o; 
-        this.render();
-        HistorySys.push(); // Save state before moving
-        
-        this.drag = { 
-            mode, o, 
-            sx: e.clientX, sy: e.clientY, 
-            ox: o.x, oy: o.y, ow: o.w, oh: o.h 
-        };
+        if(this.tool === 'path' && mode === 'move') { this.addKf(e, o); return; }
+        this.sel = o; this.render();
+        HistorySys.push(); 
+        this.drag = { mode, o, sx: e.clientX, sy: e.clientY, ox: o.x, oy: o.y, ow: o.w, oh: o.h };
     },
 
     canvasMove(e) {
         if(!this.drag) return;
-        
         const rect = document.getElementById('game-container').getBoundingClientRect();
-        // Calculate Delta in Percentages
         const dx = (e.clientX - this.drag.sx) / rect.width * 100; 
         const dy = (e.clientY - this.drag.sy) / rect.height * 100;
         const o = this.drag.o;
 
         if(this.drag.mode === 'move') { 
-            o.x = this.drag.ox + dx; 
-            o.y = this.drag.oy + dy; 
+            o.x = this.drag.ox + dx; o.y = this.drag.oy + dy; 
         } else { 
-            // Scale logic
-            o.w = Math.max(1, this.drag.ow + dx); 
-            o.h = Math.max(1, this.drag.oh + dy); 
+            o.w = Math.max(1, this.drag.ow + dx); o.h = Math.max(1, this.drag.oh + dy); 
         }
-        
-        this.render(); 
-        this.updateUI(); 
+        this.render(); this.updateUI(); 
     },
 
     canvasUp() { this.drag = null; },
-    
-    canvasDown(e) { 
-        // Deselect if clicking empty space
-        if(e.target.id === 'game-container') { 
-            this.sel = null; 
-            this.render(); 
-        } 
-    },
+    canvasDown(e) { if(e.target.id === 'game-container') { this.sel = null; this.render(); } },
 
-    // --- UI UPDATES ---
     updateUI() {
         if(!this.sel) { 
             this.els.props.style.display = 'none'; 
@@ -487,7 +330,6 @@ const Ed = {
         this.els.props.style.display = 'block';
         this.els.noSel.style.display = 'none';
 
-        // Update Geometric Inputs
         ['x','y','w','h','dur','z'].forEach(k => {
             const el = document.getElementById('v-'+k);
             if(el) el.value = Math.round((this.sel[k] || (k==='z'?10:0)) * 100) / 100;
@@ -498,9 +340,7 @@ const Ed = {
         document.getElementById('v-link').value = this.sel.link;
         document.getElementById('v-wait').checked = this.sel.wait;
         
-        // Generate Keyframe List
-        const list = document.getElementById('kf-list'); 
-        list.innerHTML = '';
+        const list = document.getElementById('kf-list'); list.innerHTML = '';
         this.sel.kfs.forEach((k, i) => {
             list.innerHTML += `
                 <div class="kf-item">
@@ -511,110 +351,56 @@ const Ed = {
         });
     },
 
-    // --- SETTERS ---
-    set(k, v) { 
-        if(this.sel) { 
-            HistorySys.push(); 
-            this.sel[k] = parseFloat(v); 
-            this.render(); 
-        } 
-    },
+    set(k, v) { if(this.sel) { HistorySys.push(); this.sel[k] = parseFloat(v); this.render(); } },
     setStr(k, v) { if(this.sel) { HistorySys.push(); this.sel[k] = v; } },
     setBool(k, v) { if(this.sel) { HistorySys.push(); this.sel[k] = v; } },
-    modZ(dir) { 
-        if(this.sel) { 
-            HistorySys.push(); 
-            this.sel.z = (this.sel.z || 10) + dir; 
-            this.render(); 
-        } 
-    },
-    setKf(i, k, v) { 
-        if(this.sel) { 
-            HistorySys.push(); 
-            this.sel.kfs[i][k] = parseFloat(v); 
-            this.render(); 
-        } 
-    },
+    modZ(dir) { if(this.sel) { HistorySys.push(); this.sel.z = (this.sel.z || 10) + dir; this.render(); } },
+    setKf(i, k, v) { if(this.sel) { HistorySys.push(); this.sel.kfs[i][k] = parseFloat(v); this.render(); } },
     
-    // --- ACTIONS ---
     del() { 
-        if(this.sel) {
-            HistorySys.push(); 
-            this.objs = this.objs.filter(o => o !== this.sel); 
-            this.sel = null; 
-            this.render(); 
-        }
+        if(this.sel) { HistorySys.push(); this.objs = this.objs.filter(o => o !== this.sel); this.sel = null; this.render(); }
     },
     clear() { 
-        if(confirm("Clear Everything?")) { 
-            HistorySys.push(); 
-            this.objs = []; 
-            this.render(); 
-        } 
+        if(confirm("Clear Everything?")) { HistorySys.push(); this.objs = []; this.render(); } 
     },
     addKf(e, o) { 
         const target = o || this.sel;
-        if(target) {
-            HistorySys.push(); 
-            // Default new keyframe to 10% offset
-            target.kfs.push({x: 10, y: 10}); 
-            this.render(); 
-        }
+        if(target) { HistorySys.push(); target.kfs.push({x: 10, y: 10}); this.render(); }
     },
     clearKf() { 
-        if(this.sel) { 
-            HistorySys.push(); 
-            this.sel.kfs = []; 
-            this.render(); 
-        } 
+        if(this.sel) { HistorySys.push(); this.sel.kfs = []; this.render(); } 
     },
 
-    // --- PLAY PREVIEW ---
     togglePlay() {
         this.playing = !this.playing;
         const pl = document.getElementById('play-layer');
         const dump = document.getElementById('style-dump');
         
         if(this.playing) {
-            // ENTER PLAY MODE
-            pl.style.display = 'block'; 
-            pl.innerHTML = '';
-            // Hide Editor Layers
-            this.els.obj.style.display = 'none'; 
-            this.els.giz.style.display = 'none';
-            
+            pl.style.display = 'block'; pl.innerHTML = '';
+            this.els.obj.style.display = 'none'; this.els.giz.style.display = 'none';
             let css = "";
-            
-            // Generate Playable DOM
             this.objs.forEach(o => {
                 const el = document.createElement('div');
                 el.className = `obj t-${o.type} ${o.wait ? 'paused' : ''}`;
-                
                 if(o.tag) el.id = "run-" + o.tag;
-                
                 Object.assign(el.style, {
                     left: o.x + '%', top: o.y + '%', 
                     width: o.w + '%', height: o.h + '%', 
                     zIndex: o.z || 10
                 });
                 
-                // Generate Dynamic CSS Animation
                 if(o.kfs.length) {
                     const nm = `anim-${Math.random().toString(36).substr(2, 5)}`;
-                    
-                    css += `@keyframes ${nm} { 
-                        0% { transform: translate(0,0); } `;
-                    
+                    css += `@keyframes ${nm} { 0% { transform: translate(0,0); } `;
                     o.kfs.forEach((k, i) => {
                         const pct = Math.round((i + 1) / (o.kfs.length + 1) * 100);
                         css += `${pct}% { transform: translate(${k.x}%, ${k.y}%); } `;
                     });
-                    
                     css += `100% { transform: translate(0,0); } } `;
                     el.style.animation = `${nm} ${o.dur}s linear infinite`;
                 }
                 
-                // Logic Linking (Simulator)
                 if(o.type === 'btn' || o.type === 'trig') {
                     el.onmouseenter = () => {
                         if(o.link) { 
@@ -624,14 +410,10 @@ const Ed = {
                     };
                     el.style.pointerEvents = "auto";
                 }
-                
                 pl.appendChild(el);
             });
-            
             dump.innerHTML = css;
-            
         } else {
-            // EXIT PLAY MODE
             pl.style.display = 'none'; 
             this.els.obj.style.display = 'block'; 
             this.els.giz.style.display = 'block'; 
@@ -640,7 +422,6 @@ const Ed = {
     }
 };
 
-// Start App
 Ed.init();
 </script>
 </body>

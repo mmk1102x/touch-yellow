@@ -11,7 +11,7 @@
         #ui { z-index:50; pointer-events:auto; text-align:center; display:flex; flex-direction:column; justify-content:center; background:#00b0f0; }
         
         /* MENU - Blue Screen */
-        #menu-screen { position:absolute; top:0; left:0; width:100%; height:100%; background-color:#2cb5e9; display:flex; flex-direction:column; align-items:center; justify-content:center; pointer-events:auto; }
+        #menu-screen { position:absolute; top:0; left:0; width:100%; height:100%; background-color:#2cb5e9; display:flex; flex-direction:column; align-items:center; justify-content:center; pointer-events:auto; cursor:default; }
         .save-title { font-family:'Roboto',sans-serif; font-weight:900; font-size:10vh; color:#000; margin-bottom:5vh; text-align:center; }
         .menu-btn-row { display:flex; align-items:center; gap:2vh; margin-bottom:3vh; cursor:pointer; transition:transform 0.1s; }
         .menu-btn-row:active { transform:scale(0.95); }
@@ -25,10 +25,12 @@
         
         /* DEBUG */
         .hitbox { position:absolute; z-index:400; opacity:0; }
-        .debug .hitbox { opacity:1; }
+        .debug .hitbox { opacity:1 !important; }
         .debug .hitbox.path { background:rgba(38,169,225,0.2); border:1px solid white; }
         .debug .hitbox.goal { background:rgba(241,169,42,0.5); border:2px solid yellow; }
         .debug .hitbox.obs { background:rgba(255,0,0,0.5); border:2px solid red; background-image: linear-gradient(45deg, #000 25%, transparent 25%, transparent 75%, #000 75%, #000), linear-gradient(45deg, #000 25%, transparent 25%, transparent 75%, #000 75%, #000); background-size: 10px 10px; }
+        .debug .hitbox.trig { background:rgba(150,0,255,0.3); border:2px dashed magenta; }
+        .debug .hitbox.btn { background:rgba(51,204,51,0.5); border:2px solid cyan; }
         
         /* DEBUG LINES */
         .debug-line { position:fixed; background-color:cyan; pointer-events:none; z-index:9999; display:none; }
@@ -54,7 +56,7 @@
                 <div class="save-title">Got Save!</div>
                 <div class="menu-btn-row" onclick="Game.start(6)"><div class="btn-circle"></div><div class="btn-text">&lt;-Continue</div></div>
                 <div class="menu-btn-row" onclick="location.href='../index.html'"><div class="btn-circle"></div><div class="btn-text">&lt;-Menu</div></div>
-                <div class="menu-btn-row" onclick="alert('Use Browser Close')"><div class="btn-circle"></div><div class="btn-text">&lt;-Exit</div></div>
+                <div class="menu-btn-row" onclick="if(document.fullscreenElement) document.exitFullscreen(); location.href='../index.html'"><div class="btn-circle"></div><div class="btn-text">&lt;-Exit</div></div>
             </div>
             <div id="cheat-ind">NOCLIP ON</div>
             <div id="debug-ind">HITBOXES ON</div>
@@ -62,6 +64,14 @@
     </div>
 
 <script>
+// --- SECURITY: PREVENT UNAUTHORIZED ACCESS ---
+if (localStorage.getItem('touchYellow_save1') !== 'true') {
+    document.body.innerHTML = ""; document.body.style.background = "#000";
+    alert("Save File Locked! Completing Level 5 is required.");
+    window.location.href = "../index.html";
+    throw new Error("Redirecting...");
+}
+
 const LevelData = {
     6: (d) => {
         const H = 14; const W = 7.875;
@@ -94,7 +104,10 @@ const Game = {
         this.loop();
     },
     start(id) {
+        if (!document.fullscreenElement) { document.documentElement.requestFullscreen().catch(e=>{}); }
         this.active = true; document.getElementById('menu-screen').style.display='none';
+        this.hitboxes=[]; this.els.gfx.innerHTML=''; this.els.phy.innerHTML='';
+        
         const builder = {
             path: (x,y,w,h) => this.spawn(x,y,w,h,'path'),
             obs: (x,y,w,h,a) => this.spawn(x,y,w,h,'obs',a),
@@ -138,20 +151,27 @@ const Game = {
                 }
             }
         }
-        
-        // Cursor
         document.getElementById('game').style.cursor = safe ? 'crosshair' : 'default';
         if(!safe) this.die();
     },
     die() { if(this.noclip) return; this.active = false; this.start(6); },
+    reset() { this.active=false; this.hitboxes=[]; this.els.gfx.innerHTML=''; this.els.phy.innerHTML=''; document.getElementById('game').style.cursor='default'; },
+    toMenu() { this.reset(); document.getElementById('menu-screen').style.display='flex'; }
 };
 Game.init();
-window.cmd = (c) => { 
-    if(c==='hitbox') { const g=document.getElementById('game'); g.classList.toggle('debug'); document.getElementById('debug-ind').style.display = g.classList.contains('debug')?'block':'none'; }
-    if(c==='noclip') { Game.noclip = !Game.noclip; document.getElementById('cheat-ind').style.display = Game.noclip?'block':'none'; }
-    if(c.startsWith('load level')) { const n=parseInt(c.split('level')[1]); if(n) Game.start(n); }
-    if(c==='load menu' || c==='load save') location.href='../index.html';
-    if(c==='clear') { localStorage.clear(); alert("Cleared"); location.href='../index.html'; }
+
+// --- PRO CONSOLE COMMANDS ---
+Object.defineProperties(window, {
+    'hitbox': { get: function() { const g=document.getElementById('game'); g.classList.toggle('debug'); const on=g.classList.contains('debug'); document.getElementById('debug-ind').style.display=on?'block':'none'; return `Hitboxes: ${on?"ON":"OFF"}`; } },
+    'noclip': { get: function() { Engine.noclip=!Engine.noclip; document.getElementById('cheat-ind').style.display=Engine.noclip?'block':'none'; return `God Mode: ${Engine.noclip?"ON":"OFF"}`; } },
+    'clear': { get: function() { localStorage.clear(); alert("Wiped"); window.location.href='../index.html'; return "Resetting..."; } }
+});
+window.s1='save1'; window.menu='menu';
+window.load = function(t) {
+    if(typeof t==='number') { Engine.start(t); return `Level ${t}`; }
+    const s=String(t).toLowerCase();
+    if(s==='menu'||s==='save') { window.location.href='../index.html'; return "Returning..."; }
+    if(s==='save1'||s==='s1') { location.reload(); return "Reloading..."; }
 };
 </script>
 </body>
