@@ -2,66 +2,44 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Touch Yellow - Ultimate Creator</title>
+    <title>Touch Yellow - Editor</title>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
     <style>
         /* --- LAYOUT --- */
         body { margin:0; background:#222; font-family:'Roboto', sans-serif; color:white; height:100vh; display:flex; flex-direction:column; overflow:hidden; user-select:none; }
-        
-        /* TOOLBAR */
         #toolbar { height:50px; background:#1a1a1a; display:flex; align-items:center; padding:0 15px; gap:10px; border-bottom:1px solid #444; overflow-x: auto; }
         button { background:#444; border:1px solid #222; color:#eee; padding:5px 10px; cursor:pointer; font-size:12px; border-radius:4px; white-space: nowrap; }
         button:hover { background:#555; } button.active { background:#666; border-color:#999; box-shadow:inset 0 0 4px #000; }
         button.prm { background:#f2a922; color:#000; border-color:#b37a15; font-weight:bold; }
         button.danger { background:#a33; border-color:#600; }
-        
         .tool-group { display:flex; gap:5px; border-right:1px solid #444; padding-right:10px; align-items:center; }
         label { font-size:11px; color:#aaa; display:flex; align-items:center; gap:4px; cursor:pointer; }
         input[type=checkbox] { margin:0; }
-
-        /* WORKSPACE */
         #workspace { flex:1; display:flex; }
         #sidebar { width:280px; background:#222; border-left:1px solid #333; padding:15px; display:flex; flex-direction:column; gap:15px; font-size:12px; overflow-y:auto; }
         #canvas { flex:1; position:relative; overflow:hidden; background-image:radial-gradient(#444 1px, transparent 1px); background-size:20px 20px; display:flex; justify-content:center; align-items:center; }
         #game-container { width:80%; aspect-ratio:16/9; position:relative; background:#000; box-shadow:0 0 50px #000; border:1px solid #333; }
-        
-        /* OBJECTS */
         .obj { position:absolute; box-sizing:border-box; box-shadow: 0 0 0 1px rgba(0,0,0,0.2); }
-        .t-path { background-color:#26a9e1; opacity:0.9; } 
-        .t-goal { background-color:#f1a92a; opacity:0.9; } 
-        .t-obs { background-color:#000; border:1px dashed #555; opacity:0.8; }
-        .t-btn { background-color:#33cc33; opacity:0.9; } 
+        .t-path { background-color:#26a9e1; opacity:0.9; } .t-goal { background-color:#f1a92a; opacity:0.9; } 
+        .t-obs { background-color:#000; border:1px dashed #555; opacity:0.8; } .t-btn { background-color:#33cc33; opacity:0.9; } 
         .t-trig { background:rgba(150,0,255,0.3); border:2px solid #b0f; }
-        .t-start { border:2px solid lime; border-radius:50%; background:transparent; display:flex; justify-content:center; align-items:center; } 
-        .t-start::after { content:"S"; color:lime; font-weight:bold; }
-        
-        /* GIZMOS */
+        .t-start { border:2px solid lime; border-radius:50%; background:transparent; display:flex; justify-content:center; align-items:center; } .t-start::after { content:"S"; color:lime; font-weight:bold; }
         .gizmo { position:absolute; border:2px solid #fff; pointer-events:none; z-index:9999 !important; }
         .handle { position:absolute; width:10px; height:10px; background:#fff; border:1px solid #000; pointer-events:auto; }
-        .h-tl { top:-6px; left:-6px; cursor:nw-resize; }
-        .h-tr { top:-6px; right:-6px; cursor:ne-resize; }
-        .h-bl { bottom:-6px; left:-6px; cursor:sw-resize; }
-        .h-br { bottom:-6px; right:-6px; cursor:se-resize; }
-        
+        .h-tl { top:-6px; left:-6px; cursor:nw-resize; } .h-tr { top:-6px; right:-6px; cursor:ne-resize; } .h-bl { bottom:-6px; left:-6px; cursor:sw-resize; } .h-br { bottom:-6px; right:-6px; cursor:se-resize; }
         .rotate-stem { position:absolute; top:-20px; left:50%; width:1px; height:20px; background:#fff; pointer-events:none; }
         .rotate-knob { position:absolute; top:-28px; left:50%; width:10px; height:10px; background:#f2a922; border:1px solid #fff; border-radius:50%; transform:translateX(-50%); cursor:grab; pointer-events:auto; }
-
-        /* PATHS */
         svg { position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:9000; }
         path { stroke:#f2a922; stroke-width:2; fill:none; stroke-dasharray:5; }
         .kf-node { position:absolute; width:10px; height:10px; background:#f2a922; border:2px solid #fff; border-radius:50%; transform:translate(-50%,-50%); z-index:9500; cursor:grab; }
-
-        /* SIDEBAR PROPS */
         .panel { background:#2a2a2a; border:1px solid #333; padding:8px; border-radius:4px; }
         .row { display:flex; justify-content:space-between; align-items:center; margin-bottom:5px; }
         .row label { color:#888; width:60px; }
         input[type=number], input[type=text] { flex:1; background:#111; border:1px solid #444; color:#fff; padding:4px; }
         .z-ctrl { display:flex; gap:2px; flex:1; } 
         .z-ctrl button { width:auto; padding:2px 8px; } .z-ctrl input { text-align:center; }
-        
         #kf-list { max-height:100px; overflow-y:auto; border:1px solid #333; margin-top:5px; }
         .kf-item { display:flex; gap:5px; padding:2px; font-size:11px; }
-
         #play-layer { position:absolute; inset:0; pointer-events:none; z-index:200; display:none; }
         .paused { animation-play-state: paused !important; }
         #style-dump { display:none; }
@@ -103,11 +81,7 @@
     <div id="workspace">
         <div id="canvas">
             <div id="game-container">
-                <div id="l-obj"></div>
-                <div id="l-giz"></div>
-                <svg id="l-svg"></svg>
-                <div id="l-pts"></div>
-                <div id="play-layer"></div>
+                <div id="l-obj"></div><div id="l-giz"></div><svg id="l-svg"></svg><div id="l-pts"></div><div id="play-layer"></div>
             </div>
         </div>
         <div id="sidebar">
@@ -129,6 +103,7 @@
                 <div class="panel">
                     <div class="row" style="color:#ddd">Anim</div>
                     <div class="row"><label>Wait</label> <input type="checkbox" id="v-wait" onchange="Ed.setBool('wait',this.checked)"></div>
+                    <div class="row"><label>Loop</label> <input type="checkbox" id="v-loop" checked onchange="Ed.setBool('loop',this.checked)"></div>
                     <div class="row"><label>Dur</label> <input type="number" id="v-dur" value="2" onchange="Ed.set('dur',this.value)"></div>
                     <div class="row"><button onclick="Ed.addKf()">+ KF</button><button onclick="Ed.clearKf()">Reset</button></div>
                     <div id="kf-list"></div>
@@ -140,11 +115,9 @@
     </div>
 
 <script>
-// --- HISTORY ---
 const HistorySys={stack:[],future:[],push(){if(this.stack.length>50)this.stack.shift();this.stack.push(JSON.parse(JSON.stringify(Ed.objs)));this.future=[];},undo(){if(this.stack.length){this.future.push(JSON.parse(JSON.stringify(Ed.objs)));Ed.objs=this.stack.pop();Ed.sel=null;Ed.render();}},redo(){if(this.future.length){this.stack.push(JSON.parse(JSON.stringify(Ed.objs)));Ed.objs=this.future.pop();Ed.sel=null;Ed.render();}}};
 window.addEventListener('keydown',(e)=>{if(e.target.tagName==='INPUT')return;if((e.ctrlKey||e.metaKey)&&e.key==='z'){e.preventDefault();HistorySys.undo();}if((e.ctrlKey||e.metaKey)&&e.key==='y'){e.preventDefault();HistorySys.redo();}if(e.key==='Delete')Ed.del();});
 
-// --- COOKIE & EXPORT ---
 const CookieSys={
     save:()=>{
         try {
@@ -164,7 +137,6 @@ const CookieSys={
     }
 };
 
-// --- MAIN EDITOR ---
 const Ed = {
     objs: [], sel: null, tool: 'sel', drag: null, playing: false,
     els: { 
@@ -181,16 +153,15 @@ const Ed = {
         cvs.addEventListener('mousedown', (e) => this.down(e));
         cvs.addEventListener('mousemove', (e) => this.move(e));
         cvs.addEventListener('mouseup',   (e) => this.up(e));
-        
         this.add('start', 5, 50, 6, 10); 
     },
     
-    // Unified Schema: [Type, X, Y, W, H, KFS, Tag, Link, Wait, Dur, Z, Rot]
+    // Schema: [Type, X, Y, W, H, KFS, Tag, Link, Wait, Dur, Z, Rot, Loop]
     pack() { 
         return this.objs.map(o=>[ 
             ['path','obs','goal','start','btn','trig'].indexOf(o.type), 
             o.x, o.y, o.w, o.h, 
-            o.kfs, o.tag, o.link, o.wait?1:0, o.dur, o.z||10, o.r||0
+            o.kfs, o.tag, o.link, o.wait?1:0, o.dur, o.z||10, o.r||0, o.loop===false?0:1
         ]); 
     },
     
@@ -199,8 +170,8 @@ const Ed = {
             id:Math.random(), 
             type:['path','obs','goal','start','btn','trig'][r[0]], 
             x:r[1], y:r[2], w:r[3], h:r[4], 
-            kfs:r[5]||[], // Fixed Index
-            tag:r[6]||"", link:r[7]||"", wait:!!r[8], dur:r[9]||2, z:r[10]||10, r:r[11]||0 
+            kfs:r[5]||[], 
+            tag:r[6]||"", link:r[7]||"", wait:!!r[8], dur:r[9]||2, z:r[10]||10, r:r[11]||0, loop: r[12]!==0
         })); 
         this.render(); 
     },
@@ -208,7 +179,7 @@ const Ed = {
     add(type,x=40,y=40,w=10,h=10) { 
         HistorySys.push(); 
         let z=10; if(type==='obs')z=20; if(type==='btn')z=15;
-        this.objs.push({id:Math.random(), type, x, y, w, h, r:0, z, kfs:[], tag:"", link:"", wait:false, dur:2 });
+        this.objs.push({id:Math.random(), type, x, y, w, h, r:0, z, kfs:[], tag:"", link:"", wait:false, dur:2, loop:true });
         this.render(); 
     },
 
@@ -255,12 +226,16 @@ const Ed = {
     renderPath(o) {
         if(!o.kfs.length && this.tool!=='path') return;
         let d = `M ${o.x+o.w/2} ${o.y+o.h/2}`;
-        o.kfs.forEach(k => {
+        o.kfs.forEach((k, i) => {
             const ax = o.x+o.w/2 + (k.x/100*o.w);
             const ay = o.y+o.h/2 + (k.y/100*o.h);
             d += ` L ${ax} ${ay}`;
             const pt=document.createElement('div'); pt.className='kf-node';
             pt.style.left=ax+'%'; pt.style.top=ay+'%';
+            
+            // Allow dragging Keyframe Nodes
+            pt.onmousedown = (e) => this.startDrag(e, o, 'kf', i);
+            
             this.els.pts.appendChild(pt);
         });
         const p = document.createElementNS("http://www.w3.org/2000/svg","path"); p.setAttribute("d",d); this.els.svg.appendChild(p);
@@ -271,7 +246,8 @@ const Ed = {
         if(this.tool==='path' && mode==='move') { this.addKf(e,o); return; }
         
         this.sel = o; this.render(); HistorySys.push();
-        this.drag = { mode, o, sx:e.clientX, sy:e.clientY, handle, ox:o.x, oy:o.y, ow:o.w, oh:o.h, or:o.r };
+        this.drag = { mode, o, sx:e.clientX, sy:e.clientY, handle, ox:o.x, oy:o.y, ow:o.w, oh:o.h, or:o.r,
+                      kfIdx: (mode==='kf'?handle:null), kfx: (mode==='kf'?o.kfs[handle].x:0), kfy: (mode==='kf'?o.kfs[handle].y:0) };
     },
 
     move(e) {
@@ -282,7 +258,15 @@ const Ed = {
         const o = this.drag.o;
         const snap = document.getElementById('chk-snap').checked;
 
-        if(this.drag.mode === 'move') {
+        if(this.drag.mode === 'kf') {
+            const i = this.drag.kfIdx;
+            // Convert % delta to object-relative %
+            let nx = this.drag.kfx + (dx/o.w*100);
+            let ny = this.drag.kfy + (dy/o.h*100);
+            if(snap) { nx=Math.round(nx/10)*10; ny=Math.round(ny/10)*10; }
+            o.kfs[i].x = nx; o.kfs[i].y = ny;
+        }
+        else if(this.drag.mode === 'move') {
             o.x = this.drag.ox + dx; o.y = this.drag.oy + dy;
             if(snap) { o.x=Math.round(o.x); o.y=Math.round(o.y); }
         } 
@@ -292,7 +276,6 @@ const Ed = {
             if(this.drag.handle.includes('l')) { let d = Math.min(this.drag.ow-1, dx); nw = this.drag.ow - d; nx = this.drag.ox + d; }
             if(this.drag.handle.includes('b')) nh = Math.max(1, this.drag.oh + dy);
             if(this.drag.handle.includes('t')) { let d = Math.min(this.drag.oh-1, dy); nh = this.drag.oh - d; ny = this.drag.oy + d; }
-            
             if(snap) { nw=Math.round(nw); nh=Math.round(nh); nx=Math.round(nx); ny=Math.round(ny); }
             o.x=nx; o.y=ny; o.w=nw; o.h=nh;
         }
@@ -322,6 +305,7 @@ const Ed = {
         document.getElementById('v-tag').value = this.sel.tag;
         document.getElementById('v-link').value = this.sel.link;
         document.getElementById('v-wait').checked = this.sel.wait;
+        document.getElementById('v-loop').checked = (this.sel.loop !== false);
         
         const l = document.getElementById('kf-list'); l.innerHTML='';
         this.sel.kfs.forEach((k,i) => l.innerHTML += `<div class="kf-item"><span class="kf-idx">#${i+1}</span> X:<input type="number" value="${Math.round(k.x)}" onchange="Ed.setKf(${i},'x',this.value)"> Y:<input type="number" value="${Math.round(k.y)}" onchange="Ed.setKf(${i},'y',this.value)"></div>`);
@@ -335,31 +319,25 @@ const Ed = {
     
     del() { if(this.sel) { HistorySys.push(); this.objs=this.objs.filter(o=>o!==this.sel); this.sel=null; this.render(); } },
     clear() { if(confirm("Clear?")) { HistorySys.push(); this.objs=[]; this.render(); } },
-    addKf(e,o) { if(this.sel) { HistorySys.push(); this.sel.kfs.push({x:10,y:10}); this.render(); } },
+    addKf(e,o) { const t=o||this.sel; if(t) { HistorySys.push(); t.kfs.push({x:10,y:10}); this.render(); } },
     clearKf() { if(this.sel) { HistorySys.push(); this.sel.kfs=[]; this.render(); } },
 
-    // --- EXPORTS ---
-    exportHash() {
-        const d = this.pack();
-        const s = btoa(JSON.stringify(d));
-        prompt("Copy Level Hash:", s);
-    },
-    importHash() {
-        const s = prompt("Paste Level Hash:");
-        if(s) {
-            try { this.unpack(JSON.parse(atob(s))); } catch(e) { alert("Invalid"); }
-        }
-    },
+    exportHash() { const d=this.pack(); const s=btoa(JSON.stringify(d)); prompt("Copy Level Hash:", s); },
+    importHash() { const s=prompt("Paste Level Hash:"); if(s) try { this.unpack(JSON.parse(atob(s))); } catch(e) { alert("Invalid"); } },
     exportCode() {
         let js = `// Level Code\n(d) => {\n`;
         this.objs.forEach(o => {
             let animStr = "null";
-            if(o.kfs.length) animStr = `"customAnim ${o.dur}s linear infinite"`; 
+            if(o.kfs.length) {
+                const iter = (o.loop !== false) ? 'infinite' : 'forwards';
+                animStr = `"customAnim ${o.dur}s linear ${iter}"`; 
+            }
             const z = o.z && o.z !== 10 ? `, z:${o.z}` : '';
             
             if(o.type==='path') js += `    d.path(${o.x}, ${o.y}, ${o.w}, ${o.h}${z});\n`;
             if(o.type==='obs') js += `    d.obs(${o.x}, ${o.y}, ${o.w}, ${o.h}, ${animStr}${z});\n`;
             if(o.type==='goal') js += `    d.goal(${o.x}, ${o.y}, ${o.w}, ${o.h}, 'next');\n`;
+            if(o.type==='btn') js += `    const b = d.btn(${o.x}, ${o.y}, ${o.w}, ${o.h});\n`;
         });
         js += `}`;
         console.log(js); alert("Code logged to Console (F12)");
@@ -378,7 +356,6 @@ const Ed = {
                 if(o.tag) el.id = "run-"+o.tag;
                 Object.assign(el.style, { left:o.x+'%', top:o.y+'%', width:o.w+'%', height:o.h+'%', zIndex:o.z||10, transform:`rotate(${o.r}deg)` });
                 
-                // Fix for the crash: Check if kfs is valid array
                 if(Array.isArray(o.kfs) && o.kfs.length) {
                     const nm = `anim-${Math.random().toString(36).substr(2,5)}`;
                     css += `@keyframes ${nm} { 0% { transform: translate(0,0) rotate(${o.r}deg); } `;
@@ -387,7 +364,8 @@ const Ed = {
                         css += `${pct}% { transform: translate(${k.x}%, ${k.y}%) rotate(${o.r}deg); } `;
                     });
                     css += `100% { transform: translate(0,0) rotate(${o.r}deg); } } `;
-                    el.style.animation = `${nm} ${o.dur}s linear infinite`;
+                    const iter = (o.loop !== false) ? 'infinite' : 'forwards';
+                    el.style.animation = `${nm} ${o.dur}s linear ${iter}`;
                 }
                 
                 if(o.type==='btn' || o.type==='trig') {

@@ -8,9 +8,9 @@
         body { margin:0; background:#000; overflow:hidden; font-family:'Roboto',sans-serif; height:100vh; display:flex; justify-content:center; align-items:center; user-select:none; touch-action:none; }
         #game { width:100%; max-width:177.7vh; aspect-ratio:16/9; position:relative; background:#000; box-shadow:0 0 50px #00b0f0; }
         .layer { position:absolute; inset:0; pointer-events:none; }
-        #ui { z-index:500; pointer-events:auto; text-align:center; display:flex; flex-direction:column; justify-content:center; background:#00b0f0; }
+        #ui { z-index:50; pointer-events:auto; text-align:center; display:flex; flex-direction:column; justify-content:center; background:#00b0f0; }
         
-        /* MENU */
+        /* MENU - Blue Screen */
         #menu-screen { position:absolute; top:0; left:0; width:100%; height:100%; background-color:#2cb5e9; display:flex; flex-direction:column; align-items:center; justify-content:center; pointer-events:auto; cursor:default; }
         .save-title { font-family:'Roboto',sans-serif; font-weight:900; font-size:10vh; color:#000; margin-bottom:5vh; text-align:center; }
         .menu-btn-row { display:flex; align-items:center; gap:2vh; margin-bottom:3vh; cursor:pointer; transition:transform 0.1s; }
@@ -18,16 +18,19 @@
         .btn-circle { width:8vh; height:8vh; background-color:#f2a922; border:0.4vh solid #bf8310; border-radius:50%; box-shadow:0 0.5vh 0 rgba(0,0,0,0.2); }
         .btn-text { font-family:'Roboto',sans-serif; font-weight:900; font-size:5vh; color:#000; }
 
-        /* GAME ELEMENTS */
+        /* GAME OBJECTS */
         .obj { position:absolute; transition:background 0.3s; box-shadow: 0 0 0 1px currentColor; }
         .path { background:#26a9e1; color:#26a9e1; } .goal { background:#f1a92a; color:#f1a92a; } 
-        /* FIXED: Obstacles now have a visible border */
-        .obs { background:#000; color:transparent; border:1px dashed #555; } 
+        /* FIXED: Visible border for obstacles */
+        .obs { background:#000; color:transparent; border: 2px dashed #555; } 
         .btn { background:#33cc33; color:#33cc33; } .btn.on { background:#228822; color:#228822; }
-        /* FIXED: Start Zone is visible green outline */
-        .start { border:2px solid lime; border-radius:50%; color:transparent; }
+        /* FIXED: Visible Start Zone */
+        .start { background:transparent; border: 2px solid lime; border-radius: 50%; }
         
-        /* DEBUG */
+        /* DEBUG OVERLAY */
+        .debug-overlay { display:none; pointer-events:none; position:absolute; top:0; left:0; width:100%; height:100%; z-index:9999; }
+        .debug .debug-overlay { display:block; }
+        
         .hitbox { position:absolute; z-index:400; opacity:0; }
         .debug .hitbox { opacity:1 !important; }
         .debug .hitbox.path { background:transparent; border:none; }
@@ -40,11 +43,10 @@
         #db-cross-y { position:absolute; width:1px; height:100%; background-color:cyan; top:0; }
         #db-coords { position:absolute; bottom:5px; right:5px; color:cyan; font-family:monospace; font-size:2vh; font-weight:bold; background:rgba(0,0,0,0.8); padding:2px 5px; border:1px solid cyan; }
         #db-room { position:absolute; bottom:5px; left:5px; color:cyan; font-family:monospace; font-size:2vh; font-weight:bold; background:rgba(0,0,0,0.8); padding:2px 5px; border:1px solid cyan; }
-        .debug-overlay { display:none; pointer-events:none; position:absolute; top:0; left:0; width:100%; height:100%; z-index:9999; }
-        .debug .debug-overlay { display:block; }
-
+        
         .paused { animation-play-state: paused !important; }
         #cheat-ind { position:absolute; bottom:10px; left:10px; color:yellow; font-weight:bold; display:none; z-index:999; font-family:monospace; font-size:2vh; }
+        #debug-ind { position:absolute; bottom:35px; left:10px; color:lime; font-weight:bold; display:none; z-index:999; font-family:monospace; font-size:2vh; }
         
         /* ANIMATIONS */
         @keyframes spawnIn { 0% { transform: scale(0); } 100% { transform: scale(1); } }
@@ -64,14 +66,15 @@
                 <div class="save-title">Got Save!</div>
                 <div class="menu-btn-row" onclick="Engine.start(6)"><div class="btn-circle"></div><div class="btn-text">&lt;-Continue</div></div>
                 <div class="menu-btn-row" onclick="location.href='../index.html'"><div class="btn-circle"></div><div class="btn-text">&lt;-Menu</div></div>
-                <div class="menu-btn-row" onclick="alert('Use Browser Close')"><div class="btn-circle"></div><div class="btn-text">&lt;-Exit</div></div>
+                <div class="menu-btn-row" onclick="if(document.fullscreenElement) document.exitFullscreen(); location.href='../index.html'"><div class="btn-circle"></div><div class="btn-text">&lt;-Exit</div></div>
             </div>
             <div id="cheat-ind">NOCLIP ON</div>
+            <div id="debug-ind">HITBOXES ON</div>
         </div>
     </div>
 
 <script>
-// --- SECURITY ---
+// --- SECURITY: PREVENT UNAUTHORIZED ACCESS ---
 if (localStorage.getItem('touchYellow_save1') !== 'true') {
     document.body.innerHTML = ""; document.body.style.background = "#000";
     alert("Save File Locked! Completing Level 5 is required.");
@@ -80,35 +83,48 @@ if (localStorage.getItem('touchYellow_save1') !== 'true') {
 }
 
 const LevelData = {
-    // LEVEL 6: 2-Button Logic (Restored)
+    // LEVEL 6: 2-Button Puzzle
     6: (d) => {
-        // Geometry
-        d.start(2, 67, 10, 10);
-        d.path(0, 65, 45, 15);
-        d.path(35, 0, 20, 80);
-        d.path(55, 0, 45, 20);
-        d.path(72, 20, 6, 55);
-        d.path(72, 65, 18, 15);
-        d.path(90, 65, 10, 15);
+        // --- Geometry (Corrected for Layout) ---
+        d.path(0, 63, 36, 11);
+        d.path(26, 0, 10, 74);
+        d.path(12.6, 0, 14.2, 18.5); // Top Left pocket
+        d.path(35.6, 0.3, 64.2, 12.9);
+        d.path(59.5, 11.9, 9.5, 54.3);
+        d.path(47.1, 53.4, 13.1, 12.8);
+        d.path(79.5, 12.1, 19.4, 57.2); // Right Shaft
+        
+        // Start Zone
+        d.start(2, 65, 10, 8); 
 
-        // Logic
-        const btn1 = d.btn(80, 5, 8, 10);
+        // --- Logic ---
+        
+        // 1. TOP BUTTON (Spawns the bottom one)
+        const btn1 = d.btn(38, 5, 8, 8); 
         btn1.link = "btn2";
 
-        const btn2 = d.btn(75, 68, 6, 8);
-        btn2.vis.style.animation = "spawnIn 0.5s forwards"; btn2.hit.style.animation = "spawnIn 0.5s forwards";
-        btn2.vis.classList.add('paused'); btn2.hit.classList.add('paused');
-        btn2.tag = "btn2";
-        btn2.link = "gate";
+        // 2. BOTTOM BUTTON (Hidden Key)
+        const btn2 = d.btn(50, 55, 8, 8);
+        btn2.vis.style.animation = "spawnIn 0.5s forwards";
+        btn2.hit.style.animation = "spawnIn 0.5s forwards";
+        btn2.vis.classList.add('paused'); 
+        btn2.hit.classList.add('paused');
+        btn2.tag = "btn2"; 
+        btn2.link = "door";
 
-        const door = d.obs(88, 65, 4, 15, "openDoor 1s forwards");
-        door.vis.classList.add('paused'); door.hit.classList.add('paused');
-        door.tag = "gate";
+        // 3. THE BIG OBSTACLE (Door)
+        // Animates ONCE ('forwards')
+        const obs = d.obs(79.3, 13.4, 19.9, 56.3, "openDoor 2s linear forwards");
+        obs.vis.classList.add('paused');
+        obs.hit.classList.add('paused');
+        obs.vis.style.zIndex = 20; 
+        obs.tag = "door";
 
-        d.goal(92, 67, 6, 10, 7);
+        // 4. GOAL
+        d.goal(87, 58.8, 10, 10, 7);
     },
     
-    // LEVEL 7: Filler
+    // FILLER
     7: (d) => { 
         d.start(10, 20, 10, 15);
         d.path(10, 20, 10, 60); d.path(10, 80, 80, 14); d.goal(80, 20, 8, 14, 'win'); 
@@ -148,6 +164,7 @@ const Engine = {
         
         document.getElementById('menu-screen').style.display='none';
         this.hitboxes=[]; this.els.gfx.innerHTML=''; this.els.phy.innerHTML='';
+        
         document.getElementById('db-room').innerText = "ROOM: LEVEL " + id;
         
         const builder = {
@@ -180,19 +197,18 @@ const Engine = {
         const mx = (this.mx - r.left)/r.width*100;
         const my = (this.my - r.top)/r.height*100;
         
-        // Bounds Check: Only die if playing (not in ghost mode)
+        // Bounds Check: Only die if playing
         if((mx<0||mx>100||my<0||my>100) && this.state==='playing') return this.die();
         
         if(this.mobile && !this.holding) return;
         let safe = false;
-        
         for(let hb of this.hitboxes) {
             const hr = hb.hit.getBoundingClientRect();
             const bx=(hr.left-r.left)/r.width*100, by=(hr.top-r.top)/r.height*100;
             const bw=hr.width/r.width*100, bh=hr.height/r.height*100;
 
             if(mx>bx && mx<bx+bw && my>by && my<by+bh) {
-                // Obstacles: Die if playing
+                // Die on Obstacle if playing
                 if(hb.type === 'obs' && this.state==='playing') return this.die();
                 
                 if(hb.type === 'path') safe = true;
@@ -207,6 +223,7 @@ const Engine = {
                 }
                 
                 if(hb.type === 'goal') { safe=true; this.start(hb.next); }
+                
                 if((hb.type==='btn' || hb.type==='trig') && hb.link) {
                     safe=true;
                     this.hitboxes.forEach(t => { if(t.tag === hb.link) { t.vis.classList.remove('paused'); t.hit.classList.remove('paused'); }});
@@ -217,10 +234,10 @@ const Engine = {
         
         document.getElementById('game').style.cursor = (this.state==='playing' && safe) ? 'crosshair' : 'default';
         
-        // Void Death: Only if playing
+        // Die on Void if playing
         if(this.state==='playing' && !safe) this.die();
     },
-    die() { if(this.noclip) return; this.active = false; this.start(6); }, // Instant Retry
+    die() { if(this.noclip) return; this.active = false; this.start(6); },
     reset() { this.active=false; this.hitboxes=[]; this.els.gfx.innerHTML=''; this.els.phy.innerHTML=''; document.getElementById('game').style.cursor='default'; },
     toMenu() { this.reset(); document.getElementById('menu-screen').style.display='flex'; document.getElementById('db-room').innerText="ROOM: MENU"; }
 };
@@ -228,11 +245,11 @@ Engine.init();
 
 // --- COMMANDS ---
 Object.defineProperties(window, {
-    'debug': { get: function() { const g=document.getElementById('game'); g.classList.toggle('debug'); return `Debug: ${g.classList.contains('debug')?"ON":"OFF"}`; } },
+    'debug': { get: function() { const g=document.getElementById('game'); g.classList.toggle('debug'); const on=g.classList.contains('debug'); document.getElementById('debug-ind').style.display=on?'block':'none'; return `Debug: ${on?"ON":"OFF"}`; } },
     'noclip': { get: function() { Engine.noclip=!Engine.noclip; document.getElementById('cheat-ind').style.display=Engine.noclip?'block':'none'; return `God Mode: ${Engine.noclip?"ON":"OFF"}`; } },
     'clear': { get: function() { localStorage.clear(); alert("Wiped"); window.location.href='../index.html'; return "Resetting..."; } }
 });
-window.s1='save1'; window.menu='menu';
+window.menu='menu';
 window.load = function(t) {
     if(typeof t==='number') { Engine.start(t); return `Level ${t}`; }
     const s=String(t).toLowerCase();
