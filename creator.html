@@ -21,7 +21,7 @@
 
         /* WORKSPACE */
         #workspace { flex:1; display:flex; }
-        #sidebar { width:280px; background:#222; border-left:1px solid #333; padding:10px; display:flex; flex-direction:column; gap:10px; font-size:12px; overflow-y:auto; }
+        #sidebar { width:280px; background:#222; border-left:1px solid #333; padding:15px; display:flex; flex-direction:column; gap:15px; font-size:12px; overflow-y:auto; }
         #canvas { flex:1; position:relative; overflow:hidden; background-image:radial-gradient(#444 1px, transparent 1px); background-size:20px 20px; display:flex; justify-content:center; align-items:center; }
         #game-container { width:80%; aspect-ratio:16/9; position:relative; background:#000; box-shadow:0 0 50px #000; border:1px solid #333; }
         
@@ -103,7 +103,11 @@
     <div id="workspace">
         <div id="canvas">
             <div id="game-container">
-                <div id="l-obj"></div><div id="l-giz"></div><svg id="l-svg"></svg><div id="l-pts"></div><div id="play-layer"></div>
+                <div id="l-obj"></div>
+                <div id="l-giz"></div>
+                <svg id="l-svg"></svg>
+                <div id="l-pts"></div>
+                <div id="play-layer"></div>
             </div>
         </div>
         <div id="sidebar">
@@ -182,7 +186,6 @@ const Ed = {
     },
     
     // Unified Schema: [Type, X, Y, W, H, KFS, Tag, Link, Wait, Dur, Z, Rot]
-    // Rotation moved to end to prevent index mismatch with CookieSys
     pack() { 
         return this.objs.map(o=>[ 
             ['path','obs','goal','start','btn','trig'].indexOf(o.type), 

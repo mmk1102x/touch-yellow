@@ -62,7 +62,7 @@
         .debug .hitbox { opacity:1 !important; }
         .debug .hitbox.path { background:transparent; border:none; }
         .debug .hitbox.goal { background:rgba(241,169,42,0.5); border:2px solid yellow; }
-        .debug .hitbox.obs { background:rgba(255,0,0,0.6); border:2px solid red; }
+        .debug .hitbox.obs { background:rgba(255,0,0,0.6); border:2px solid red; background-image: linear-gradient(45deg, #000 25%, transparent 25%, transparent 75%, #000 75%, #000), linear-gradient(45deg, #000 25%, transparent 25%, transparent 75%, #000 75%, #000); background-size: 10px 10px; }
         .debug .hitbox.trig, .debug .hitbox.btn { background:rgba(148,0,211,0.5); border:2px dashed magenta; }
         .debug .hitbox.start { background:rgba(0,255,0,0.2); border:1px dotted lime; }
 
@@ -160,24 +160,16 @@ const LevelData = {
         d.obs(75, g.p4Y, oW, g.H*1.5, "waterfallDrop 4s linear infinite"); d.obs(75, g.p4Y, oW, g.H*1.5, "waterfallDrop 4s linear infinite -1.3s");
     },
     4: (d) => { 
-        // Z-Shape Layout (Top-Left is Void)
         const H = 14; const W = 7.875;
-        d.path(50, 0, 50, 50);   // Top Right
-        d.path(0, 50, 100, 50);  // Bottom Half
-        d.path(0, 0, 55, 15);    // Bridge from previous
-        
-        d.path(10, 0, 10, 15); // Start Area
-
-        const g = d.goal(10, 65, W, H, 5);
-        g.vis.style.animation = "crazyMove 3s linear infinite"; 
-        g.hit.style.animation = "crazyMove 3s linear infinite";
-        g.vis.classList.add('paused'); g.hit.classList.add('paused'); g.tag="runner";
-
-        const t = d.trig(35, 50, 2, 50); t.link = "runner";
+        d.path(15, 10, 75, H); d.path(90 - W, 10, W, 60); d.path(5, 60, 85, 35);
+        const enemy = d.obs(25, 60, 2, 30, "safeRoomPatrol 4s linear infinite");
+        enemy.vis.classList.add('paused'); enemy.hit.classList.add('paused'); enemy.tag = "patrol";
+        const t = d.trig(80, 20, 10, 40); t.link = "patrol";
+        d.goal(10, 65, W, H, 5, 500); 
     },
     5: (d) => { 
         d.path(5, 5, 90, 90); 
-        const g = d.goal(10, 10, 10, 10, "redirect_save1");
+        const g = d.goal(10, 10, 10, 10, "redirect_save1", 500);
         g.vis.style.animation = "superCrazyMove 4s linear infinite"; g.hit.style.animation = "superCrazyMove 4s linear infinite";
         g.vis.classList.add('paused'); g.hit.classList.add('paused'); g.tag="run";
         const t = d.trig(5,5,90,90); t.link="run";
@@ -193,18 +185,15 @@ const Engine = {
         this.mobile = 'ontouchstart' in window;
         const move = (x,y) => { 
             this.mx=x; this.my=y; 
-            
-            // Debug Overlay Update
             const cx = document.getElementById('db-cross-x');
             const cy = document.getElementById('db-cross-y');
             const ct = document.getElementById('db-coords');
             
-            if(cx && cy) { cx.style.top = y + 'px'; cy.style.left = x + 'px'; }
-            if(ct) {
+            if(cx && cy) { 
                 const r = document.getElementById('game').getBoundingClientRect();
-                const px = ((x - r.left)/r.width*100).toFixed(2);
-                const py = ((y - r.top)/r.height*100).toFixed(2);
-                ct.innerText = `X: ${px}% Y: ${py}%`;
+                const ly = y - r.top; const lx = x - r.left;
+                cx.style.top = ly + 'px'; cy.style.left = lx + 'px';
+                if(ct) ct.innerText = `X: ${(lx/r.width*100).toFixed(2)}% Y: ${(ly/r.height*100).toFixed(2)}%`;
             }
         };
         window.addEventListener('mousemove', e => move(e.clientX, e.clientY));
@@ -230,9 +219,9 @@ const Engine = {
         this.active = true;
         this.els.menu.style.display='none'; document.getElementById('saves-screen').style.display='none';
         
+        // Custom = Ghost Mode, Official = Instant
         this.state = (id==='custom') ? 'waiting' : 'playing'; 
         
-        // Update Room Name
         document.getElementById('db-room').innerText = (id==='custom') ? "ROOM: CUSTOM" : "ROOM: LEVEL " + id;
         
         const builder = {
@@ -347,11 +336,7 @@ const Engine = {
         this.els.gfx.innerHTML=''; this.els.phy.innerHTML=''; 
         document.getElementById('game').style.cursor = 'default';
     },
-    toMenu() { 
-        this.reset(); 
-        this.els.menu.style.display='block'; 
-        document.getElementById('db-room').innerText = "ROOM: MENU";
-    },
+    toMenu() { this.reset(); this.els.menu.style.display='block'; document.getElementById('db-room').innerText="ROOM: MENU"; },
     
     // UI LOGIC
     openSavesMenu() {
@@ -386,14 +371,6 @@ window.load = function(t) {
     if(s==='save'||s==='saves') { Engine.openSavesMenu(); return "Saves"; }
     if(s==='save1'||s==='s1') { localStorage.setItem('touchYellow_save1','true'); location.href='save/save1.html'; return "World 2"; }
     if(s==='save2'||s==='s2') { localStorage.setItem('touchYellow_save2','true'); alert("Unlocked 2"); Engine.openSavesMenu(); return "Unlock"; }
-};
-// Alias for old habit
-window.cmd = function(c) {
-    if(c==='hitbox') window.debug;
-    else if(c==='noclip') window.noclip;
-    else if(c==='clear') window.clear;
-    else if(c.startsWith('load level')) { const n=parseInt(c.split('level')[1]); if(!isNaN(n)) Engine.start(n); }
-    else if(c.startsWith('load ')) window.load(c.split(' ')[1]);
 };
 </script>
 </body>
