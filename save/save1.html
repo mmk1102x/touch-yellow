@@ -23,31 +23,36 @@
         .path { background:#26a9e1; color:#26a9e1; } .goal { background:#f1a92a; color:#f1a92a; } .obs { background:#000; color:transparent; } 
         .btn { background:#33cc33; color:#33cc33; } .btn.on { background:#228822; color:#228822; }
         
-        /* DEBUG */
+        /* DEBUG OVERLAY */
+        .debug-overlay { display:none; pointer-events:none; position:absolute; top:0; left:0; width:100%; height:100%; z-index:9999; }
+        .debug .debug-overlay { display:block; }
+        
         .hitbox { position:absolute; z-index:400; opacity:0; }
         .debug .hitbox { opacity:1 !important; }
-        .debug .hitbox.path { background:rgba(38,169,225,0.2); border:1px solid white; }
+        .debug .hitbox.path { background:transparent; border:none; }
         .debug .hitbox.goal { background:rgba(241,169,42,0.5); border:2px solid yellow; }
-        .debug .hitbox.obs { background:rgba(255,0,0,0.5); border:2px solid red; background-image: linear-gradient(45deg, #000 25%, transparent 25%, transparent 75%, #000 75%, #000), linear-gradient(45deg, #000 25%, transparent 25%, transparent 75%, #000 75%, #000); background-size: 10px 10px; }
-        .debug .hitbox.trig { background:rgba(150,0,255,0.3); border:2px dashed magenta; }
-        .debug .hitbox.btn { background:rgba(51,204,51,0.5); border:2px solid cyan; }
-        
-        /* DEBUG LINES */
-        .debug-line { position:fixed; background-color:cyan; pointer-events:none; z-index:9999; display:none; }
-        .debug .debug-line { display:block; }
-        #debug-cross-x { width:100%; height:1px; left:0; }
-        #debug-cross-y { width:1px; height:100%; top:0; }
+        .debug .hitbox.obs { background:rgba(255,0,0,0.6); border:2px solid red; }
+        .debug .hitbox.trig, .debug .hitbox.btn { background:rgba(148,0,211,0.5); border:2px dashed magenta; }
+        .debug .hitbox.start { background:rgba(0,255,0,0.2); border:1px dotted lime; }
+
+        #db-cross-x { position:absolute; width:100%; height:1px; background-color:cyan; left:0; }
+        #db-cross-y { position:absolute; width:1px; height:100%; background-color:cyan; top:0; }
+        #db-coords { position:absolute; bottom:5px; right:5px; color:cyan; font-family:monospace; font-size:2vh; font-weight:bold; background:rgba(0,0,0,0.8); padding:2px 5px; border:1px solid cyan; }
+        #db-room { position:absolute; bottom:5px; left:5px; color:cyan; font-family:monospace; font-size:2vh; font-weight:bold; background:rgba(0,0,0,0.8); padding:2px 5px; border:1px solid cyan; }
         
         .paused { animation-play-state: paused !important; }
         #cheat-ind { position:absolute; bottom:10px; left:10px; color:yellow; font-weight:bold; display:none; z-index:999; font-family:monospace; font-size:2vh; }
-        #debug-ind { position:absolute; bottom:35px; left:10px; color:lime; font-weight:bold; display:none; z-index:999; font-family:monospace; font-size:2vh; }
         @keyframes openDoor { 100% { transform:translateY(-150%); } }
     </style>
 </head>
 <body>
     <div id="game">
-        <div id="debug-cross-x" class="debug-line"></div>
-        <div id="debug-cross-y" class="debug-line"></div>
+        <div class="debug-overlay">
+            <div id="db-cross-x"></div>
+            <div id="db-cross-y"></div>
+            <div id="db-coords">X: 0.00% Y: 0.00%</div>
+            <div id="db-room">ROOM: MENU</div>
+        </div>
         
         <div id="gfx" class="layer" style="z-index:10"></div>
         <div id="phy" class="layer"></div>
@@ -59,12 +64,11 @@
                 <div class="menu-btn-row" onclick="if(document.fullscreenElement) document.exitFullscreen(); location.href='../index.html'"><div class="btn-circle"></div><div class="btn-text">&lt;-Exit</div></div>
             </div>
             <div id="cheat-ind">NOCLIP ON</div>
-            <div id="debug-ind">HITBOXES ON</div>
         </div>
     </div>
 
 <script>
-// --- SECURITY: PREVENT UNAUTHORIZED ACCESS ---
+// --- SECURITY ---
 if (localStorage.getItem('touchYellow_save1') !== 'true') {
     document.body.innerHTML = ""; document.body.style.background = "#000";
     alert("Save File Locked! Completing Level 5 is required.");
@@ -91,8 +95,9 @@ const Game = {
         this.mobile = 'ontouchstart' in window;
         const move = (x,y) => { 
             this.mx=x; this.my=y;
-            const cx=document.getElementById('debug-cross-x'); const cy=document.getElementById('debug-cross-y');
+            const cx=document.getElementById('db-cross-x'); const cy=document.getElementById('db-cross-y'); const ct=document.getElementById('db-coords');
             if(cx&&cy){cx.style.top=y+'px';cy.style.left=x+'px';}
+            if(ct){ const r=document.getElementById('game').getBoundingClientRect(); const px=((x-r.left)/r.width*100).toFixed(2); const py=((y-r.top)/r.height*100).toFixed(2); ct.innerText=`X: ${px}% Y: ${py}%`; }
         };
         window.addEventListener('mousemove', e => move(e.clientX, e.clientY));
         window.addEventListener('touchmove', e => { e.preventDefault(); move(e.touches[0].clientX, e.touches[0].clientY); }, {passive:false});
@@ -107,6 +112,8 @@ const Game = {
         if (!document.fullscreenElement) { document.documentElement.requestFullscreen().catch(e=>{}); }
         this.active = true; document.getElementById('menu-screen').style.display='none';
         this.hitboxes=[]; this.els.gfx.innerHTML=''; this.els.phy.innerHTML='';
+        
+        document.getElementById('db-room').innerText = "ROOM: LEVEL " + id;
         
         const builder = {
             path: (x,y,w,h) => this.spawn(x,y,w,h,'path'),
@@ -156,13 +163,13 @@ const Game = {
     },
     die() { if(this.noclip) return; this.active = false; this.start(6); },
     reset() { this.active=false; this.hitboxes=[]; this.els.gfx.innerHTML=''; this.els.phy.innerHTML=''; document.getElementById('game').style.cursor='default'; },
-    toMenu() { this.reset(); document.getElementById('menu-screen').style.display='flex'; }
+    toMenu() { this.reset(); document.getElementById('menu-screen').style.display='flex'; document.getElementById('db-room').innerText="ROOM: MENU"; }
 };
 Game.init();
 
 // --- PRO CONSOLE COMMANDS ---
 Object.defineProperties(window, {
-    'hitbox': { get: function() { const g=document.getElementById('game'); g.classList.toggle('debug'); const on=g.classList.contains('debug'); document.getElementById('debug-ind').style.display=on?'block':'none'; return `Hitboxes: ${on?"ON":"OFF"}`; } },
+    'debug': { get: function() { const g=document.getElementById('game'); g.classList.toggle('debug'); return `Debug: ${g.classList.contains('debug')?"ON":"OFF"}`; } },
     'noclip': { get: function() { Engine.noclip=!Engine.noclip; document.getElementById('cheat-ind').style.display=Engine.noclip?'block':'none'; return `God Mode: ${Engine.noclip?"ON":"OFF"}`; } },
     'clear': { get: function() { localStorage.clear(); alert("Wiped"); window.location.href='../index.html'; return "Resetting..."; } }
 });
@@ -172,6 +179,14 @@ window.load = function(t) {
     const s=String(t).toLowerCase();
     if(s==='menu'||s==='save') { window.location.href='../index.html'; return "Returning..."; }
     if(s==='save1'||s==='s1') { location.reload(); return "Reloading..."; }
+};
+// Alias for old habit
+window.cmd = function(c) {
+    if(c==='hitbox') window.debug;
+    else if(c==='noclip') window.noclip;
+    else if(c==='clear') window.clear;
+    else if(c.startsWith('load level')) { const n=parseInt(c.split('level')[1]); if(!isNaN(n)) Engine.start(n); }
+    else if(c.startsWith('load ')) window.load(c.split(' ')[1]);
 };
 </script>
 </body>
