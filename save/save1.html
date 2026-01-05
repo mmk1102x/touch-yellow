@@ -59,7 +59,7 @@
         <div id="ui" class="layer">
             <div id="menu-screen">
                 <div class="save-title">Got Save!</div>
-                <div class="menu-btn-row" onclick="Game.start(6)"><div class="btn-circle"></div><div class="btn-text">&lt;-Continue</div></div>
+                <div class="menu-btn-row" onclick="Engine.start(6)"><div class="btn-circle"></div><div class="btn-text">&lt;-Continue</div></div>
                 <div class="menu-btn-row" onclick="location.href='../index.html'"><div class="btn-circle"></div><div class="btn-text">&lt;-Menu</div></div>
                 <div class="menu-btn-row" onclick="if(document.fullscreenElement) document.exitFullscreen(); location.href='../index.html'"><div class="btn-circle"></div><div class="btn-text">&lt;-Exit</div></div>
             </div>
@@ -68,7 +68,7 @@
     </div>
 
 <script>
-// --- SECURITY ---
+// --- SECURITY: PREVENT UNAUTHORIZED ACCESS ---
 if (localStorage.getItem('touchYellow_save1') !== 'true') {
     document.body.innerHTML = ""; document.body.style.background = "#000";
     alert("Save File Locked! Completing Level 5 is required.");
@@ -88,7 +88,8 @@ const LevelData = {
     7: (d) => { d.path(10, 20, 10, 60); d.path(10, 80, 80, 14); d.goal(80, 20, 8, 14, 'win'); }
 };
 
-const Game = {
+// Renamed from Game -> Engine to match commands
+const Engine = {
     active: false, mx:0, my:0, mobile:false, holding:false, hitboxes:[], noclip: false,
     els: { gfx:document.getElementById('gfx'), phy:document.getElementById('phy'), ui:document.getElementById('ui') },
     init() {
@@ -96,8 +97,11 @@ const Game = {
         const move = (x,y) => { 
             this.mx=x; this.my=y;
             const cx=document.getElementById('db-cross-x'); const cy=document.getElementById('db-cross-y'); const ct=document.getElementById('db-coords');
-            if(cx&&cy){cx.style.top=y+'px';cy.style.left=x+'px';}
-            if(ct){ const r=document.getElementById('game').getBoundingClientRect(); const px=((x-r.left)/r.width*100).toFixed(2); const py=((y-r.top)/r.height*100).toFixed(2); ct.innerText=`X: ${px}% Y: ${py}%`; }
+            if(cx&&cy){
+                const r=document.getElementById('game').getBoundingClientRect();
+                cx.style.top=(y-r.top)+'px'; cy.style.left=(x-r.left)+'px';
+                if(ct){ const px=((x-r.left)/r.width*100).toFixed(2); const py=((y-r.top)/r.height*100).toFixed(2); ct.innerText=`X: ${px}% Y: ${py}%`; }
+            }
         };
         window.addEventListener('mousemove', e => move(e.clientX, e.clientY));
         window.addEventListener('touchmove', e => { e.preventDefault(); move(e.touches[0].clientX, e.touches[0].clientY); }, {passive:false});
@@ -165,7 +169,7 @@ const Game = {
     reset() { this.active=false; this.hitboxes=[]; this.els.gfx.innerHTML=''; this.els.phy.innerHTML=''; document.getElementById('game').style.cursor='default'; },
     toMenu() { this.reset(); document.getElementById('menu-screen').style.display='flex'; document.getElementById('db-room').innerText="ROOM: MENU"; }
 };
-Game.init();
+Engine.init();
 
 // --- PRO CONSOLE COMMANDS ---
 Object.defineProperties(window, {
