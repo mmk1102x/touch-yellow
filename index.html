@@ -11,7 +11,7 @@
         .layer { position:absolute; inset:0; pointer-events:none; }
         #ui { z-index:500; pointer-events:auto; }
 
-        /* --- MENU --- */
+        /* MENU */
         .menu-bg { background-color:#4d4d4d; width:100%; height:100%; position:absolute; top:0; left:0; pointer-events:auto; cursor:default; }
         .grid-line { position:absolute; border:1px dashed rgba(255,255,255,0.3); pointer-events:none; }
         .grid-x { width:100%; height:0; top:50%; left:0; }
@@ -33,7 +33,7 @@
         #grp-start   { bottom:28%; left:15%; }
         #grp-exit    { bottom:8%; left:15%; }
 
-        /* SAVE SELECT */
+        /* SAVE OVERLAY */
         #saves-screen { display:none; position:absolute; top:0; left:0; width:100%; height:100%; background-color:#4d4d4d; z-index:600; cursor:default; }
         .save-title { position:absolute; top:15%; width:100%; text-align:center; font-family:'Luckiest Guy',cursive; font-size:12vh; color:#ffff00; text-shadow:0.6vh 0.6vh 0 #000; }
         .save-row { position:absolute; top:45%; width:100%; display:flex; justify-content:center; gap:15vh; }
@@ -55,19 +55,19 @@
         /* DEBUG */
         .hitbox { position:absolute; z-index:400; opacity:0; }
         .debug .hitbox { opacity:1 !important; }
-        .debug .hitbox.path { background:rgba(38,169,225,0.2); border:1px solid white; }
+        .debug .hitbox.path { background:transparent; border:none; }
         .debug .hitbox.goal { background:rgba(241,169,42,0.5); border:2px solid yellow; }
         .debug .hitbox.obs { background:rgba(255,0,0,0.6); border:2px solid red; }
         .debug .hitbox.trig, .debug .hitbox.btn { background:rgba(148,0,211,0.5); border:2px dashed magenta; }
         .debug .hitbox.start { background:rgba(0,255,0,0.3); border:2px dotted lime; }
-        
+
         .debug-overlay { display:none; pointer-events:none; position:absolute; top:0; left:0; width:100%; height:100%; z-index:9999; }
         .debug .debug-overlay { display:block; }
         #db-cross-x { position:absolute; width:100%; height:1px; background-color:cyan; left:0; }
         #db-cross-y { position:absolute; width:1px; height:100%; background-color:cyan; top:0; }
         #db-coords { position:absolute; bottom:5px; right:5px; color:cyan; font-family:monospace; font-size:2vh; font-weight:bold; background:rgba(0,0,0,0.8); padding:2px 5px; border:1px solid cyan; }
         #db-room { position:absolute; bottom:5px; left:5px; color:cyan; font-family:monospace; font-size:2vh; font-weight:bold; background:rgba(0,0,0,0.8); padding:2px 5px; border:1px solid cyan; }
-
+        
         #cheat-ind { position:absolute; bottom:10px; left:10px; color:yellow; font-weight:bold; display:none; z-index:999; font-family:monospace; font-size:2vh; }
         #catch-meter { position:fixed; display:none; width:40px; height:6px; background:#333; border:1px solid white; border-radius:3px; pointer-events:none; z-index:9999; transform:translate(-50%,-20px); }
         #catch-fill { width:0%; height:100%; background:#00ff00; transition:width 0.05s linear; }
@@ -141,7 +141,7 @@ const LevelData = {
         d.obs(75, g.p4Y, oW, g.H*1.5, "waterfallDrop 4s linear infinite"); d.obs(75, g.p4Y, oW, g.H*1.5, "waterfallDrop 4s linear infinite -1.3s");
     },
     4: (d) => { 
-        // Z-SHAPE TRAP (Restored)
+        // Z-SHAPE TRAP
         const H = 14; const W = 7.875;
         d.path(50, 0, 50, 50); d.path(0, 50, 100, 50); d.path(0, 0, 55, 15); d.path(10, 0, 10, 15);
         const g = d.goal(10, 65, W, H, 5, 500); // 500ms Hold
@@ -169,7 +169,6 @@ const Engine = {
             const cx = document.getElementById('db-cross-x');
             const cy = document.getElementById('db-cross-y');
             const ct = document.getElementById('db-coords');
-            
             if(cx && cy) { 
                 const r = document.getElementById('game').getBoundingClientRect();
                 const ly = y - r.top; const lx = x - r.left;
@@ -187,7 +186,11 @@ const Engine = {
         
         // Right Click Death
         window.addEventListener('mousedown', e => { if(e.button===2 && this.active && !this.noclip) this.die(); });
-        
+
+        // Restore Settings
+        if(localStorage.getItem('touchYellow_noclip')==='true'){ this.noclip=true; document.getElementById('cheat-ind').style.display='block'; }
+        if(localStorage.getItem('touchYellow_debug')==='true'){ document.getElementById('game').classList.add('debug'); }
+
         this.loop();
     },
 
@@ -282,7 +285,14 @@ const Engine = {
                 if(hb.type === 'obs' && this.state==='playing') return this.die();
                 
                 if(hb.type === 'path') safe = true;
-                if(hb.type === 'start') { safe = true; if(this.state === 'waiting') { this.state = 'playing'; } }
+                
+                if(hb.type === 'start') { 
+                    safe = true; 
+                    if(this.state === 'waiting') { 
+                        this.state = 'playing'; 
+                        console.log("Game Active");
+                    } 
+                }
                 
                 if(hb.type === 'goal') { 
                     safe=true; touchingGoal=true; 
@@ -338,10 +348,20 @@ const Engine = {
 
 Engine.init();
 
-// --- PRO CONSOLE COMMANDS ---
+// --- COMMANDS ---
 Object.defineProperties(window, {
-    'debug': { get: function() { const g=document.getElementById('game'); g.classList.toggle('debug'); const on=g.classList.contains('debug'); document.getElementById('debug-ind').style.display=on?'block':'none'; return `Debug: ${on?"ON":"OFF"}`; } },
-    'noclip': { get: function() { Engine.noclip=!Engine.noclip; document.getElementById('cheat-ind').style.display=Engine.noclip?'block':'none'; return `God Mode: ${Engine.noclip?"ON":"OFF"}`; } },
+    'debug': { get: function() { 
+        const g=document.getElementById('game'); g.classList.toggle('debug'); 
+        const on=g.classList.contains('debug'); 
+        localStorage.setItem('touchYellow_debug', on);
+        return `Debug: ${on?"ON":"OFF"}`; 
+    }},
+    'noclip': { get: function() { 
+        Engine.noclip=!Engine.noclip; 
+        document.getElementById('cheat-ind').style.display=Engine.noclip?'block':'none'; 
+        localStorage.setItem('touchYellow_noclip', Engine.noclip);
+        return `God Mode: ${Engine.noclip?"ON":"OFF"}`; 
+    }},
     'clear': { get: function() { localStorage.clear(); alert("Wiped"); window.location.href='index.html'; return "Resetting..."; } }
 });
 window.s1='save1'; window.s2='save2'; window.menu='menu';

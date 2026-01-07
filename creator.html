@@ -2,46 +2,84 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Touch Yellow - Editor</title>
+    <title>Touch Yellow - Ultimate Creator</title>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
     <style>
         /* --- LAYOUT --- */
         body { margin:0; background:#222; font-family:'Roboto', sans-serif; color:white; height:100vh; display:flex; flex-direction:column; overflow:hidden; user-select:none; }
+        
+        /* TOOLBAR */
         #toolbar { height:50px; background:#1a1a1a; display:flex; align-items:center; padding:0 15px; gap:10px; border-bottom:1px solid #444; overflow-x: auto; }
         button { background:#444; border:1px solid #222; color:#eee; padding:5px 10px; cursor:pointer; font-size:12px; border-radius:4px; white-space: nowrap; }
         button:hover { background:#555; } button.active { background:#666; border-color:#999; box-shadow:inset 0 0 4px #000; }
         button.prm { background:#f2a922; color:#000; border-color:#b37a15; font-weight:bold; }
         button.danger { background:#a33; border-color:#600; }
+        
         .tool-group { display:flex; gap:5px; border-right:1px solid #444; padding-right:10px; align-items:center; }
         label { font-size:11px; color:#aaa; display:flex; align-items:center; gap:4px; cursor:pointer; }
         input[type=checkbox] { margin:0; }
+
+        /* WORKSPACE */
         #workspace { flex:1; display:flex; }
         #sidebar { width:280px; background:#222; border-left:1px solid #333; padding:15px; display:flex; flex-direction:column; gap:15px; font-size:12px; overflow-y:auto; }
         #canvas { flex:1; position:relative; overflow:hidden; background-image:radial-gradient(#444 1px, transparent 1px); background-size:20px 20px; display:flex; justify-content:center; align-items:center; }
         #game-container { width:80%; aspect-ratio:16/9; position:relative; background:#000; box-shadow:0 0 50px #000; border:1px solid #333; }
+        
+        /* OBJECTS */
         .obj { position:absolute; box-sizing:border-box; box-shadow: 0 0 0 1px rgba(0,0,0,0.2); }
-        .t-path { background-color:#26a9e1; opacity:0.9; } .t-goal { background-color:#f1a92a; opacity:0.9; } 
-        .t-obs { background-color:#000; border:1px dashed #555; opacity:0.8; } .t-btn { background-color:#33cc33; opacity:0.9; } 
+        .t-path { background-color:#26a9e1; opacity:0.9; } 
+        .t-goal { background-color:#f1a92a; opacity:0.9; } 
+        .t-obs { background-color:#000; border:1px dashed #555; opacity:0.8; }
+        .t-btn { background-color:#33cc33; opacity:0.9; } 
         .t-trig { background:rgba(150,0,255,0.3); border:2px solid #b0f; }
-        .t-start { border:2px solid lime; border-radius:50%; background:transparent; display:flex; justify-content:center; align-items:center; } .t-start::after { content:"S"; color:lime; font-weight:bold; }
+        .t-start { border:2px solid lime; border-radius:50%; background:transparent; display:flex; justify-content:center; align-items:center; } 
+        .t-start::after { content:"S"; color:lime; font-weight:bold; }
+        
+        /* GIZMOS */
         .gizmo { position:absolute; border:2px solid #fff; pointer-events:none; z-index:9999 !important; }
         .handle { position:absolute; width:10px; height:10px; background:#fff; border:1px solid #000; pointer-events:auto; }
-        .h-tl { top:-6px; left:-6px; cursor:nw-resize; } .h-tr { top:-6px; right:-6px; cursor:ne-resize; } .h-bl { bottom:-6px; left:-6px; cursor:sw-resize; } .h-br { bottom:-6px; right:-6px; cursor:se-resize; }
+        .h-tl { top:-6px; left:-6px; cursor:nw-resize; }
+        .h-tr { top:-6px; right:-6px; cursor:ne-resize; }
+        .h-bl { bottom:-6px; left:-6px; cursor:sw-resize; }
+        .h-br { bottom:-6px; right:-6px; cursor:se-resize; }
+        
         .rotate-stem { position:absolute; top:-20px; left:50%; width:1px; height:20px; background:#fff; pointer-events:none; }
         .rotate-knob { position:absolute; top:-28px; left:50%; width:10px; height:10px; background:#f2a922; border:1px solid #fff; border-radius:50%; transform:translateX(-50%); cursor:grab; pointer-events:auto; }
+
+        /* PATHS */
         svg { position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:9000; }
         path { stroke:#f2a922; stroke-width:2; fill:none; stroke-dasharray:5; }
         .kf-node { position:absolute; width:10px; height:10px; background:#f2a922; border:2px solid #fff; border-radius:50%; transform:translate(-50%,-50%); z-index:9500; cursor:grab; }
+
+        /* SIDEBAR PROPS */
         .panel { background:#2a2a2a; border:1px solid #333; padding:8px; border-radius:4px; }
         .row { display:flex; justify-content:space-between; align-items:center; margin-bottom:5px; }
         .row label { color:#888; width:60px; }
         input[type=number], input[type=text] { flex:1; background:#111; border:1px solid #444; color:#fff; padding:4px; }
         .z-ctrl { display:flex; gap:2px; flex:1; } 
         .z-ctrl button { width:auto; padding:2px 8px; } .z-ctrl input { text-align:center; }
+        
         #kf-list { max-height:100px; overflow-y:auto; border:1px solid #333; margin-top:5px; }
         .kf-item { display:flex; gap:5px; padding:2px; font-size:11px; }
+
         #play-layer { position:absolute; inset:0; pointer-events:none; z-index:200; display:none; }
         .paused { animation-play-state: paused !important; }
+        
+        /* HELP MODAL */
+        #help-modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:20000; justify-content:center; align-items:center; }
+        .help-content { background:#2a2a2a; padding:25px; border-radius:8px; border:2px solid #f2a922; width:500px; color:#eee; box-shadow:0 0 20px #000; }
+        .help-section { margin-bottom:15px; border-bottom:1px solid #444; padding-bottom:10px; }
+        .help-section h3 { margin:0 0 5px 0; color:#26a9e1; }
+        .help-section p, .help-section li { font-size:13px; line-height:1.4; color:#ccc; }
+        .key { background:#111; padding:2px 6px; border-radius:4px; font-family:monospace; border:1px solid #555; color:#fff; }
+        
+        /* PLAY UI OVERLAY */
+        #play-ui { position:fixed; top:0; left:0; width:100%; height:100%; z-index:20000; pointer-events:none; }
+        .p-panel { position:absolute; top:10px; right:10px; background:rgba(0,0,0,0.8); border:2px solid #f2a922; padding:10px; border-radius:8px; pointer-events:auto; color:white; font-family:sans-serif; }
+        .p-panel h3 { margin:0 0 10px 0; color:#f2a922; font-size:14px; }
+        .p-panel label { display:block; margin-bottom:5px; cursor:pointer; }
+        #p-cursor { position:absolute; width:20px; height:20px; border-left:2px solid cyan; border-top:2px solid cyan; transform:translate(-50%,-50%) rotate(45deg); pointer-events:none; display:none; }
+        
         #style-dump { display:none; }
     </style>
     <style id="style-dump"></style>
@@ -69,12 +107,14 @@
             <button onclick="HistorySys.redo()">Redo</button>
         </div>
         <div class="tool-group" style="border:none">
+            <button class="prm" onclick="StorageSys.save()">Save</button>
+            <button onclick="StorageSys.load()">Load</button>
+            <button onclick="FileIO.export()" title="Download .level file">Exp</button>
+            <button onclick="FileIO.import()" title="Open .level file">Imp</button>
             <button onclick="Ed.exportCode()">Code</button>
-            <button onclick="Ed.exportHash()">Hash</button>
-            <button onclick="Ed.importHash()">Load</button>
-            <button class="prm" onclick="CookieSys.save()">Save(C)</button>
-            <button onclick="CookieSys.load()">Load(C)</button>
+            <button onclick="Ed.toggleHelp()">Help(F1)</button>
             <button class="danger" onclick="Ed.clear()">CLR</button>
+            <button class="danger" style="border-color:#f00" onclick="Ed.exit()">EXIT</button>
         </div>
     </div>
 
@@ -113,39 +153,85 @@
             <div id="no-sel" style="text-align:center; color:#666; margin-top:50px;">No Selection</div>
         </div>
     </div>
+    
+    <!-- PLAY UI -->
+    <div id="play-ui" style="display:none;">
+        <div class="p-panel">
+            <h3>TEST MODE</h3>
+            <label><input type="checkbox" id="chk-god" onchange="Ed.god=this.checked"> God Mode</label>
+            <label><input type="checkbox" id="chk-dbg" onchange="Ed.togDbg()"> Debug View</label>
+            <hr style="border-color:#444">
+            <button class="danger" onclick="Ed.togglePlay()">EXIT (Esc)</button>
+        </div>
+        <div id="p-cursor"></div>
+    </div>
+    
+    <!-- HELP MODAL -->
+    <div id="help-modal" onclick="if(event.target===this) Ed.toggleHelp()">
+        <div class="help-content">
+            <h2 style="color:#f2a922; margin-top:0;">Quick Guide</h2>
+            <div class="help-section">
+                <h3>🎮 Controls</h3>
+                <p><strong>Move:</strong> Drag object.</p>
+                <p><strong>Resize:</strong> Drag corners.</p>
+                <p><strong>Shortcuts:</strong> <span class="key">Ctrl+Z/Y</span> Undo/Redo.</p>
+            </div>
+            <div class="help-section">
+                <h3>⚡ Logic</h3>
+                <p><strong>Tag:</strong> Name of object (e.g., "door").</p>
+                <p><strong>Link:</strong> Button target (e.g., "door").</p>
+                <p><strong>Wait:</strong> Check this to start animation paused.</p>
+            </div>
+            <button onclick="Ed.toggleHelp()" style="width:100%; padding:10px; margin-top:10px;">CLOSE</button>
+        </div>
+    </div>
 
 <script>
-const HistorySys={stack:[],future:[],push(){if(this.stack.length>50)this.stack.shift();this.stack.push(JSON.parse(JSON.stringify(Ed.objs)));this.future=[];},undo(){if(this.stack.length){this.future.push(JSON.parse(JSON.stringify(Ed.objs)));Ed.objs=this.stack.pop();Ed.sel=null;Ed.render();}},redo(){if(this.future.length){this.stack.push(JSON.parse(JSON.stringify(Ed.objs)));Ed.objs=this.future.pop();Ed.sel=null;Ed.render();}}};
-window.addEventListener('keydown',(e)=>{if(e.target.tagName==='INPUT')return;if((e.ctrlKey||e.metaKey)&&e.key==='z'){e.preventDefault();HistorySys.undo();}if((e.ctrlKey||e.metaKey)&&e.key==='y'){e.preventDefault();HistorySys.redo();}if(e.key==='Delete')Ed.del();});
+const HistorySys={
+    stack:[], future:[],
+    push(){ if(this.stack.length>50)this.stack.shift(); this.stack.push(JSON.parse(JSON.stringify(Ed.objs))); this.future=[]; Ed.dirty=true; },
+    undo(){ if(this.stack.length){ this.future.push(JSON.parse(JSON.stringify(Ed.objs))); Ed.objs=this.stack.pop(); Ed.sel=null; Ed.render(); } },
+    redo(){ if(this.future.length){ this.stack.push(JSON.parse(JSON.stringify(Ed.objs))); Ed.objs=this.future.pop(); Ed.sel=null; Ed.render(); } }
+};
 
-const CookieSys={
-    save:()=>{
-        try {
-            const data=Ed.pack(); 
-            const s=btoa(JSON.stringify(data)); 
-            if(s.length>4090)return alert("Too big for Cookie!"); 
-            document.cookie=`ty_level=${s};max-age=31536000;path=/`; 
-            alert("Saved to Cookie");
-        } catch(e){ alert("Error"); }
-    }, 
-    load:()=>{
-        const m=document.cookie.match(/ty_level=([^;]+)/); 
-        if(m){
-            Ed.unpack(JSON.parse(atob(m[1]))); 
-            alert("Loaded");
-        } else alert("No Save");
+window.addEventListener('keydown',(e)=>{
+    if(e.target.tagName==='INPUT')return;
+    if((e.ctrlKey||e.metaKey)&&e.key==='z'){e.preventDefault();HistorySys.undo();}
+    if((e.ctrlKey||e.metaKey)&&e.key==='y'){e.preventDefault();HistorySys.redo();}
+    if(e.key==='Delete')Ed.del();
+    if(e.key==='F1'){e.preventDefault();Ed.toggleHelp();}
+    if(e.key==='`'||e.key==='~')Ed.togglePlay();
+});
+document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement && Ed.playing) Ed.togglePlay(); });
+
+const StorageSys={
+    KEY:'ty_custom_level_data',
+    save:()=>{ try{ const d=Ed.pack(); localStorage.setItem(StorageSys.KEY, JSON.stringify(d)); Ed.dirty=false; alert("Quick Saved!"); }catch(e){alert("Error");} }, 
+    load:()=>{ const s=localStorage.getItem(StorageSys.KEY); if(s){ Ed.unpack(JSON.parse(s)); alert("Loaded!"); }else alert("No Save"); }
+};
+
+const CookieSys={ save:StorageSys.save, load:StorageSys.load }; // Legacy mapping
+
+const FileIO = {
+    export: () => {
+        const d=Ed.pack(); const b=new Blob([JSON.stringify(d)],{type:"text/plain"});
+        const a=document.createElement('a'); a.href=URL.createObjectURL(b);
+        const n=prompt("Filename:","my_level"); if(!n)return;
+        a.download=n+".level"; document.body.appendChild(a); a.click(); document.body.removeChild(a); Ed.dirty=false;
+    },
+    import: () => {
+        const i=document.createElement('input'); i.type='file'; i.accept='.level';
+        i.onchange=e=>{ const f=e.target.files[0]; if(!f)return; const r=new FileReader(); r.onload=ev=>{ try{ Ed.unpack(JSON.parse(ev.target.result)); alert("Imported!"); }catch(err){alert("Invalid File");} }; r.readAsText(f); };
+        i.click();
     }
 };
 
 const Ed = {
-    objs: [], sel: null, tool: 'sel', drag: null, playing: false,
+    objs: [], sel: null, tool: 'sel', drag: null, playing: false, dirty: false, god: false, debug: false, mx:0, my:0,
     els: { 
-        obj:document.getElementById('l-obj'), 
-        giz:document.getElementById('l-giz'), 
-        svg:document.getElementById('l-svg'), 
-        pts:document.getElementById('l-pts'), 
-        props:document.getElementById('props'), 
-        no:document.getElementById('no-sel') 
+        obj:document.getElementById('l-obj'), giz:document.getElementById('l-giz'), 
+        svg:document.getElementById('l-svg'), pts:document.getElementById('l-pts'), 
+        props:document.getElementById('props'), no:document.getElementById('no-sel') 
     },
     
     init() { 
@@ -153,28 +239,18 @@ const Ed = {
         cvs.addEventListener('mousedown', (e) => this.down(e));
         cvs.addEventListener('mousemove', (e) => this.move(e));
         cvs.addEventListener('mouseup',   (e) => this.up(e));
+        
+        window.addEventListener('mousemove', e => { 
+            this.mx=e.clientX; this.my=e.clientY;
+            const c=document.getElementById('p-cursor');
+            if(this.playing && c) { c.style.display='block'; c.style.left=e.clientX+'px'; c.style.top=e.clientY+'px'; }
+        });
+
         this.add('start', 5, 50, 6, 10); 
     },
     
-    // Schema: [Type, X, Y, W, H, KFS, Tag, Link, Wait, Dur, Z, Rot, Loop]
-    pack() { 
-        return this.objs.map(o=>[ 
-            ['path','obs','goal','start','btn','trig'].indexOf(o.type), 
-            o.x, o.y, o.w, o.h, 
-            o.kfs, o.tag, o.link, o.wait?1:0, o.dur, o.z||10, o.r||0, o.loop===false?0:1
-        ]); 
-    },
-    
-    unpack(d) { 
-        this.objs=d.map(r=>({
-            id:Math.random(), 
-            type:['path','obs','goal','start','btn','trig'][r[0]], 
-            x:r[1], y:r[2], w:r[3], h:r[4], 
-            kfs:r[5]||[], 
-            tag:r[6]||"", link:r[7]||"", wait:!!r[8], dur:r[9]||2, z:r[10]||10, r:r[11]||0, loop: r[12]!==0
-        })); 
-        this.render(); 
-    },
+    pack() { return this.objs.map(o=>[ ['path','obs','goal','start','btn','trig'].indexOf(o.type), o.x, o.y, o.w, o.h, o.kfs, o.tag, o.link, o.wait?1:0, o.dur, o.z||10, o.r||0, o.loop===false?0:1 ]); },
+    unpack(d) { this.objs=d.map(r=>({ id:Math.random(), type:['path','obs','goal','start','btn','trig'][r[0]], x:r[1], y:r[2], w:r[3], h:r[4], kfs:r[5]||[], tag:r[6]||"", link:r[7]||"", wait:!!r[8], dur:r[9]||2, z:r[10]||10, r:r[11]||0, loop:r[12]!==0 })); this.render(); },
 
     add(type,x=40,y=40,w=10,h=10) { 
         HistorySys.push(); 
@@ -204,18 +280,15 @@ const Ed = {
             if(this.sel === o) {
                 const g = document.createElement('div'); g.className='gizmo';
                 Object.assign(g.style, { left:o.x+'%', top:o.y+'%', width:o.w+'%', height:o.h+'%', transform:`rotate(${o.r}deg)`, zIndex:9999 });
-                
                 ['tl','tr','bl','br'].forEach(p => {
                     const h = document.createElement('div'); h.className=`handle h-${p}`;
                     h.onmousedown = (e) => this.startDrag(e, o, 'scale', p);
                     g.appendChild(h);
                 });
-                
                 const stem = document.createElement('div'); stem.className='rotate-stem';
                 const knob = document.createElement('div'); knob.className='rotate-knob';
                 knob.onmousedown = (e) => this.startDrag(e, o, 'rotate');
                 g.append(stem, knob);
-                
                 this.els.giz.appendChild(g);
                 this.renderPath(o);
             }
@@ -232,10 +305,7 @@ const Ed = {
             d += ` L ${ax} ${ay}`;
             const pt=document.createElement('div'); pt.className='kf-node';
             pt.style.left=ax+'%'; pt.style.top=ay+'%';
-            
-            // Allow dragging Keyframe Nodes
             pt.onmousedown = (e) => this.startDrag(e, o, 'kf', i);
-            
             this.els.pts.appendChild(pt);
         });
         const p = document.createElementNS("http://www.w3.org/2000/svg","path"); p.setAttribute("d",d); this.els.svg.appendChild(p);
@@ -244,7 +314,6 @@ const Ed = {
     startDrag(e, o, mode, handle) {
         e.stopPropagation();
         if(this.tool==='path' && mode==='move') { this.addKf(e,o); return; }
-        
         this.sel = o; this.render(); HistorySys.push();
         this.drag = { mode, o, sx:e.clientX, sy:e.clientY, handle, ox:o.x, oy:o.y, ow:o.w, oh:o.h, or:o.r,
                       kfIdx: (mode==='kf'?handle:null), kfx: (mode==='kf'?o.kfs[handle].x:0), kfy: (mode==='kf'?o.kfs[handle].y:0) };
@@ -260,7 +329,6 @@ const Ed = {
 
         if(this.drag.mode === 'kf') {
             const i = this.drag.kfIdx;
-            // Convert % delta to object-relative %
             let nx = this.drag.kfx + (dx/o.w*100);
             let ny = this.drag.kfy + (dy/o.h*100);
             if(snap) { nx=Math.round(nx/10)*10; ny=Math.round(ny/10)*10; }
@@ -322,8 +390,11 @@ const Ed = {
     addKf(e,o) { const t=o||this.sel; if(t) { HistorySys.push(); t.kfs.push({x:10,y:10}); this.render(); } },
     clearKf() { if(this.sel) { HistorySys.push(); this.sel.kfs=[]; this.render(); } },
 
-    exportHash() { const d=this.pack(); const s=btoa(JSON.stringify(d)); prompt("Copy Level Hash:", s); },
-    importHash() { const s=prompt("Paste Level Hash:"); if(s) try { this.unpack(JSON.parse(atob(s))); } catch(e) { alert("Invalid"); } },
+    exit() { if(this.dirty) { if(confirm("Unsaved changes! Exit?")) window.location.href='index.html'; } else window.location.href='index.html'; },
+    
+    toggleHelp() { const el=document.getElementById('help-modal'); el.style.display=(el.style.display==='flex')?'none':'flex'; },
+    togDbg() { this.debug=!this.debug; document.getElementById('play-layer').classList.toggle('debug-view', this.debug); },
+
     exportCode() {
         let js = `// Level Code\n(d) => {\n`;
         this.objs.forEach(o => {
@@ -333,22 +404,29 @@ const Ed = {
                 animStr = `"customAnim ${o.dur}s linear ${iter}"`; 
             }
             const z = o.z && o.z !== 10 ? `, z:${o.z}` : '';
-            
             if(o.type==='path') js += `    d.path(${o.x}, ${o.y}, ${o.w}, ${o.h}${z});\n`;
-            if(o.type==='obs') js += `    d.obs(${o.x}, ${o.y}, ${o.w}, ${o.h}, ${animStr}${z});\n`;
+            if(o.type==='obs') js += `    const obs = d.obs(${o.x}, ${o.y}, ${o.w}, ${o.h}, ${animStr}); ${z?`obs.vis.style.zIndex=${o.z};`:''}\n`;
             if(o.type==='goal') js += `    d.goal(${o.x}, ${o.y}, ${o.w}, ${o.h}, 'next');\n`;
+            if(o.type==='start') js += `    d.start(${o.x}, ${o.y}, ${o.w}, ${o.h});\n`;
             if(o.type==='btn') js += `    const b = d.btn(${o.x}, ${o.y}, ${o.w}, ${o.h});\n`;
         });
         js += `}`;
         console.log(js); alert("Code logged to Console (F12)");
     },
+    
+    exportHash() { const d=this.pack(); prompt("Level Hash:", btoa(JSON.stringify(d))); },
+    importHash() { const s=prompt("Paste Hash:"); if(s) try { this.unpack(JSON.parse(atob(s))); } catch(e) { alert("Invalid"); } },
 
     togglePlay() {
         this.playing = !this.playing;
         const pl = document.getElementById('play-layer');
         const dump = document.getElementById('style-dump');
         if(this.playing) {
-            pl.style.display='block'; pl.innerHTML=''; this.els.obj.style.display='none'; this.els.giz.style.display='none';
+            document.documentElement.requestFullscreen().catch(e=>{});
+            pl.style.display='block'; pl.innerHTML='';
+            document.getElementById('play-ui').style.display='block';
+            this.els.obj.style.display='none'; this.els.giz.style.display='none';
+            
             let css = "";
             this.objs.forEach(o => {
                 const el = document.createElement('div');
@@ -368,16 +446,60 @@ const Ed = {
                     el.style.animation = `${nm} ${o.dur}s linear ${iter}`;
                 }
                 
-                if(o.type==='btn' || o.type==='trig') {
-                    el.onmouseenter = () => { if(o.link) { const t=document.getElementById("run-"+o.link); if(t) t.classList.remove('paused'); } };
-                    el.style.pointerEvents="auto";
-                }
+                o._el = el; // Ref for physics
                 pl.appendChild(el);
             });
             dump.innerHTML = css;
+            this.physicsLoop();
+            
         } else {
-            pl.style.display='none'; this.els.obj.style.display='block'; this.els.giz.style.display='block'; this.render();
+            if(document.fullscreenElement) document.exitFullscreen();
+            pl.style.display='none'; document.getElementById('play-ui').style.display='none';
+            this.els.obj.style.display='block'; this.els.giz.style.display='block'; 
+            this.render();
         }
+    },
+
+    physicsLoop() {
+        if(!this.playing) return;
+        requestAnimationFrame(() => this.physicsLoop());
+        const rect = document.getElementById('game-container').getBoundingClientRect();
+        const px = ((this.mx - rect.left) / rect.width) * 100;
+        const py = ((this.my - rect.top) / rect.height) * 100;
+        
+        if((px<0 || px>100 || py<0 || py>100) && !this.god) return this.death();
+
+        let safe = false;
+        for(let o of this.objs) {
+            if(!o._el) continue;
+            const r = o._el.getBoundingClientRect();
+            const relX = this.mx - rect.left;
+            const relY = this.my - rect.top;
+            const bx = (r.left - rect.left);
+            const by = (r.top - rect.top);
+
+            if(relX >= bx && relX <= bx+r.width && relY >= by && relY <= by+r.height) {
+                if(o.type === 'obs' && !this.god) return this.death();
+                if(o.type === 'path' || o.type === 'start') safe = true;
+                if((o.type==='btn' || o.type==='trig') && o.link) {
+                    safe = true;
+                    const t = document.getElementById("run-"+o.link);
+                    if(t) t.classList.remove('paused');
+                    if(o.type==='btn') o._el.style.backgroundColor = '#228822';
+                }
+            }
+        }
+        if(!safe && !this.god) this.death();
+    },
+
+    death() {
+        document.body.style.background = '#500';
+        this.playing = false;
+        setTimeout(() => {
+            document.body.style.background = '#222';
+            this.playing = true; 
+            this.togglePlay(); this.togglePlay(); // Reset
+        }, 100);
     }
 };
 
