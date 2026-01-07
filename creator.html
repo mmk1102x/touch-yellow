@@ -64,23 +64,19 @@
 
         #play-layer { position:absolute; inset:0; pointer-events:none; z-index:200; display:none; }
         .paused { animation-play-state: paused !important; }
+        #style-dump { display:none; }
         
-        /* HELP MODAL */
+        /* PLAY UI */
+        #play-ui { position:fixed; top:0; left:0; width:100%; height:100%; z-index:20000; pointer-events:none; }
+        .p-panel { position:absolute; top:10px; right:10px; background:rgba(0,0,0,0.8); border:2px solid #f2a922; padding:10px; border-radius:8px; pointer-events:auto; color:white; font-family:sans-serif; }
+        #p-cursor { position:absolute; width:20px; height:20px; border-left:2px solid cyan; border-top:2px solid cyan; transform:translate(-50%,-50%) rotate(45deg); pointer-events:none; display:none; }
+        
+        /* HELP */
         #help-modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:20000; justify-content:center; align-items:center; }
         .help-content { background:#2a2a2a; padding:25px; border-radius:8px; border:2px solid #f2a922; width:500px; color:#eee; box-shadow:0 0 20px #000; }
         .help-section { margin-bottom:15px; border-bottom:1px solid #444; padding-bottom:10px; }
         .help-section h3 { margin:0 0 5px 0; color:#26a9e1; }
-        .help-section p, .help-section li { font-size:13px; line-height:1.4; color:#ccc; }
         .key { background:#111; padding:2px 6px; border-radius:4px; font-family:monospace; border:1px solid #555; color:#fff; }
-        
-        /* PLAY UI OVERLAY */
-        #play-ui { position:fixed; top:0; left:0; width:100%; height:100%; z-index:20000; pointer-events:none; }
-        .p-panel { position:absolute; top:10px; right:10px; background:rgba(0,0,0,0.8); border:2px solid #f2a922; padding:10px; border-radius:8px; pointer-events:auto; color:white; font-family:sans-serif; }
-        .p-panel h3 { margin:0 0 10px 0; color:#f2a922; font-size:14px; }
-        .p-panel label { display:block; margin-bottom:5px; cursor:pointer; }
-        #p-cursor { position:absolute; width:20px; height:20px; border-left:2px solid cyan; border-top:2px solid cyan; transform:translate(-50%,-50%) rotate(45deg); pointer-events:none; display:none; }
-        
-        #style-dump { display:none; }
     </style>
     <style id="style-dump"></style>
 </head>
@@ -112,7 +108,7 @@
             <button onclick="FileIO.export()" title="Download .level file">Exp</button>
             <button onclick="FileIO.import()" title="Open .level file">Imp</button>
             <button onclick="Ed.exportCode()">Code</button>
-            <button onclick="Ed.toggleHelp()">Help(F1)</button>
+            <button onclick="Ed.toggleHelp()">Help</button>
             <button class="danger" onclick="Ed.clear()">CLR</button>
             <button class="danger" style="border-color:#f00" onclick="Ed.exit()">EXIT</button>
         </div>
@@ -154,7 +150,6 @@
         </div>
     </div>
     
-    <!-- PLAY UI -->
     <div id="play-ui" style="display:none;">
         <div class="p-panel">
             <h3>TEST MODE</h3>
@@ -166,32 +161,48 @@
         <div id="p-cursor"></div>
     </div>
     
-    <!-- HELP MODAL -->
     <div id="help-modal" onclick="if(event.target===this) Ed.toggleHelp()">
         <div class="help-content">
             <h2 style="color:#f2a922; margin-top:0;">Quick Guide</h2>
             <div class="help-section">
                 <h3>🎮 Controls</h3>
-                <p><strong>Move:</strong> Drag object.</p>
-                <p><strong>Resize:</strong> Drag corners.</p>
-                <p><strong>Shortcuts:</strong> <span class="key">Ctrl+Z/Y</span> Undo/Redo.</p>
+                <p><strong>Move/Resize:</strong> Drag object/corners.</p>
+                <p><strong>Path:</strong> 'Edit Path' -> Click object to add keyframes.</p>
+                <p><strong>Shortcuts:</strong> <span class="key">Ctrl+Z/Y</span> Undo/Redo <span class="key">Del</span> Delete</p>
             </div>
             <div class="help-section">
                 <h3>⚡ Logic</h3>
-                <p><strong>Tag:</strong> Name of object (e.g., "door").</p>
-                <p><strong>Link:</strong> Button target (e.g., "door").</p>
-                <p><strong>Wait:</strong> Check this to start animation paused.</p>
+                <p><strong>Tag:</strong> Name an object (e.g. "door").</p>
+                <p><strong>Link:</strong> Link a button to that name (e.g. "door").</p>
+                <p><strong>Wait:</strong> Starts animation paused. Button unpauses it.</p>
             </div>
-            <button onclick="Ed.toggleHelp()" style="width:100%; padding:10px; margin-top:10px;">CLOSE</button>
+            <button onclick="Ed.toggleHelp()" style="width:100%; padding:10px;">CLOSE</button>
         </div>
     </div>
 
 <script>
 const HistorySys={
     stack:[], future:[],
-    push(){ if(this.stack.length>50)this.stack.shift(); this.stack.push(JSON.parse(JSON.stringify(Ed.objs))); this.future=[]; Ed.dirty=true; },
-    undo(){ if(this.stack.length){ this.future.push(JSON.parse(JSON.stringify(Ed.objs))); Ed.objs=this.stack.pop(); Ed.sel=null; Ed.render(); } },
-    redo(){ if(this.future.length){ this.stack.push(JSON.parse(JSON.stringify(Ed.objs))); Ed.objs=this.future.pop(); Ed.sel=null; Ed.render(); } }
+    push(){
+        if(this.stack.length>50)this.stack.shift();
+        this.stack.push(JSON.parse(JSON.stringify(Ed.objs)));
+        this.future=[];
+        Ed.dirty = true;
+    },
+    undo(){
+        if(this.stack.length){
+            this.future.push(JSON.parse(JSON.stringify(Ed.objs)));
+            Ed.objs=this.stack.pop();
+            Ed.sel=null; Ed.render();
+        }
+    },
+    redo(){
+        if(this.future.length){
+            this.stack.push(JSON.parse(JSON.stringify(Ed.objs)));
+            Ed.objs=this.future.pop();
+            Ed.sel=null; Ed.render();
+        }
+    }
 };
 
 window.addEventListener('keydown',(e)=>{
@@ -200,7 +211,7 @@ window.addEventListener('keydown',(e)=>{
     if((e.ctrlKey||e.metaKey)&&e.key==='y'){e.preventDefault();HistorySys.redo();}
     if(e.key==='Delete')Ed.del();
     if(e.key==='F1'){e.preventDefault();Ed.toggleHelp();}
-    if(e.key==='`'||e.key==='~')Ed.togglePlay();
+    if(e.key==='`' || e.key==='Escape'){ if(Ed.playing) Ed.togglePlay(); }
 });
 document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement && Ed.playing) Ed.togglePlay(); });
 
@@ -210,7 +221,7 @@ const StorageSys={
     load:()=>{ const s=localStorage.getItem(StorageSys.KEY); if(s){ Ed.unpack(JSON.parse(s)); alert("Loaded!"); }else alert("No Save"); }
 };
 
-const CookieSys={ save:StorageSys.save, load:StorageSys.load }; // Legacy mapping
+const CookieSys={ save:StorageSys.save, load:StorageSys.load };
 
 const FileIO = {
     export: () => {
@@ -250,7 +261,24 @@ const Ed = {
     },
     
     pack() { return this.objs.map(o=>[ ['path','obs','goal','start','btn','trig'].indexOf(o.type), o.x, o.y, o.w, o.h, o.kfs, o.tag, o.link, o.wait?1:0, o.dur, o.z||10, o.r||0, o.loop===false?0:1 ]); },
-    unpack(d) { this.objs=d.map(r=>({ id:Math.random(), type:['path','obs','goal','start','btn','trig'][r[0]], x:r[1], y:r[2], w:r[3], h:r[4], kfs:r[5]||[], tag:r[6]||"", link:r[7]||"", wait:!!r[8], dur:r[9]||2, z:r[10]||10, r:r[11]||0, loop:r[12]!==0 })); this.render(); },
+    
+    unpack(d) { 
+        this.objs=d.map(r=>{
+            let o = {
+                id: Math.random().toString(36),
+                type: ['path','obs','goal','start','btn','trig'][r[0]],
+                x: r[1], y: r[2], w: r[3], h: r[4],
+                kfs: [], tag: "", link: "", wait: false, dur: 2, z: 10, r: 0, loop: true
+            };
+            if (Array.isArray(r[5])) { // New Schema
+                o.kfs=r[5]; o.tag=r[6]||""; o.link=r[7]||""; o.wait=!!r[8]; o.dur=r[9]||2; o.z=r[10]||10; o.r=r[11]||0; o.loop=(r[12]!==0);
+            } else if (typeof r[5] === 'number') { // Old Schema
+                o.r=r[5]; if(Array.isArray(r[6])) o.kfs=r[6];
+            }
+            return o;
+        }); 
+        this.render(); 
+    },
 
     add(type,x=40,y=40,w=10,h=10) { 
         HistorySys.push(); 
@@ -414,9 +442,6 @@ const Ed = {
         console.log(js); alert("Code logged to Console (F12)");
     },
     
-    exportHash() { const d=this.pack(); prompt("Level Hash:", btoa(JSON.stringify(d))); },
-    importHash() { const s=prompt("Paste Hash:"); if(s) try { this.unpack(JSON.parse(atob(s))); } catch(e) { alert("Invalid"); } },
-
     togglePlay() {
         this.playing = !this.playing;
         const pl = document.getElementById('play-layer');
@@ -426,7 +451,6 @@ const Ed = {
             pl.style.display='block'; pl.innerHTML='';
             document.getElementById('play-ui').style.display='block';
             this.els.obj.style.display='none'; this.els.giz.style.display='none';
-            
             let css = "";
             this.objs.forEach(o => {
                 const el = document.createElement('div');
@@ -446,8 +470,12 @@ const Ed = {
                     el.style.animation = `${nm} ${o.dur}s linear ${iter}`;
                 }
                 
-                o._el = el; // Ref for physics
+                if(o.type==='btn' || o.type==='trig') {
+                    el.onmouseenter = () => { if(o.link) { const t=document.getElementById("run-"+o.link); if(t) t.classList.remove('paused'); } };
+                    el.style.pointerEvents="auto";
+                }
                 pl.appendChild(el);
+                o._el = el;
             });
             dump.innerHTML = css;
             this.physicsLoop();
@@ -498,9 +526,11 @@ const Ed = {
         setTimeout(() => {
             document.body.style.background = '#222';
             this.playing = true; 
-            this.togglePlay(); this.togglePlay(); // Reset
+            this.togglePlay(); this.togglePlay(); 
         }, 100);
-    }
+    },
+
+    togDbg() { this.debug=!this.debug; document.getElementById('play-layer').classList.toggle('debug-view', this.debug); }
 };
 
 Ed.init();

@@ -23,6 +23,7 @@
         .title-text { font-family:'Luckiest Guy',cursive; font-size:14vh; color:#ffff00; text-transform:uppercase; text-shadow:0.8vh 0.8vh 0 #000; letter-spacing:-0.5vh; display:inline-block; }
         .title-sub { font-family:'Luckiest Guy',cursive; font-size:5vh; color:#ff9900; text-transform:uppercase; text-shadow:0.4vh 0.4vh 0 #000; position:absolute; top:10.5vh; left:14vh; transform:rotate(-3deg); }
 
+        /* BUTTONS (Uniform 8vh) */
         .btn-group { position:absolute; display:flex; align-items:center; gap:15px; cursor:pointer; transition:transform 0.1s; }
         .btn-group:active { transform:scale(0.95); }
         .btn-label { font-family:'Roboto',sans-serif; font-weight:bold; font-size:3.5vh; color:#000; text-shadow: 0 0 2px rgba(255,255,255,0.5); }
@@ -33,7 +34,7 @@
         #grp-start   { bottom:28%; left:15%; }
         #grp-exit    { bottom:8%; left:15%; }
 
-        /* SAVE OVERLAY */
+        /* SAVE SELECT */
         #saves-screen { display:none; position:absolute; top:0; left:0; width:100%; height:100%; background-color:#4d4d4d; z-index:600; cursor:default; }
         .save-title { position:absolute; top:15%; width:100%; text-align:center; font-family:'Luckiest Guy',cursive; font-size:12vh; color:#ffff00; text-shadow:0.6vh 0.6vh 0 #000; }
         .save-row { position:absolute; top:45%; width:100%; display:flex; justify-content:center; gap:15vh; }
@@ -45,22 +46,23 @@
         #btn-back { position:absolute; bottom:10%; left:10%; display:flex; align-items:center; gap:15px; cursor:pointer; }
         .back-circle { width:10vh; height:10vh; background:#fca503; border:0.5vh solid #000; border-radius:50%; }
 
-        /* GAME OBJECTS */
+        /* GAME ELEMENTS */
         .obj { position:absolute; box-shadow: 0 0 0 1px currentColor; }
         .path { background:#26a9e1; color:#26a9e1; } .goal { background:#f1a92a; color:#f1a92a; } 
         .obs { background:#000; color:transparent; } 
         .btn { background:#33cc33; color:#33cc33; } .btn.on { background:#228822; color:#228822; }
         .paused { animation-play-state: paused !important; }
         
-        /* DEBUG */
-        .hitbox { position:absolute; z-index:400; opacity:0; }
+        /* DEBUG VISUALS */
+        .hitbox { position:absolute; z-index:400; opacity:0; pointer-events:none; }
         .debug .hitbox { opacity:1 !important; }
         .debug .hitbox.path { background:transparent; border:none; }
-        .debug .hitbox.goal { background:rgba(241,169,42,0.5); border:2px solid yellow; }
-        .debug .hitbox.obs { background:rgba(255,0,0,0.6); border:2px solid red; }
+        .debug .hitbox.goal { background:rgba(0,255,0,0.5); border:2px solid lime; }
+        .debug .hitbox.obs { background:rgba(255,0,0,0.5); border:2px solid red; background-image: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0,0,0,0.5) 10px, rgba(0,0,0,0.5) 20px); }
         .debug .hitbox.trig, .debug .hitbox.btn { background:rgba(148,0,211,0.5); border:2px dashed magenta; }
-        .debug .hitbox.start { background:rgba(0,255,0,0.3); border:2px dotted lime; }
+        .debug .hitbox.start { background:rgba(0,255,0,0.1); border:1px dotted lime; }
 
+        /* DEBUG OVERLAY */
         .debug-overlay { display:none; pointer-events:none; position:absolute; top:0; left:0; width:100%; height:100%; z-index:9999; }
         .debug .debug-overlay { display:block; }
         #db-cross-x { position:absolute; width:100%; height:1px; background-color:cyan; left:0; }
@@ -69,6 +71,7 @@
         #db-room { position:absolute; bottom:5px; left:5px; color:cyan; font-family:monospace; font-size:2vh; font-weight:bold; background:rgba(0,0,0,0.8); padding:2px 5px; border:1px solid cyan; }
         
         #cheat-ind { position:absolute; bottom:10px; left:10px; color:yellow; font-weight:bold; display:none; z-index:999; font-family:monospace; font-size:2vh; }
+        #debug-ind { position:absolute; bottom:35px; left:10px; color:lime; font-weight:bold; display:none; z-index:999; font-family:monospace; font-size:2vh; }
         #catch-meter { position:fixed; display:none; width:40px; height:6px; background:#333; border:1px solid white; border-radius:3px; pointer-events:none; z-index:9999; transform:translate(-50%,-20px); }
         #catch-fill { width:0%; height:100%; background:#00ff00; transition:width 0.05s linear; }
         #dynamic-css { display:none; }
@@ -93,6 +96,7 @@
         <div id="phy" class="layer"></div>
         <div id="ui" class="layer">
             
+            <!-- MAIN MENU -->
             <div id="menu" class="menu-bg">
                 <div class="grid-line grid-x"></div><div class="grid-line grid-y"></div>
                 <div id="title-wrapper">
@@ -105,6 +109,7 @@
                 <div id="grp-exit" class="btn-group" onclick="if(document.fullscreenElement) document.exitFullscreen(); Engine.toMenu();"><div class="circle-btn"></div><span class="btn-label">&lt;- Exit</span></div>
             </div>
 
+            <!-- SAVE SELECT OVERLAY -->
             <div id="saves-screen">
                 <div class="save-title">SELECT SAVE</div>
                 <div class="save-row">
@@ -115,6 +120,7 @@
             </div>
 
             <div id="cheat-ind">NOCLIP ON</div>
+            <div id="debug-ind">HITBOXES ON</div>
         </div>
     </div>
 
@@ -159,10 +165,21 @@ const LevelData = {
 };
 
 const Engine = {
-    active: false, state: 'menu', mx:0, my:0, mobile:false, holding:false, hitboxes:[], noclip: false, goalTimer:0,
+    active: false, state: 'menu', mx:0, my:0, mobile:false, holding:false, hitboxes:[], noclip: false, goalTimer:0, linkPlay: false,
     els: { gfx:document.getElementById('gfx'), phy:document.getElementById('phy'), menu:document.getElementById('menu'), hud:document.getElementById('catch-meter'), fill:document.getElementById('catch-fill'), css:document.getElementById('dynamic-css') },
 
     init() {
+        // --- LINK LOADER ---
+        const urlParams = new URLSearchParams(window.location.search);
+        if(urlParams.has('data')) {
+            try {
+                localStorage.setItem('ty_custom_level_data', JSON.stringify(JSON.parse(atob(urlParams.get('data')))));
+                this.linkPlay = true;
+                this.els.menu.style.display = 'none';
+                setTimeout(() => this.start('custom'), 50);
+            } catch(e) { alert("Corrupt Level Link"); }
+        }
+
         this.mobile = 'ontouchstart' in window;
         const move = (x,y) => { 
             this.mx=x; this.my=y; 
@@ -189,8 +206,8 @@ const Engine = {
 
         // Restore Settings
         if(localStorage.getItem('touchYellow_noclip')==='true'){ this.noclip=true; document.getElementById('cheat-ind').style.display='block'; }
-        if(localStorage.getItem('touchYellow_debug')==='true'){ document.getElementById('game').classList.add('debug'); }
-
+        if(localStorage.getItem('touchYellow_debug')==='true'){ document.getElementById('game').classList.add('debug'); document.getElementById('debug-ind').style.display='block'; }
+        
         this.loop();
     },
 
@@ -215,39 +232,37 @@ const Engine = {
             trig: (x,y,w,h) => this.spawn(x,y,w,h,'trig')
         };
 
-        if(id === 'custom') this.parseCookie(builder);
+        if(id === 'custom') this.loadCustom(builder);
         else if(LevelData[id]) LevelData[id](builder);
         else { alert("You Win!"); this.toMenu(); }
     },
 
-    loadCustom() {
-        if(document.cookie.indexOf('ty_level') === -1) return alert("No custom level found.");
-        this.start('custom');
+    loadCustom(builder) {
+        const raw = localStorage.getItem('ty_custom_level_data');
+        if (!raw) { alert("No custom level data."); this.toMenu(); return; }
+        try { this.parseCookie(raw, builder); } catch(e) { alert("Level Corrupt"); this.toMenu(); }
     },
 
-    parseCookie(d) {
-        try {
-            const m = document.cookie.match(/ty_level=([^;]+)/);
-            const data = JSON.parse(atob(m[1]));
-            let css = "";
-            data.forEach(o => {
-                const types = ['path','obs','goal','start','btn','trig'];
-                const t = types[o[0]];
-                let anim = null;
-                if(o[5] && o[5].length) {
-                    const nm = `a-${Math.random().toString(36).substr(2)}`;
-                    css += `@keyframes ${nm} { 0%{transform:translate(0,0)} `;
-                    o[5].forEach((k,i) => css += `${Math.round((i+1)/(o[5].length+1)*100)}%{transform:translate(${k[0]}%,${k[1]}%)} `);
-                    css += `100%{transform:translate(0,0)} } `;
-                    anim = `${nm} ${o[9]||2}s linear infinite`;
-                }
-                const obj = this.spawn(o[1],o[2],o[3],o[4], t, anim, (t==='goal'?'menu':null));
-                if(o[6]) obj.tag = o[6]; if(o[7]) obj.link = o[7];
-                if(o[8]) { obj.vis.classList.add('paused'); obj.hit.classList.add('paused'); }
-                if(o[10]) obj.vis.style.zIndex = o[10];
-            });
-            this.els.css.innerHTML += css;
-        } catch(e) { console.error(e); alert("Load Error"); this.toMenu(); }
+    parseCookie(jsonStr, d) {
+        const data = JSON.parse(jsonStr);
+        let css = "";
+        data.forEach(o => {
+            const types = ['path','obs','goal','start','btn','trig'];
+            const t = types[o[0]];
+            let anim = null;
+            if(o[5] && o[5].length) {
+                const nm = `a-${Math.random().toString(36).substr(2)}`;
+                css += `@keyframes ${nm} { 0%{transform:translate(0,0)} `;
+                o[5].forEach((k,i) => css += `${Math.round((i+1)/(o[5].length+1)*100)}%{transform:translate(${k[0]}%,${k[1]}%)} `);
+                css += `100%{transform:translate(0,0)} } `;
+                anim = `${nm} ${o[9]||2}s linear infinite`;
+            }
+            const obj = this.spawn(o[1],o[2],o[3],o[4], t, anim, (t==='goal'?'menu':null));
+            if(o[6]) obj.tag = o[6]; if(o[7]) obj.link = o[7];
+            if(o[8]) { obj.vis.classList.add('paused'); obj.hit.classList.add('paused'); }
+            if(o[10]) obj.vis.style.zIndex = o[10];
+        });
+        this.els.css.innerHTML += css;
     },
 
     spawn(x,y,w,h,type,anim,next,holdTime) {
@@ -272,7 +287,6 @@ const Engine = {
         
         if((mx<0||mx>100||my<0||my>100) && this.state==='playing') return this.die();
         if(this.mobile && !this.holding) return;
-
         let safe = false;
         let touchingGoal = false;
         
@@ -283,17 +297,8 @@ const Engine = {
 
             if(mx>bx && mx<bx+bw && my>by && my<by+bh) {
                 if(hb.type === 'obs' && this.state==='playing') return this.die();
-                
                 if(hb.type === 'path') safe = true;
-                
-                if(hb.type === 'start') { 
-                    safe = true; 
-                    if(this.state === 'waiting') { 
-                        this.state = 'playing'; 
-                        console.log("Game Active");
-                    } 
-                }
-                
+                if(hb.type === 'start') { safe = true; if(this.state === 'waiting') { this.state = 'playing'; } }
                 if(hb.type === 'goal') { 
                     safe=true; touchingGoal=true; 
                     if(hb.hold > 0) {
@@ -304,7 +309,6 @@ const Engine = {
                         if(this.goalTimer >= hb.hold) this.win(hb.next);
                     } else { this.win(hb.next); }
                 }
-                
                 if((hb.type==='btn' || hb.type==='trig') && hb.link) {
                     safe=true;
                     this.hitboxes.forEach(t => { if(t.tag === hb.link) { t.vis.classList.remove('paused'); t.hit.classList.remove('paused'); }});
@@ -314,54 +318,39 @@ const Engine = {
         }
         
         document.getElementById('game').style.cursor = (this.state==='playing' && safe) ? 'crosshair' : 'default';
-
         if(!touchingGoal) { this.goalTimer=0; this.els.hud.style.display='none'; }
         if(this.state === 'playing' && !safe) this.die();
     },
 
-    win(next) { if(next==='menu') { alert("Complete!"); this.toMenu(); } else this.start(next); },
-    die() { if(this.noclip) return; this.active = false; this.toMenu(); },
-    
-    reset() { 
-        this.active=false; this.hitboxes=[]; 
-        this.els.gfx.innerHTML=''; this.els.phy.innerHTML=''; 
-        document.getElementById('game').style.cursor = 'default';
+    win(next) { 
+        if(next==='menu') { 
+            alert("Complete!"); 
+            if(this.linkPlay) this.start('custom'); else this.toMenu(); 
+        } else this.start(next); 
     },
+    
+    die() { 
+        if(this.noclip) return; 
+        this.active = false; 
+        if(this.linkPlay) this.start('custom'); else this.toMenu();
+    },
+    
+    reset() { this.active=false; this.hitboxes=[]; this.els.gfx.innerHTML=''; this.els.phy.innerHTML=''; document.getElementById('game').style.cursor='default'; },
     toMenu() { this.reset(); this.els.menu.style.display='block'; document.getElementById('db-room').innerText="ROOM: MENU"; },
     
     // UI LOGIC
-    openSavesMenu() {
-        document.getElementById('saves-screen').style.display='block';
-        document.getElementById('menu').style.display='none';
-        this.checkSave(1); this.checkSave(2);
-    },
+    openSavesMenu() { document.getElementById('saves-screen').style.display='block'; document.getElementById('menu').style.display='none'; this.checkSave(1); this.checkSave(2); },
     closeSaves() { document.getElementById('saves-screen').style.display='none'; document.getElementById('menu').style.display='block'; },
-    checkSave(n) {
-        const has = localStorage.getItem(`touchYellow_save${n}`) === 'true';
-        document.getElementById(`circle-${n}`).className = `slot-btn slot-${has?'unlocked':'locked'}`;
-    },
-    loadSave(n) {
-        if(localStorage.getItem(`touchYellow_save${n}`) === 'true') location.href=`save/save${n}.html`;
-        else alert("Locked!");
-    }
+    checkSave(n) { const has = localStorage.getItem(`touchYellow_save${n}`) === 'true'; document.getElementById(`circle-${n}`).className = `slot-btn slot-${has?'unlocked':'locked'}`; },
+    loadSave(n) { if(localStorage.getItem(`touchYellow_save${n}`) === 'true') location.href=`save/save${n}.html`; else alert("Locked!"); }
 };
 
 Engine.init();
 
 // --- COMMANDS ---
 Object.defineProperties(window, {
-    'debug': { get: function() { 
-        const g=document.getElementById('game'); g.classList.toggle('debug'); 
-        const on=g.classList.contains('debug'); 
-        localStorage.setItem('touchYellow_debug', on);
-        return `Debug: ${on?"ON":"OFF"}`; 
-    }},
-    'noclip': { get: function() { 
-        Engine.noclip=!Engine.noclip; 
-        document.getElementById('cheat-ind').style.display=Engine.noclip?'block':'none'; 
-        localStorage.setItem('touchYellow_noclip', Engine.noclip);
-        return `God Mode: ${Engine.noclip?"ON":"OFF"}`; 
-    }},
+    'debug': { get: function() { const g=document.getElementById('game'); g.classList.toggle('debug'); const on=g.classList.contains('debug'); document.getElementById('debug-ind').style.display=on?'block':'none'; localStorage.setItem('touchYellow_debug', on); return `Debug: ${on?"ON":"OFF"}`; } },
+    'noclip': { get: function() { Engine.noclip=!Engine.noclip; document.getElementById('cheat-ind').style.display=Engine.noclip?'block':'none'; localStorage.setItem('touchYellow_noclip', Engine.noclip); return `God Mode: ${Engine.noclip?"ON":"OFF"}`; } },
     'clear': { get: function() { localStorage.clear(); alert("Wiped"); window.location.href='index.html'; return "Resetting..."; } }
 });
 window.s1='save1'; window.s2='save2'; window.menu='menu';
