@@ -9,12 +9,9 @@
         body { margin:0; background:#222; font-family:'Roboto', sans-serif; color:white; height:100vh; display:flex; flex-direction:column; overflow:hidden; user-select:none; }
         
         /* TOOLBAR */
-        #toolbar { height:50px; background:#1a1a1a; display:flex; align-items:center; padding:0 15px; gap:10px; border-bottom:1px solid #444; position:relative; }
-        
-        /* BUTTONS */
-        button { background:#444; border:1px solid #222; color:#eee; padding:5px 10px; cursor:pointer; font-size:12px; border-radius:4px; white-space:nowrap; }
-        button:hover { background:#555; } 
-        button.active { background:#666; border-color:#999; box-shadow:inset 0 0 4px #000; }
+        #toolbar { height:50px; background:#1a1a1a; display:flex; align-items:center; padding:0 15px; gap:10px; border-bottom:1px solid #444; overflow-x: auto; }
+        button { background:#444; border:1px solid #222; color:#eee; padding:5px 10px; cursor:pointer; font-size:12px; border-radius:4px; white-space: nowrap; }
+        button:hover { background:#555; } button.active { background:#666; border-color:#999; box-shadow:inset 0 0 4px #000; }
         button.prm { background:#f2a922; color:#000; border-color:#b37a15; font-weight:bold; }
         button.danger { background:#a33; border-color:#600; }
         
@@ -22,33 +19,11 @@
         label { font-size:11px; color:#aaa; display:flex; align-items:center; gap:4px; cursor:pointer; }
         input[type=checkbox] { margin:0; }
 
-        /* --- DROPDOWN MENU --- */
+        /* DROPDOWN MENU */
         .dropdown { position: relative; display: inline-block; }
-        .dropdown-content {
-            display: none;
-            position: absolute;
-            right: 0; top: 100%;
-            background-color: #333;
-            min-width: 160px;
-            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.5);
-            z-index: 20000;
-            border: 1px solid #555;
-            border-radius: 4px;
-        }
-        .dropdown-content button {
-            color: white;
-            padding: 12px 16px;
-            text-decoration: none;
-            display: block;
-            width: 100%;
-            text-align: left;
-            border: none;
-            background: transparent;
-            border-bottom: 1px solid #444;
-            border-radius: 0;
-        }
+        .dropdown-content { display: none; position: absolute; right: 0; top: 100%; background-color: #333; min-width: 160px; box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.5); z-index: 20000; border: 1px solid #555; border-radius: 4px; }
+        .dropdown-content button { color: white; padding: 12px 16px; text-decoration: none; display: block; width: 100%; text-align: left; border: none; background: transparent; border-bottom: 1px solid #444; border-radius: 0; }
         .dropdown-content button:hover { background-color: #444; }
-        .dropdown-content button:last-child { border-bottom: none; }
         .show { display: block; }
 
         /* WORKSPACE */
@@ -59,8 +34,10 @@
         
         /* OBJECTS */
         .obj { position:absolute; box-sizing:border-box; box-shadow: 0 0 0 1px rgba(0,0,0,0.2); }
-        .t-path { background-color:#26a9e1; opacity:0.9; } .t-goal { background-color:#f1a92a; opacity:0.9; } 
-        .t-obs { background-color:#000; border:1px dashed #555; opacity:0.8; } .t-btn { background-color:#33cc33; opacity:0.9; } 
+        .t-path { background-color:#26a9e1; opacity:0.9; } 
+        .t-goal { background-color:#f1a92a; opacity:0.9; } 
+        .t-obs { background-color:#000; border:1px dashed #555; opacity:0.8; }
+        .t-btn { background-color:#33cc33; opacity:0.9; } 
         .t-trig { background:rgba(150,0,255,0.3); border:2px solid #b0f; }
         .t-start { border:2px solid lime; border-radius:50%; background:transparent; display:flex; justify-content:center; align-items:center; } 
         .t-start::after { content:"S"; color:lime; font-weight:bold; }
@@ -78,7 +55,7 @@
         path { stroke:#f2a922; stroke-width:2; fill:none; stroke-dasharray:5; }
         .kf-node { position:absolute; width:10px; height:10px; background:#f2a922; border:2px solid #fff; border-radius:50%; transform:translate(-50%,-50%); z-index:9500; cursor:grab; }
 
-        /* SIDEBAR */
+        /* SIDEBAR PROPS */
         .panel { background:#2a2a2a; border:1px solid #333; padding:8px; border-radius:4px; }
         .row { display:flex; justify-content:space-between; align-items:center; margin-bottom:5px; }
         .row label { color:#888; width:60px; }
@@ -89,9 +66,11 @@
         #kf-list { max-height:100px; overflow-y:auto; border:1px solid #333; margin-top:5px; }
         .kf-item { display:flex; gap:5px; padding:2px; font-size:11px; }
 
-        /* PLAY MODE */
         #play-layer { position:absolute; inset:0; pointer-events:none; z-index:200; display:none; }
         .paused { animation-play-state: paused !important; }
+        #style-dump { display:none; }
+        
+        /* PLAY UI */
         #play-ui { position:fixed; top:0; left:0; width:100%; height:100%; z-index:20000; pointer-events:none; }
         .p-panel { position:absolute; top:10px; right:10px; background:rgba(0,0,0,0.8); border:2px solid #f2a922; padding:10px; border-radius:8px; pointer-events:auto; color:white; font-family:sans-serif; }
         #p-cursor { position:absolute; width:20px; height:20px; border-left:2px solid cyan; border-top:2px solid cyan; transform:translate(-50%,-50%) rotate(45deg); pointer-events:none; display:none; }
@@ -102,8 +81,6 @@
         .help-section { margin-bottom:15px; border-bottom:1px solid #444; padding-bottom:10px; }
         .help-section h3 { margin:0 0 5px 0; color:#26a9e1; }
         .key { background:#111; padding:2px 6px; border-radius:4px; font-family:monospace; border:1px solid #555; color:#fff; }
-        
-        #style-dump { display:none; }
     </style>
     <style id="style-dump"></style>
 </head>
@@ -131,24 +108,33 @@
         </div>
         <div style="flex:1"></div>
         
-        <!-- DROPDOWN MENU -->
+        <!-- IMPORT -->
         <div class="dropdown">
-            <button class="prm" onclick="document.getElementById('file-menu').classList.toggle('show')">FILE ▼</button>
-            <div id="file-menu" class="dropdown-content">
-                <button onclick="StorageSys.save()">💾 Quick Save</button>
-                <button onclick="StorageSys.load()">📂 Quick Load</button>
-                <hr style="border-color:#555; margin:0">
-                <button onclick="FileIO.export()">⬇ Export File (.level)</button>
-                <button onclick="FileIO.import()">⬆ Import File (.level)</button>
-                <hr style="border-color:#555; margin:0">
-                <button onclick="Ed.exportHash()">📋 Copy Hash</button>
-                <button onclick="Ed.importHash()">📥 Load Hash</button>
-                <button onclick="Ed.exportCode()">💻 Gen Code (Console)</button>
-                <hr style="border-color:#555; margin:0">
-                <button onclick="Ed.toggleHelp()">❓ Help (F1)</button>
-                <button onclick="Ed.clear()" style="color:#f88">🗑 Clear All</button>
-                <button onclick="Ed.exit()" style="color:#f55">🚪 Exit to Menu</button>
+            <button onclick="toggleDrop('menu-imp')">IMPORT ▲</button>
+            <div id="menu-imp" class="dropdown-content">
+                <button onclick="StorageSys.load()">💾 Browser Storage</button>
+                <button onclick="FileIO.import()">📂 File (.level)</button>
+                <button onclick="Ed.importHash()">📝 Text Hash</button>
+                <button onclick="IO.importLink()">🔗 From Link</button>
             </div>
+        </div>
+
+        <!-- EXPORT -->
+        <div class="dropdown">
+            <button class="prm" onclick="toggleDrop('menu-exp')">EXPORT ▼</button>
+            <div id="menu-exp" class="dropdown-content">
+                <button onclick="StorageSys.save()">💾 Browser Storage</button>
+                <button onclick="FileIO.export()">📂 File (.level)</button>
+                <button onclick="Ed.exportHash()">📝 Text Hash</button>
+                <button onclick="IO.exportLink()">🔗 Shareable Link</button>
+                <button onclick="Ed.exportCode()">💻 Dev Code (JS)</button>
+            </div>
+        </div>
+
+        <div class="tool-group" style="border:none; margin-left:10px;">
+            <button onclick="Ed.toggleHelp()">Help</button>
+            <button class="danger" onclick="Ed.clear()">CLR</button>
+            <button class="danger" style="border-color:#f00" onclick="Ed.exit()">EXIT</button>
         </div>
     </div>
 
@@ -219,16 +205,11 @@
     </div>
 
 <script>
-// Close dropdown if clicking outside
-window.onclick = function(e) {
-    if (!e.target.matches('.prm')) {
-        const d = document.getElementById("file-menu");
-        if (d && d.classList.contains('show')) d.classList.remove('show');
-    }
-}
+function toggleDrop(id) { document.querySelectorAll('.dropdown-content').forEach(e=>e.classList.remove('show')); document.getElementById(id).classList.toggle('show'); }
+window.onclick = function(e) { if (!e.target.matches('.dropdown button')) { document.querySelectorAll('.dropdown-content').forEach(e=>e.classList.remove('show')); } }
 
 const HistorySys={stack:[],future:[],push(){if(this.stack.length>50)this.stack.shift();this.stack.push(JSON.parse(JSON.stringify(Ed.objs)));this.future=[];Ed.dirty=true;},undo(){if(this.stack.length){this.future.push(JSON.parse(JSON.stringify(Ed.objs)));Ed.objs=this.stack.pop();Ed.sel=null;Ed.render();}},redo(){if(this.future.length){this.stack.push(JSON.parse(JSON.stringify(Ed.objs)));Ed.objs=this.future.pop();Ed.sel=null;Ed.render();}}};
-window.addEventListener('keydown',(e)=>{if(e.target.tagName==='INPUT')return;if((e.ctrlKey||e.metaKey)&&e.key==='z'){e.preventDefault();HistorySys.undo();}if((e.ctrlKey||e.metaKey)&&e.key==='y'){e.preventDefault();HistorySys.redo();}if(e.key==='Delete')Ed.del();if(e.key==='F1'){e.preventDefault();Ed.toggleHelp();}if(e.key==='`')Ed.togglePlay();});
+window.addEventListener('keydown',(e)=>{if(e.target.tagName==='INPUT')return;if((e.ctrlKey||e.metaKey)&&e.key==='z'){e.preventDefault();HistorySys.undo();}if((e.ctrlKey||e.metaKey)&&e.key==='y'){e.preventDefault();HistorySys.redo();}if(e.key==='Delete')Ed.del();if(e.key==='F1'){e.preventDefault();Ed.toggleHelp();}if(e.key==='`'||e.key==='Escape'){if(Ed.playing)Ed.togglePlay();}});
 document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement && Ed.playing) Ed.togglePlay(); });
 
 const StorageSys={
@@ -250,6 +231,19 @@ const FileIO = {
         const i=document.createElement('input'); i.type='file'; i.accept='.level';
         i.onchange=e=>{ const f=e.target.files[0]; if(!f)return; const r=new FileReader(); r.onload=ev=>{ try{ Ed.unpack(JSON.parse(ev.target.result)); alert("Imported!"); }catch(err){alert("Invalid File");} }; r.readAsText(f); };
         i.click();
+    }
+};
+
+const IO = {
+    exportLink: () => {
+        const d=Ed.pack(); const s=btoa(JSON.stringify(d));
+        if(s.length>3000) return alert("Level too big for Link!");
+        const base=window.location.href.replace('creator.html','index.html');
+        prompt("Copy Link:", `${base}?data=${s}`);
+    },
+    importLink: () => {
+        const s=prompt("Paste Link:"); if(!s)return;
+        try { const d=new URL(s).searchParams.get('data'); Ed.unpack(JSON.parse(atob(d))); alert("Imported!"); } catch(e){ alert("Invalid Link"); }
     }
 };
 
@@ -296,6 +290,7 @@ const Ed = {
             Object.assign(el.style, { left:o.x+'%', top:o.y+'%', width:o.w+'%', height:o.h+'%', transform:`rotate(${o.r}deg)`, zIndex:o.z||10 });
             el.onmousedown = (e) => this.startDrag(e, o, 'move');
             this.els.obj.appendChild(el);
+
             if(this.sel === o) {
                 const g = document.createElement('div'); g.className='gizmo';
                 Object.assign(g.style, { left:o.x+'%', top:o.y+'%', width:o.w+'%', height:o.h+'%', transform:`rotate(${o.r}deg)`, zIndex:9999 });
@@ -413,7 +408,6 @@ const Ed = {
     toggleHelp() { const el=document.getElementById('help-modal'); el.style.display=(el.style.display==='flex')?'none':'flex'; },
     togDbg() { this.debug=!this.debug; document.getElementById('play-layer').classList.toggle('debug-view', this.debug); },
 
-    // --- RESTORED EXPORT/IMPORT FUNCTIONS ---
     exportHash() { const d=this.pack(); prompt("Level Hash:", btoa(JSON.stringify(d))); },
     importHash() { const s=prompt("Paste Hash:"); if(s) try { this.unpack(JSON.parse(atob(s))); } catch(e) { alert("Invalid"); } },
     exportCode() {
@@ -468,14 +462,59 @@ const Ed = {
                     el.style.pointerEvents="auto";
                 }
                 pl.appendChild(el);
+                o._el = el;
             });
             dump.innerHTML = css;
+            this.physicsLoop();
+            
         } else {
             if(document.fullscreenElement) document.exitFullscreen();
             pl.style.display='none'; document.getElementById('play-ui').style.display='none';
             this.els.obj.style.display='block'; this.els.giz.style.display='block'; 
             this.render();
         }
+    },
+
+    physicsLoop() {
+        if(!this.playing) return;
+        requestAnimationFrame(() => this.physicsLoop());
+        const rect = document.getElementById('game-container').getBoundingClientRect();
+        const px = ((this.mx - rect.left) / rect.width) * 100;
+        const py = ((this.my - rect.top) / rect.height) * 100;
+        
+        if((px<0 || px>100 || py<0 || py>100) && !this.god) return this.death();
+
+        let safe = false;
+        for(let o of this.objs) {
+            if(!o._el) continue;
+            const r = o._el.getBoundingClientRect();
+            const relX = this.mx - rect.left;
+            const relY = this.my - rect.top;
+            const bx = (r.left - rect.left);
+            const by = (r.top - rect.top);
+
+            if(relX >= bx && relX <= bx+r.width && relY >= by && relY <= by+r.height) {
+                if(o.type === 'obs' && !this.god) return this.death();
+                if(o.type === 'path' || o.type === 'start') safe = true;
+                if((o.type==='btn' || o.type==='trig') && o.link) {
+                    safe = true;
+                    const t = document.getElementById("run-"+o.link);
+                    if(t) t.classList.remove('paused');
+                    if(o.type==='btn') o._el.style.backgroundColor = '#228822';
+                }
+            }
+        }
+        if(!safe && !this.god) this.death();
+    },
+
+    death() {
+        document.body.style.background = '#500';
+        this.playing = false;
+        setTimeout(() => {
+            document.body.style.background = '#222';
+            this.playing = true; 
+            this.togglePlay(); this.togglePlay(); 
+        }, 100);
     }
 };
 

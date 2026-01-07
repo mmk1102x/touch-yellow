@@ -10,7 +10,6 @@
         .layer { position:absolute; inset:0; pointer-events:none; }
         #ui { z-index:50; pointer-events:auto; text-align:center; display:flex; flex-direction:column; justify-content:center; background:#00b0f0; }
         
-        /* MENU - Blue Screen */
         #menu-screen { position:absolute; top:0; left:0; width:100%; height:100%; background-color:#2cb5e9; display:flex; flex-direction:column; align-items:center; justify-content:center; pointer-events:auto; cursor:default; }
         .save-title { font-family:'Roboto',sans-serif; font-weight:900; font-size:10vh; color:#000; margin-bottom:5vh; text-align:center; }
         .menu-btn-row { display:flex; align-items:center; gap:2vh; margin-bottom:3vh; cursor:pointer; transition:transform 0.1s; }
@@ -18,18 +17,16 @@
         .btn-circle { width:8vh; height:8vh; background-color:#f2a922; border:0.4vh solid #bf8310; border-radius:50%; box-shadow:0 0.5vh 0 rgba(0,0,0,0.2); }
         .btn-text { font-family:'Roboto',sans-serif; font-weight:900; font-size:5vh; color:#000; }
 
-        /* GAME OBJECTS */
         .obj { position:absolute; transition:background 0.3s; box-shadow: 0 0 0 1px currentColor; }
         .path { background:#26a9e1; color:#26a9e1; } .goal { background:#f1a92a; color:#f1a92a; } 
         .obs { background:#000; color:transparent; border: 2px dashed #555; } 
         .btn { background:#33cc33; color:#33cc33; } .btn.on { background:#228822; color:#228822; }
-        .start { background:transparent; border: 2px solid lime; border-radius: 50%; z-index:50; }
+        .start { background:transparent; border: 2px solid lime; border-radius: 50%; z-index: 50; }
         
-        /* DEBUG */
         .hitbox { position:absolute; z-index:400; opacity:0; }
         .debug .hitbox { opacity:1 !important; }
         .debug .hitbox.path { background:transparent; border:none; }
-        .debug .hitbox.goal { background:rgba(241,169,42,0.5); border:2px solid yellow; }
+        .debug .hitbox.goal { background:rgba(0,255,0,0.5); border:2px solid yellow; }
         .debug .hitbox.obs { background:rgba(255,0,0,0.6); border:2px solid red; }
         .debug .hitbox.trig, .debug .hitbox.btn { background:rgba(148,0,211,0.5); border:2px dashed magenta; }
         .debug .hitbox.start { background:rgba(0,255,0,0.2); border:1px dotted lime; }
@@ -45,7 +42,6 @@
         #cheat-ind { position:absolute; bottom:10px; left:10px; color:yellow; font-weight:bold; display:none; z-index:999; font-family:monospace; font-size:2vh; }
         #debug-ind { position:absolute; bottom:35px; left:10px; color:lime; font-weight:bold; display:none; z-index:999; font-family:monospace; font-size:2vh; }
         
-        /* ANIMATIONS */
         @keyframes spawnIn { 0% { transform: scale(0); } 100% { transform: scale(1); } }
         @keyframes openDoor { 100% { transform:translateY(-150%); } }
     </style>
@@ -82,24 +78,10 @@ if (localStorage.getItem('touchYellow_save1') !== 'true') {
 const LevelData = {
     6: (d) => {
         d.start(2, 67, 10, 10);
-        d.path(0, 65, 45, 15);
-        d.path(35, 0, 20, 80);
-        d.path(55, 0, 45, 20);
-        d.path(72, 20, 6, 55);
-        d.path(72, 65, 18, 15);
-        d.path(90, 65, 10, 15);
-
+        d.path(0, 65, 45, 15); d.path(35, 0, 20, 80); d.path(55, 0, 45, 20); d.path(72, 20, 6, 55); d.path(72, 65, 18, 15); d.path(90, 65, 10, 15);
         const btn1 = d.btn(80, 5, 8, 10); btn1.link = "btn2";
-
-        const btn2 = d.btn(75, 68, 6, 8);
-        btn2.vis.style.animation = "spawnIn 0.5s forwards"; btn2.hit.style.animation = "spawnIn 0.5s forwards";
-        btn2.vis.classList.add('paused'); btn2.hit.classList.add('paused');
-        btn2.tag = "btn2"; btn2.link = "gate";
-
-        const door = d.obs(88, 65, 4, 15, "openDoor 1s forwards");
-        door.vis.classList.add('paused'); door.hit.classList.add('paused');
-        door.tag = "gate"; door.vis.style.zIndex = 20;
-
+        const btn2 = d.btn(75, 68, 6, 8); btn2.vis.style.animation = "spawnIn 0.5s forwards"; btn2.hit.style.animation = "spawnIn 0.5s forwards"; btn2.vis.classList.add('paused'); btn2.hit.classList.add('paused'); btn2.tag = "btn2"; btn2.link = "gate";
+        const door = d.obs(88, 65, 4, 15, "openDoor 1s forwards"); door.vis.classList.add('paused'); door.hit.classList.add('paused'); door.tag = "gate"; door.vis.style.zIndex = 20;
         d.goal(92, 67, 6, 10, 7);
     },
     7: (d) => { d.start(10, 20, 10, 15); d.path(10, 20, 10, 60); d.path(10, 80, 80, 14); d.goal(80, 20, 8, 14, 'win'); }
@@ -135,8 +117,7 @@ const Engine = {
     },
     start(id) {
         if (!document.fullscreenElement) { document.documentElement.requestFullscreen().catch(e=>{}); }
-        this.active = true; 
-        this.state = 'waiting'; 
+        this.active = true; this.state = 'waiting'; 
         document.getElementById('menu-screen').style.display='none';
         this.hitboxes=[]; this.els.gfx.innerHTML=''; this.els.phy.innerHTML='';
         document.getElementById('db-room').innerText = "ROOM: LEVEL " + id;
@@ -178,7 +159,7 @@ const Engine = {
             if(mx>bx && mx<bx+bw && my>by && my<by+bh) {
                 if(hb.type === 'obs' && this.state==='playing') return this.die();
                 if(hb.type === 'path') safe = true;
-                if(hb.type === 'start') { safe = true; if(this.state === 'waiting') { this.state = 'playing'; console.log("Game Active"); } }
+                if(hb.type === 'start') { safe = true; if(this.state === 'waiting') { this.state = 'playing'; } }
                 if(hb.type === 'goal') { safe=true; this.start(hb.next); }
                 if((hb.type==='btn' || hb.type==='trig') && hb.link) {
                     safe=true;
@@ -196,7 +177,6 @@ const Engine = {
 };
 Engine.init();
 
-// --- COMMANDS ---
 Object.defineProperties(window, {
     'debug': { get: function() { const g=document.getElementById('game'); g.classList.toggle('debug'); const on=g.classList.contains('debug'); document.getElementById('debug-ind').style.display=on?'block':'none'; localStorage.setItem('touchYellow_debug', on); return `Debug: ${on?"ON":"OFF"}`; } },
     'noclip': { get: function() { Engine.noclip=!Engine.noclip; document.getElementById('cheat-ind').style.display=Engine.noclip?'block':'none'; localStorage.setItem('touchYellow_noclip', Engine.noclip); return `God Mode: ${Engine.noclip?"ON":"OFF"}`; } },
