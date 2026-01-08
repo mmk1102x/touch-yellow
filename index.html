@@ -17,7 +17,6 @@
         .grid-x { width:100%; height:0; top:50%; left:0; }
         .grid-y { width:0; height:100%; top:0; left:50%; }
 
-        /* TITLE */
         #title-wrapper { position:absolute; top:5%; width:100%; display:flex; justify-content:center; align-items:flex-start; pointer-events:none; z-index:100; line-height:0.85; }
         #t-left { flex:1; text-align:right; padding-right:0.5vh; }
         #t-right { flex:1; text-align:left; padding-left:0.5vh; position:relative; }
@@ -26,7 +25,8 @@
 
         /* BUTTONS (Instantly Reactive) */
         .btn-group { position:absolute; display:flex; align-items:center; gap:15px; pointer-events:none; }
-        .btn-label { font-family:'Roboto',sans-serif; font-weight:bold; font-size:3.5vh; color:#000; text-shadow:0 0 2px rgba(255,255,255,0.5); pointer-events:none; user-select:none; }
+        .btn-group:active { transform:scale(0.95); }
+        .btn-label { font-family:'Roboto',sans-serif; font-weight:bold; font-size:3.5vh; color:#000; text-shadow: 0 0 2px rgba(255,255,255,0.5); pointer-events:none; user-select:none; }
         .circle-btn { width:8vh; height:8vh; background:#f2a922; border:0.4vh solid #b37a15; border-radius:50%; box-shadow:0 0 10px rgba(0,0,0,0.5); cursor:pointer; pointer-events:auto; transition:transform 0.05s; }
         .circle-btn:active { transform:scale(0.9); }
         
@@ -59,7 +59,7 @@
         .btn { background:#33cc33; color:#33cc33; } .btn.on { background:#228822; color:#228822; }
         .paused { animation-play-state: paused !important; }
         
-        /* DEBUG VISUALS (High Contrast) */
+        /* DEBUG VISUALS */
         .hitbox { position:absolute; z-index:400; opacity:0; pointer-events:none; }
         .debug .hitbox { opacity:1 !important; }
         .debug .hitbox.path { background:transparent; border:none; }
@@ -83,6 +83,11 @@
         #catch-meter { position:fixed; display:none; width:40px; height:6px; background:#333; border:1px solid white; border-radius:3px; pointer-events:none; z-index:9999; transform:translate(-50%,-20px); }
         #catch-fill { width:0%; height:100%; background:#00ff00; transition:width 0.05s linear; }
         #dynamic-css { display:none; }
+        
+        /* BLUE START CURTAIN */
+        #start-curtain { display:none; position:absolute; top:0; left:0; width:100%; height:100%; background-color:#26a9e1; z-index:9000; cursor:default; pointer-events:auto; }
+        #start-trigger { position:absolute; width:10%; height:10%; background:#f1a92a; border-radius:50%; border:2px solid white; box-shadow:0 0 20px white; cursor:pointer; transform:translate(-50%,-50%); animation:pulse 1s infinite alternate; pointer-events:auto; }
+        @keyframes pulse { from { transform:translate(-50%,-50%) scale(1); } to { transform:translate(-50%,-50%) scale(1.1); } }
 
         @keyframes slicerMove { 0% { transform: translateY(0%); } 50% { transform: translateY(200%); } 100% { transform: translateY(0%); } }
         @keyframes waterfallDrop { 0% { transform: translateY(-250%); } 100% { transform: translateY(250%); } }
@@ -90,10 +95,15 @@
         @keyframes safeRoomPatrol { 0% {transform:translate(0,0)} 25%{transform:translate(1000%,-20%)} 50%{transform:translate(500%,20%)} 75%{transform:translate(1000%,20%)} 90%{transform:translate(500%,-20%)} 100%{transform:translate(0,0)} }
         @keyframes superCrazyMove { 0% { transform: translate(0,0); } 10% { transform: translate(800%, 200%); } 20% { transform: translate(200%, 400%); } 30% { transform: translate(600%, 0%); } 40% { transform: translate(0%, 300%); } 50% { transform: translate(900%, 300%); } 60% { transform: translate(400%, 100%); } 70% { transform: translate(100%, 0%); } 80% { transform: translate(700%, 400%); } 90% { transform: translate(300%, 100%); } 100% { transform: translate(0,0); } }
 
-        /* MOBILE ROTATION */
+        /* MOBILE FORCE LANDSCAPE */
         @media screen and (orientation: portrait) {
             body { position: fixed; width: 100%; height: 100%; }
-            #game { position: absolute; top: 50%; left: 50%; width: 100vh !important; height: 100vw !important; transform: translate(-50%, -50%) rotate(90deg); max-width: none !important; aspect-ratio: auto !important; box-shadow: none !important; }
+            #game {
+                position: absolute; top: 50%; left: 50%;
+                width: 100vh !important; height: 100vw !important;
+                transform: translate(-50%, -50%) rotate(90deg);
+                max-width: none !important; aspect-ratio: auto !important; box-shadow: none !important;
+            }
             .circle-btn { width: 8vw !important; height: 8vw !important; border-width: 0.5vw !important; }
             .btn-label { font-size: 3.5vw !important; text-shadow: none !important; }
             .title-text { font-size: 14vw !important; }
@@ -163,6 +173,10 @@
                     <span class="btn-label">&lt;- Back</span>
                 </div>
             </div>
+            
+            <div id="start-curtain">
+                <div id="start-trigger" onmousedown="Engine.activateCustom()"></div>
+            </div>
 
             <div id="cheat-ind">NOCLIP ON</div>
             <div id="debug-ind">HITBOXES ON</div>
@@ -187,23 +201,22 @@ const LevelData = {
     },
     3: (d) => {
         const g = DrawStandard(d); d.path(0, g.sY, 30, g.H); 
-        d.goal(55, g.p4Y - g.H, g.W, g.H, 4); // Safety Exit
+        d.goal(55, g.p4Y - g.H, g.W, g.H, 4); 
         const oW = g.W * 0.6; const oH = g.H * 1.5;
         d.obs(32, g.sY - oH, oW, oH, "slicerMove 2s linear infinite"); d.obs(42, g.midY - oH, oW, oH, "slicerMove 3s linear infinite");
         d.obs(75, g.p4Y, oW, g.H*1.5, "waterfallDrop 4s linear infinite"); d.obs(75, g.p4Y, oW, g.H*1.5, "waterfallDrop 4s linear infinite -1.3s");
     },
     4: (d) => { 
-        // Z-SHAPE TRAP
         const H = 14; const W = 7.875;
         d.path(50, 0, 50, 50); d.path(0, 50, 100, 50); 
-        const g = d.goal(10, 65, W, H, 5, 500); // 500ms Hold
+        const g = d.goal(10, 65, W, H, 5, 500); 
         g.vis.style.animation = "crazyMove 3s linear infinite"; g.hit.style.animation = "crazyMove 3s linear infinite";
         g.vis.classList.add('paused'); g.hit.classList.add('paused'); g.tag="runner";
         const t = d.trig(35, 50, 2, 50); t.link = "runner";
     },
     5: (d) => { 
         d.path(5, 5, 90, 90); 
-        const g = d.goal(10, 10, 10, 10, "redirect_save1", 500); // 500ms Hold
+        const g = d.goal(10, 10, 10, 10, "redirect_save1", 500); 
         g.vis.style.animation = "superCrazyMove 4s linear infinite"; g.hit.style.animation = "superCrazyMove 4s linear infinite";
         g.vis.classList.add('paused'); g.hit.classList.add('paused'); g.tag="run";
         const t = d.trig(5,5,90,90); t.link="run";
@@ -212,10 +225,9 @@ const LevelData = {
 
 const Engine = {
     active: false, state: 'menu', mx:0, my:0, mobile:false, holding:false, holdMode:false, hitboxes:[], noclip: false, goalTimer:0, linkPlay: false,
-    els: { gfx:document.getElementById('gfx'), phy:document.getElementById('phy'), menu:document.getElementById('menu'), hud:document.getElementById('catch-meter'), fill:document.getElementById('catch-fill'), css:document.getElementById('dynamic-css') },
+    els: { gfx:document.getElementById('gfx'), phy:document.getElementById('phy'), menu:document.getElementById('menu'), hud:document.getElementById('catch-meter'), fill:document.getElementById('catch-fill'), css:document.getElementById('dynamic-css'), curtain:document.getElementById('start-curtain'), trig:document.getElementById('start-trigger') },
 
     init() {
-        // Link Loader
         const urlParams = new URLSearchParams(window.location.search);
         if(urlParams.has('data')) {
             try {
@@ -226,8 +238,6 @@ const Engine = {
         }
 
         this.mobile = 'ontouchstart' in window;
-        
-        // Restore/Check Mode
         const savedHold = localStorage.getItem('touchYellow_holdMode') === 'true';
         if(this.mobile) {
             this.holdMode=true; 
@@ -300,9 +310,18 @@ const Engine = {
 
     loadCustom(builder) {
         const raw = localStorage.getItem('ty_custom_level_data');
-        if (!raw) { alert("No custom level."); this.toMenu(); return; }
+        if (!raw) { alert("No custom level data."); this.toMenu(); return; }
         try { this.parseCookie(raw, builder); } catch(e) { alert("Corrupt"); this.toMenu(); }
+        
+        // Show Blue Curtain for Safe Start
+        const startObj = this.hitboxes.find(o => o.type === 'start');
+        if(startObj) {
+            this.els.curtain.style.display = 'block';
+            Object.assign(this.els.trig.style, { left:startObj.style.left, top:startObj.style.top, width:startObj.style.width, height:startObj.style.height });
+        } else { alert("Level has no Start!"); this.toMenu(); }
     },
+    
+    activateCustom() { this.els.curtain.style.display = 'none'; this.state = 'playing'; },
 
     parseCookie(jsonStr, d) {
         const data = JSON.parse(jsonStr);
@@ -318,7 +337,9 @@ const Engine = {
                 css += `100%{transform:translate(0,0)} } `;
                 anim = `${nm} ${o[9]||2}s linear infinite`;
             }
-            const obj = this.spawn(o[1],o[2],o[3],o[4], t, anim, (t==='goal'?'menu':null));
+            // Start objects mapped for visual consistency
+            const type = (t==='start') ? 'start' : t;
+            const obj = this.spawn(o[1],o[2],o[3],o[4], type, anim, (t==='goal'?'menu':null));
             if(o[6]) obj.tag = o[6]; if(o[7]) obj.link = o[7];
             if(o[8]) { obj.vis.classList.add('paused'); obj.hit.classList.add('paused'); }
             if(o[10]) obj.vis.style.zIndex = o[10];
@@ -334,7 +355,7 @@ const Engine = {
         const p = document.createElement('div'); p.className=`hitbox ${type}`; Object.assign(p.style, s);
         if(anim) p.style.animation = anim;
         this.els.phy.appendChild(p);
-        const obj = { vis:v, hit:p, type, next, tag:"", link:"", hold:holdTime||0 };
+        const obj = { vis:v, hit:p, type, next, tag:"", link:"", hold:holdTime||0, style:s };
         this.hitboxes.push(obj);
         return obj;
     },
@@ -382,9 +403,13 @@ const Engine = {
 
     win(next) { if(next==='menu') { alert("Complete!"); if(this.linkPlay) this.start('custom'); else this.toMenu(); } else this.start(next); },
     die() { if(this.noclip) return; this.active = false; if(this.linkPlay) this.start('custom'); else this.toMenu(); },
-    reset() { this.active=false; this.hitboxes=[]; this.els.gfx.innerHTML=''; this.els.phy.innerHTML=''; document.getElementById('game').style.cursor='default'; },
+    reset() { 
+        this.active=false; this.hitboxes=[]; 
+        this.els.gfx.innerHTML=''; this.els.phy.innerHTML=''; 
+        document.getElementById('game').style.cursor='default';
+        this.els.curtain.style.display = 'none';
+    },
     toMenu() { this.reset(); this.els.menu.style.display='block'; document.getElementById('db-room').innerText="ROOM: MENU"; },
-    
     openSavesMenu() { document.getElementById('saves-screen').style.display='block'; document.getElementById('menu').style.display='none'; this.checkSave(1); this.checkSave(2); },
     closeSaves() { document.getElementById('saves-screen').style.display='none'; document.getElementById('menu').style.display='block'; },
     checkSave(n) { const has = localStorage.getItem(`touchYellow_save${n}`) === 'true'; document.getElementById(`circle-${n}`).className = `slot-btn slot-${has?'unlocked':'locked'}`; },

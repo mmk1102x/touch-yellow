@@ -138,7 +138,6 @@ const Engine = {
         this.state = 'waiting'; 
         document.getElementById('menu-screen').style.display='none';
         this.hitboxes=[]; this.els.gfx.innerHTML=''; this.els.phy.innerHTML='';
-        
         document.getElementById('db-room').innerText = "ROOM: LEVEL " + id;
         
         const builder = {
@@ -149,9 +148,7 @@ const Engine = {
             btn: (x,y,w,h) => this.spawn(x,y,w,h,'btn'),
             trig: (x,y,w,h) => this.spawn(x,y,w,h,'trig')
         };
-
-        if(LevelData[id]) LevelData[id](builder); 
-        else { alert("World 2 Complete!"); location.href='../index.html'; }
+        if(LevelData[id]) LevelData[id](builder); else { alert("World 2 Complete!"); location.href='../index.html'; }
     },
     spawn(x,y,w,h,type,anim,next) {
         const s = {left:x+'%', top:y+'%', width:w+'%', height:h+'%'};
@@ -170,31 +167,18 @@ const Engine = {
         const r = document.getElementById('game').getBoundingClientRect();
         const mx = (this.mx - r.left)/r.width*100;
         const my = (this.my - r.top)/r.height*100;
-        
         if((mx<0||mx>100||my<0||my>100) && this.state==='playing') return this.die();
         if(this.mobile && !this.holding) return;
-        
         let safe = false;
         for(let hb of this.hitboxes) {
             const hr = hb.hit.getBoundingClientRect();
             const bx=(hr.left-r.left)/r.width*100, by=(hr.top-r.top)/r.height*100;
             const bw=hr.width/r.width*100, bh=hr.height/r.height*100;
-
             if(mx>bx && mx<bx+bw && my>by && my<by+bh) {
                 if(hb.type === 'obs' && this.state==='playing') return this.die();
-                
                 if(hb.type === 'path') safe = true;
-                
-                if(hb.type === 'start') { 
-                    safe = true; 
-                    if(this.state === 'waiting') { 
-                        this.state = 'playing'; 
-                        console.log("Game Active");
-                    } 
-                }
-                
+                if(hb.type === 'start') { safe = true; if(this.state === 'waiting') { this.state = 'playing'; console.log("Game Active"); } }
                 if(hb.type === 'goal') { safe=true; this.start(hb.next); }
-                
                 if((hb.type==='btn' || hb.type==='trig') && hb.link) {
                     safe=true;
                     this.hitboxes.forEach(t => { if(t.tag === hb.link) { t.vis.classList.remove('paused'); t.hit.classList.remove('paused'); }});
@@ -202,16 +186,13 @@ const Engine = {
                 }
             }
         }
-        
         document.getElementById('game').style.cursor = (this.state==='playing' && safe) ? 'crosshair' : 'default';
-        
         if(this.state==='playing' && !safe) this.die();
     },
     die() { if(this.noclip) return; this.active = false; this.start(6); },
     reset() { this.active=false; this.hitboxes=[]; this.els.gfx.innerHTML=''; this.els.phy.innerHTML=''; document.getElementById('game').style.cursor='default'; },
     toMenu() { this.reset(); document.getElementById('menu-screen').style.display='flex'; document.getElementById('db-room').innerText="ROOM: MENU"; }
 };
-
 Engine.init();
 
 // --- COMMANDS ---

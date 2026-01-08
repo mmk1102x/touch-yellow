@@ -443,12 +443,8 @@ const Ed = {
                 animStr = `"customAnim ${o.dur}s linear ${iter}"`; 
             }
             const z = o.z && o.z !== 10 ? `, z:${o.z}` : '';
-            
             if(o.type==='path') js += `    d.path(${o.x}, ${o.y}, ${o.w}, ${o.h}${z});\n`;
-            if(o.type==='obs') {
-                js += `    const obs = d.obs(${o.x}, ${o.y}, ${o.w}, ${o.h}, ${animStr});\n`;
-                if(o.z && o.z !== 10) js += `    obs.vis.style.zIndex = ${o.z};\n`;
-            }
+            if(o.type==='obs') js += `    const obs = d.obs(${o.x}, ${o.y}, ${o.w}, ${o.h}, ${animStr}); ${z?`obs.vis.style.zIndex=${o.z};`:''}\n`;
             if(o.type==='goal') js += `    d.goal(${o.x}, ${o.y}, ${o.w}, ${o.h}, 'next');\n`;
             if(o.type==='start') js += `    d.start(${o.x}, ${o.y}, ${o.w}, ${o.h});\n`;
             if(o.type==='btn') js += `    const b = d.btn(${o.x}, ${o.y}, ${o.w}, ${o.h});\n`;
@@ -456,7 +452,7 @@ const Ed = {
         js += `}`;
         console.log(js); alert("Code logged to Console (F12)");
     },
-
+    
     togglePlay() {
         this.playing = !this.playing;
         const pl = document.getElementById('play-layer');
