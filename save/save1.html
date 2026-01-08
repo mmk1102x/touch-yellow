@@ -12,10 +12,10 @@
         
         #menu-screen { position:absolute; top:0; left:0; width:100%; height:100%; background-color:#2cb5e9; display:flex; flex-direction:column; align-items:center; justify-content:center; pointer-events:auto; cursor:default; }
         .save-title { font-family:'Roboto',sans-serif; font-weight:900; font-size:10vh; color:#000; margin-bottom:5vh; text-align:center; }
-        .menu-btn-row { display:flex; align-items:center; gap:2vh; margin-bottom:3vh; cursor:pointer; transition:transform 0.1s; }
+        .menu-btn-row { display:flex; align-items:center; gap:2vh; margin-bottom:3vh; cursor:pointer; transition:transform 0.1s; pointer-events:none; }
         .menu-btn-row:active { transform:scale(0.95); }
-        .btn-circle { width:8vh; height:8vh; background-color:#f2a922; border:0.4vh solid #bf8310; border-radius:50%; box-shadow:0 0.5vh 0 rgba(0,0,0,0.2); }
-        .btn-text { font-family:'Roboto',sans-serif; font-weight:900; font-size:5vh; color:#000; }
+        .btn-circle { width:8vh; height:8vh; background-color:#f2a922; border:0.4vh solid #bf8310; border-radius:50%; box-shadow:0 0.5vh 0 rgba(0,0,0,0.2); cursor:pointer; pointer-events:auto; }
+        .btn-text { font-family:'Roboto',sans-serif; font-weight:900; font-size:5vh; color:#000; user-select:none; pointer-events:none; }
 
         .obj { position:absolute; transition:background 0.3s; box-shadow: 0 0 0 1px currentColor; }
         .path { background:#26a9e1; color:#26a9e1; } .goal { background:#f1a92a; color:#f1a92a; } 
@@ -26,7 +26,7 @@
         .hitbox { position:absolute; z-index:400; opacity:0; pointer-events:none; }
         .debug .hitbox { opacity:1 !important; }
         .debug .hitbox.path { background:transparent; border:none; }
-        .debug .hitbox.goal { background:rgba(0,255,0,0.5); border:2px solid lime; }
+        .debug .hitbox.goal { background:rgba(0,255,0,0.5); border:2px solid yellow; }
         .debug .hitbox.obs { background:rgba(255,0,0,0.6); border:2px solid red; }
         .debug .hitbox.trig, .debug .hitbox.btn { background:rgba(148,0,211,0.5); border:2px dashed magenta; }
         .debug .hitbox.start { background:rgba(0,255,0,0.2); border:1px dotted lime; }
@@ -44,7 +44,6 @@
         
         @keyframes spawnIn { 0% { transform: scale(0); } 100% { transform: scale(1); } }
         @keyframes openDoor { 100% { transform:translateY(-150%); } }
-
         @media screen and (orientation: portrait) {
             body { position: fixed; width: 100%; height: 100%; }
             #game { position: absolute; top: 50%; left: 50%; width: 100vh !important; height: 100vw !important; transform: translate(-50%, -50%) rotate(90deg); max-width: none !important; aspect-ratio: auto !important; box-shadow: none !important; }
@@ -53,7 +52,7 @@
         }
     </style>
 </head>
-<body>
+<body oncontextmenu="return false;" ondragstart="return false;">
     <div id="game">
         <div class="debug-overlay">
             <div id="db-cross-x"></div><div id="db-cross-y"></div>
@@ -65,9 +64,18 @@
         <div id="ui" class="layer">
             <div id="menu-screen">
                 <div class="save-title">Got Save!</div>
-                <div class="menu-btn-row" onclick="Engine.start(6)"><div class="btn-circle"></div><div class="btn-text">&lt;-Continue</div></div>
-                <div class="menu-btn-row" onclick="location.href='../index.html'"><div class="btn-circle"></div><div class="btn-text">&lt;-Menu</div></div>
-                <div class="menu-btn-row" onclick="if(document.fullscreenElement) document.exitFullscreen(); location.href='../index.html'"><div class="btn-circle"></div><div class="btn-text">&lt;-Exit</div></div>
+                <div class="menu-btn-row">
+                    <div class="btn-circle" onclick="Engine.start(6)"></div>
+                    <div class="btn-text">&lt;-Continue</div>
+                </div>
+                <div class="menu-btn-row">
+                    <div class="btn-circle" onclick="location.href='../index.html'"></div>
+                    <div class="btn-text">&lt;-Menu</div>
+                </div>
+                <div class="menu-btn-row">
+                    <div class="btn-circle" onclick="if(document.fullscreenElement) document.exitFullscreen(); location.href='../index.html'"></div>
+                    <div class="btn-text">&lt;-Exit</div>
+                </div>
             </div>
             <div id="cheat-ind">NOCLIP ON</div>
             <div id="debug-ind">HITBOXES ON</div>
@@ -167,7 +175,7 @@ const Engine = {
             if(mx>bx && mx<bx+bw && my>by && my<by+bh) {
                 if(hb.type === 'obs' && this.state==='playing') return this.die();
                 if(hb.type === 'path') safe = true;
-                if(hb.type === 'start') { safe = true; if(this.state === 'waiting') { this.state = 'playing'; } }
+                if(hb.type === 'start') { safe = true; if(this.state === 'waiting') { this.state = 'playing'; console.log("Game Active"); } }
                 if(hb.type === 'goal') { safe=true; this.start(hb.next); }
                 if((hb.type==='btn' || hb.type==='trig') && hb.link) {
                     safe=true;
@@ -190,7 +198,7 @@ Object.defineProperties(window, {
     'noclip': { get: function() { Engine.noclip=!Engine.noclip; document.getElementById('cheat-ind').style.display=Engine.noclip?'block':'none'; localStorage.setItem('touchYellow_noclip', Engine.noclip); return `God Mode: ${Engine.noclip?"ON":"OFF"}`; } },
     'clear': { get: function() { localStorage.clear(); alert("Wiped"); window.location.href='../index.html'; return "Resetting..."; } }
 });
-window.s1='save1'; window.s2='save2'; window.menu='menu';
+window.s1='save1'; window.menu='menu';
 window.load = function(t) {
     if(typeof t==='number') { Engine.start(t); return `Level ${t}`; }
     const s=String(t).toLowerCase();

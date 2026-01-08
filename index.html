@@ -6,30 +6,10 @@
     <title>Touch Yellow Web</title>
     <link href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Roboto:wght@900&display=swap" rel="stylesheet">
     <style>
-        body { margin:0; background:#000; overflow:hidden; font-family:'Roboto',sans-serif; height:100vh; display:flex; justify-content:center; align-items:center; user-select:none; touch-action:none; }
+        body { margin:0; background:#000; overflow:hidden; font-family:'Roboto',sans-serif; height:100vh; display:flex; justify-content:center; align-items:center; user-select:none; touch-action:none; -webkit-user-select:none; }
         #game { width:100%; max-width:177.7vh; aspect-ratio:16/9; position:relative; background:#000; box-shadow:0 0 50px #333; }
         .layer { position:absolute; inset:0; pointer-events:none; }
         #ui { z-index:500; pointer-events:auto; }
-
-        /* --- MOBILE ROTATION --- */
-        @media screen and (orientation: portrait) {
-            body { position: fixed; width: 100%; height: 100%; }
-            #game {
-                position: absolute; top: 50%; left: 50%;
-                width: 100vh !important; height: 100vw !important;
-                transform: translate(-50%, -50%) rotate(90deg);
-                max-width: none !important; aspect-ratio: auto !important; box-shadow: none !important;
-            }
-            /* Scale UI for vertical view */
-            .circle-btn { width: 8vw !important; height: 8vw !important; border-width: 0.5vw !important; }
-            .btn-label { font-size: 3.5vw !important; text-shadow: none !important; }
-            .title-text { font-size: 14vw !important; }
-            .title-sub { font-size: 5vw !important; top: 10.5vw !important; left: 14vw !important; }
-            .slot-btn, .back-circle { width: 10vw !important; height: 10vw !important; }
-            
-            /* Hide toggle on mobile (Touch is forced) */
-            #toggle-wrap { display: none !important; }
-        }
 
         /* MENU STYLES */
         .menu-bg { background-color:#4d4d4d; width:100%; height:100%; position:absolute; top:0; left:0; pointer-events:auto; cursor:default; }
@@ -44,39 +24,49 @@
         .title-sub { font-family:'Luckiest Guy',cursive; font-size:5vh; color:#ff9900; text-transform:uppercase; text-shadow:0.4vh 0.4vh 0 #000; position:absolute; top:10.5vh; left:14vh; transform:rotate(-3deg); }
 
         /* BUTTONS */
-        .btn-group { position:absolute; display:flex; align-items:center; gap:15px; cursor:pointer; transition:transform 0.1s; }
+        /* Changed: Removed cursor/pointer-events from group. Only circles are clickable. */
+        .btn-group { position:absolute; display:flex; align-items:center; gap:15px; transition:transform 0.1s; pointer-events:none; }
         .btn-group:active { transform:scale(0.95); }
-        .btn-label { font-family:'Roboto',sans-serif; font-weight:bold; font-size:3.5vh; color:#000; text-shadow: 0 0 2px rgba(255,255,255,0.5); }
-        .circle-btn { width:8vh; height:8vh; background:#f2a922; border:0.4vh solid #b37a15; border-radius:50%; box-shadow:0 0 10px rgba(0,0,0,0.5); }
+        
+        .btn-label { 
+            font-family:'Roboto',sans-serif; font-weight:bold; font-size:3.5vh; color:#000; 
+            text-shadow: 0 0 2px rgba(255,255,255,0.5); 
+            pointer-events: none; /* Cannot click text */
+            user-select: none; 
+        }
+        
+        .circle-btn { 
+            width:8vh; height:8vh; background:#f2a922; border:0.4vh solid #b37a15; 
+            border-radius:50%; box-shadow:0 0 10px rgba(0,0,0,0.5); 
+            cursor:pointer; pointer-events:auto; /* Only circle captures clicks */
+        }
         
         #grp-saves   { top:22%; right:5%; }
         #grp-creator { top:38%; right:5%; }
         #grp-start   { bottom:28%; left:15%; }
         #grp-exit    { bottom:8%; left:15%; }
 
-        /* TOGGLE SWITCH */
-        #toggle-wrap { position:absolute; bottom:5%; right:5%; display:flex; flex-direction:column; align-items:center; width:80px; z-index:501; }
-        .switch-label { font-family:'Luckiest Guy',cursive; color:#f2ef45; font-size:2vh; margin-bottom:5px; text-shadow:1px 1px 0 #000; }
-        .switch { position:relative; display:inline-block; width:50px; height:26px; }
-        .switch input { opacity:0; width:0; height:0; }
-        .slider { position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#333; border:2px solid #000; border-radius:34px; transition:.4s; }
-        .slider:before { position:absolute; content:""; height:18px; width:18px; left:2px; bottom:2px; background-color:white; border-radius:50%; transition:.4s; }
-        input:checked + .slider { background-color:#f2a922; }
-        input:checked + .slider:before { transform:translateX(24px); }
-
         /* SAVE SELECT */
         #saves-screen { display:none; position:absolute; top:0; left:0; width:100%; height:100%; background-color:#4d4d4d; z-index:600; cursor:default; }
-        .save-title { position:absolute; top:15%; width:100%; text-align:center; font-family:'Luckiest Guy',cursive; font-size:12vh; color:#ffff00; text-shadow:0.6vh 0.6vh 0 #000; }
+        .save-title { position:absolute; top:15%; width:100%; text-align:center; font-family:'Luckiest Guy',cursive; font-size:12vh; color:#ffff00; text-shadow:0.6vh 0.6vh 0 #000; pointer-events:none; }
         .save-row { position:absolute; top:45%; width:100%; display:flex; justify-content:center; gap:15vh; }
-        .slot-group { display:flex; align-items:center; gap:10px; cursor:pointer; transition:transform 0.1s; }
+        .slot-group { display:flex; align-items:center; gap:10px; transition:transform 0.1s; pointer-events:none; }
         .slot-group:active { transform:scale(0.95); }
-        .slot-btn { width:10vh; height:10vh; border-radius:50%; border:0.5vh solid #000; box-shadow:0 0 10px rgba(0,0,0,0.5); }
+        
+        .slot-btn { 
+            width:10vh; height:10vh; border-radius:50%; border:0.5vh solid #000; 
+            box-shadow:0 0 10px rgba(0,0,0,0.5); pointer-events:auto; /* Clickable */
+        }
         .slot-locked { background-color:#444; border-color:#222; cursor:not-allowed; opacity:0.7; }
         .slot-unlocked { background-color:#00ff00; border-color:#004400; cursor:pointer; }
-        #btn-back { position:absolute; bottom:10%; left:10%; display:flex; align-items:center; gap:15px; cursor:pointer; }
-        .back-circle { width:10vh; height:10vh; background:#fca503; border:0.5vh solid #000; border-radius:50%; }
+        
+        #btn-back { position:absolute; bottom:10%; left:10%; display:flex; align-items:center; gap:15px; pointer-events:none; }
+        .back-circle { 
+            width:10vh; height:10vh; background:#fca503; border:0.5vh solid #000; 
+            border-radius:50%; cursor:pointer; pointer-events:auto; 
+        }
 
-        /* GAME ELEMENTS */
+        /* GAME OBJECTS */
         .obj { position:absolute; box-shadow: 0 0 0 1px currentColor; }
         .path { background:#26a9e1; color:#26a9e1; } .goal { background:#f1a92a; color:#f1a92a; } 
         .obs { background:#000; color:transparent; } 
@@ -110,9 +100,26 @@
         @keyframes crazyMove { 0% { transform: translate(0, 0); } 20% { transform: translate(250%, -350%); } 40% { transform: translate(250%, 0%); } 60% { transform: translate(120%, -150%); } 80% { transform: translate(0, -350%); } 100% { transform: translate(0, 0); } }
         @keyframes safeRoomPatrol { 0% {transform:translate(0,0)} 25%{transform:translate(1000%,-20%)} 50%{transform:translate(500%,20%)} 75%{transform:translate(1000%,20%)} 90%{transform:translate(500%,-20%)} 100%{transform:translate(0,0)} }
         @keyframes superCrazyMove { 0% { transform: translate(0,0); } 10% { transform: translate(800%, 200%); } 20% { transform: translate(200%, 400%); } 30% { transform: translate(600%, 0%); } 40% { transform: translate(0%, 300%); } 50% { transform: translate(900%, 300%); } 60% { transform: translate(400%, 100%); } 70% { transform: translate(100%, 0%); } 80% { transform: translate(700%, 400%); } 90% { transform: translate(300%, 100%); } 100% { transform: translate(0,0); } }
+
+        /* MOBILE ROTATION */
+        @media screen and (orientation: portrait) {
+            body { position: fixed; width: 100%; height: 100%; }
+            #game {
+                position: absolute; top: 50%; left: 50%;
+                width: 100vh !important; height: 100vw !important;
+                transform: translate(-50%, -50%) rotate(90deg);
+                max-width: none !important; aspect-ratio: auto !important; box-shadow: none !important;
+            }
+            .circle-btn { width: 8vw !important; height: 8vw !important; border-width: 0.5vw !important; }
+            .btn-label { font-size: 3.5vw !important; text-shadow: none !important; }
+            .title-text { font-size: 14vw !important; }
+            .title-sub { font-size: 5vw !important; top: 10.5vw !important; left: 14vw !important; }
+            .slot-btn, .back-circle { width: 10vw !important; height: 10vw !important; }
+            #toggle-wrap { display: none !important; }
+        }
     </style>
 </head>
-<body oncontextmenu="return false;">
+<body oncontextmenu="return false;" ondragstart="return false;">
     <div id="catch-meter"><div id="catch-fill"></div></div>
     
     <div id="game">
@@ -125,30 +132,63 @@
         <div id="phy" class="layer"></div>
         <div id="ui" class="layer">
             
+            <!-- MAIN MENU -->
             <div id="menu" class="menu-bg">
                 <div class="grid-line grid-x"></div><div class="grid-line grid-y"></div>
+                
                 <div id="title-wrapper">
                     <div id="t-left"><span class="title-text">Touch</span></div>
                     <div id="t-right"><span class="title-text">Yellow</span><div class="title-sub">Web</div></div>
                 </div>
-                <div id="grp-saves" class="btn-group" onclick="Engine.openSavesMenu()"><span class="btn-label">Saves -&gt;</span><div class="circle-btn"></div></div>
-                <div id="grp-creator" class="btn-group" onclick="location.href='creator.html'"><span class="btn-label">Creator -&gt;</span><div class="circle-btn"></div></div>
-                <div id="grp-start" class="btn-group" onclick="Engine.start(1)"><div class="circle-btn"></div><span class="btn-label">&lt;- Start/Restart</span></div>
-                <div id="grp-exit" class="btn-group" onclick="if(document.fullscreenElement) document.exitFullscreen(); Engine.toMenu();"><div class="circle-btn"></div><span class="btn-label">&lt;- Exit</span></div>
+
+                <!-- BUTTONS: Click logic moved to .circle-btn only -->
+                <div id="grp-saves" class="btn-group">
+                    <span class="btn-label">Saves -&gt;</span>
+                    <div class="circle-btn" onclick="Engine.openSavesMenu()"></div>
+                </div>
                 
+                <div id="grp-creator" class="btn-group">
+                    <span class="btn-label">Creator -&gt;</span>
+                    <div class="circle-btn" onclick="location.href='creator.html'"></div>
+                </div>
+                
+                <div id="grp-start" class="btn-group">
+                    <div class="circle-btn" onclick="Engine.start(1)"></div>
+                    <span class="btn-label">&lt;- Start/Restart</span>
+                </div>
+                
+                <div id="grp-exit" class="btn-group">
+                    <div class="circle-btn" onclick="if(document.fullscreenElement) document.exitFullscreen(); Engine.toMenu();"></div>
+                    <span class="btn-label">&lt;- Exit</span>
+                </div>
+                
+                <!-- TOGGLE -->
                 <div id="toggle-wrap">
                     <div class="switch-label" id="mode-text">Hover</div>
-                    <label class="switch"><input type="checkbox" id="mode-check" onchange="Engine.toggleMode()"><span class="slider"></span></label>
+                    <label class="switch">
+                        <input type="checkbox" id="mode-check" onchange="Engine.toggleMode()">
+                        <span class="slider"></span>
+                    </label>
                 </div>
             </div>
 
+            <!-- SAVE SELECT OVERLAY -->
             <div id="saves-screen">
                 <div class="save-title">SELECT SAVE</div>
                 <div class="save-row">
-                    <div id="slot-1" class="slot-group" onclick="Engine.loadSave(1)"><div id="circle-1" class="slot-btn slot-locked"></div><span class="btn-label">&lt;- Save 1</span></div>
-                    <div id="slot-2" class="slot-group" onclick="Engine.loadSave(2)"><div id="circle-2" class="slot-btn slot-locked"></div><span class="btn-label">&lt;- Save 2</span></div>
+                    <div id="slot-1" class="slot-group">
+                        <div id="circle-1" class="slot-btn slot-locked" onclick="Engine.loadSave(1)"></div>
+                        <span class="btn-label">&lt;- Save 1</span>
+                    </div>
+                    <div id="slot-2" class="slot-group">
+                        <div id="circle-2" class="slot-btn slot-locked" onclick="Engine.loadSave(2)"></div>
+                        <span class="btn-label">&lt;- Save 2</span>
+                    </div>
                 </div>
-                <div id="btn-back" onclick="Engine.closeSaves()"><div class="back-circle"></div><span class="btn-label">&lt;- Back</span></div>
+                <div id="btn-back">
+                    <div class="back-circle" onclick="Engine.closeSaves()"></div>
+                    <span class="btn-label">&lt;- Back</span>
+                </div>
             </div>
 
             <div id="cheat-ind">NOCLIP ON</div>
@@ -174,22 +214,22 @@ const LevelData = {
     },
     3: (d) => {
         const g = DrawStandard(d); d.path(0, g.sY, 30, g.H); 
-        d.goal(55, g.p4Y - g.H, g.W, g.H, 4); // X=55 Safety for Lvl 4
+        d.goal(55, g.p4Y - g.H, g.W, g.H, 4); 
         const oW = g.W * 0.6; const oH = g.H * 1.5;
         d.obs(32, g.sY - oH, oW, oH, "slicerMove 2s linear infinite"); d.obs(42, g.midY - oH, oW, oH, "slicerMove 3s linear infinite");
         d.obs(75, g.p4Y, oW, g.H*1.5, "waterfallDrop 4s linear infinite"); d.obs(75, g.p4Y, oW, g.H*1.5, "waterfallDrop 4s linear infinite -1.3s");
     },
     4: (d) => { 
         const H = 14; const W = 7.875;
-        d.path(50, 0, 50, 50); d.path(0, 50, 100, 50); // Z-Shape
-        const g = d.goal(10, 65, W, H, 5, 500); // 500ms Hold
+        d.path(50, 0, 50, 50); d.path(0, 50, 100, 50); 
+        const g = d.goal(10, 65, W, H, 5, 500); 
         g.vis.style.animation = "crazyMove 3s linear infinite"; g.hit.style.animation = "crazyMove 3s linear infinite";
         g.vis.classList.add('paused'); g.hit.classList.add('paused'); g.tag="runner";
         const t = d.trig(35, 50, 2, 50); t.link = "runner";
     },
     5: (d) => { 
         d.path(5, 5, 90, 90); 
-        const g = d.goal(10, 10, 10, 10, "redirect_save1", 500); // 500ms Hold
+        const g = d.goal(10, 10, 10, 10, "redirect_save1", 500); 
         g.vis.style.animation = "superCrazyMove 4s linear infinite"; g.hit.style.animation = "superCrazyMove 4s linear infinite";
         g.vis.classList.add('paused'); g.hit.classList.add('paused'); g.tag="run";
         const t = d.trig(5,5,90,90); t.link="run";
@@ -216,12 +256,14 @@ const Engine = {
 
         const move = (x,y) => { 
             this.mx=x; this.my=y; 
-            const cx=document.getElementById('db-cross-x'); const cy=document.getElementById('db-cross-y'); const ct=document.getElementById('db-coords');
-            if(cx&&cy){
-                const r=document.getElementById('game').getBoundingClientRect();
-                const ly=y-r.top; const lx=x-r.left;
-                cx.style.top=ly+'px'; cy.style.left=lx+'px';
-                if(ct){ const px=((lx/r.width*100).toFixed(2)); const py=((ly/r.height*100).toFixed(2)); ct.innerText=`X: ${px}% Y: ${py}%`; }
+            const cx = document.getElementById('db-cross-x');
+            const cy = document.getElementById('db-cross-y');
+            const ct = document.getElementById('db-coords');
+            if(cx && cy) { 
+                const r = document.getElementById('game').getBoundingClientRect();
+                const ly = y - r.top; const lx = x - r.left;
+                cx.style.top = ly + 'px'; cy.style.left = lx + 'px';
+                if(ct) ct.innerText = `X: ${(lx/r.width*100).toFixed(2)}% Y: ${(ly/r.height*100).toFixed(2)}%`;
             }
         };
         window.addEventListener('mousemove', e => move(e.clientX, e.clientY));
@@ -253,6 +295,7 @@ const Engine = {
         this.reset();
         this.active = true;
         this.els.menu.style.display='none'; document.getElementById('saves-screen').style.display='none';
+        
         this.state = (id==='custom') ? 'waiting' : 'playing'; 
         document.getElementById('db-room').innerText = (id==='custom') ? "ROOM: CUSTOM" : "ROOM: LEVEL " + id;
         
@@ -318,7 +361,8 @@ const Engine = {
         
         if((mx<0||mx>100||my<0||my>100) && this.state==='playing') return this.die();
         if(this.holdMode && !this.holding) return;
-        let safe = false; let touchingGoal = false;
+        let safe = false;
+        let touchingGoal = false;
         
         for(let hb of this.hitboxes) {
             const hr = hb.hit.getBoundingClientRect();
