@@ -209,7 +209,14 @@ function toggleDrop(id) { document.querySelectorAll('.dropdown-content').forEach
 window.onclick = function(e) { if (!e.target.matches('.dropdown button')) { document.querySelectorAll('.dropdown-content').forEach(e=>e.classList.remove('show')); } }
 
 const HistorySys={stack:[],future:[],push(){if(this.stack.length>50)this.stack.shift();this.stack.push(JSON.parse(JSON.stringify(Ed.objs)));this.future=[];Ed.dirty=true;},undo(){if(this.stack.length){this.future.push(JSON.parse(JSON.stringify(Ed.objs)));Ed.objs=this.stack.pop();Ed.sel=null;Ed.render();}},redo(){if(this.future.length){this.stack.push(JSON.parse(JSON.stringify(Ed.objs)));Ed.objs=this.future.pop();Ed.sel=null;Ed.render();}}};
-window.addEventListener('keydown',(e)=>{if(e.target.tagName==='INPUT')return;if((e.ctrlKey||e.metaKey)&&e.key==='z'){e.preventDefault();HistorySys.undo();}if((e.ctrlKey||e.metaKey)&&e.key==='y'){e.preventDefault();HistorySys.redo();}if(e.key==='Delete')Ed.del();if(e.key==='F1'){e.preventDefault();Ed.toggleHelp();}if(e.key==='`'||e.key==='Escape'){if(Ed.playing)Ed.togglePlay();}});
+window.addEventListener('keydown',(e)=>{
+    if(e.target.tagName==='INPUT')return;
+    if((e.ctrlKey||e.metaKey)&&e.key==='z'){e.preventDefault();HistorySys.undo();}
+    if((e.ctrlKey||e.metaKey)&&e.key==='y'){e.preventDefault();HistorySys.redo();}
+    if(e.key==='Delete')Ed.del();
+    if(e.key==='F1'){e.preventDefault();Ed.toggleHelp();}
+    if(e.key==='`'||e.key==='Escape'){if(Ed.playing)Ed.togglePlay();}
+});
 document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement && Ed.playing) Ed.togglePlay(); });
 
 const StorageSys={
@@ -256,6 +263,7 @@ const Ed = {
         cvs.addEventListener('mousedown', (e) => this.down(e));
         cvs.addEventListener('mousemove', (e) => this.move(e));
         cvs.addEventListener('mouseup',   (e) => this.up(e));
+        
         window.addEventListener('mousemove', e => { 
             this.mx=e.clientX; this.my=e.clientY;
             const c=document.getElementById('p-cursor');
@@ -405,6 +413,7 @@ const Ed = {
     clearKf() { if(this.sel) { HistorySys.push(); this.sel.kfs=[]; this.render(); } },
 
     exit() { if(this.dirty) { if(confirm("Unsaved changes! Exit?")) window.location.href='index.html'; } else window.location.href='index.html'; },
+    
     toggleHelp() { const el=document.getElementById('help-modal'); el.style.display=(el.style.display==='flex')?'none':'flex'; },
     togDbg() { this.debug=!this.debug; document.getElementById('play-layer').classList.toggle('debug-view', this.debug); },
 
