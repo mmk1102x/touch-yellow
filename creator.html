@@ -9,7 +9,7 @@
         body { margin:0; background:#222; font-family:'Roboto', sans-serif; color:white; height:100vh; display:flex; flex-direction:column; overflow:hidden; user-select:none; }
         
         /* TOOLBAR */
-        #toolbar { height:50px; background:#1a1a1a; display:flex; align-items:center; padding:0 15px; gap:10px; border-bottom:1px solid #444; overflow-x: auto; }
+        #toolbar { height:50px; background:#1a1a1a; display:flex; align-items:center; padding:0 15px; gap:10px; border-bottom:1px solid #444; overflow: visible; }
         button { background:#444; border:1px solid #222; color:#eee; padding:5px 10px; cursor:pointer; font-size:12px; border-radius:4px; white-space: nowrap; }
         button:hover { background:#555; } button.active { background:#666; border-color:#999; box-shadow:inset 0 0 4px #000; }
         button.prm { background:#f2a922; color:#000; border-color:#b37a15; font-weight:bold; }
@@ -263,7 +263,6 @@ const Ed = {
         cvs.addEventListener('mousedown', (e) => this.down(e));
         cvs.addEventListener('mousemove', (e) => this.move(e));
         cvs.addEventListener('mouseup',   (e) => this.up(e));
-        
         window.addEventListener('mousemove', e => { 
             this.mx=e.clientX; this.my=e.clientY;
             const c=document.getElementById('p-cursor');
@@ -273,7 +272,24 @@ const Ed = {
     },
     
     pack() { return this.objs.map(o=>[ ['path','obs','goal','start','btn','trig'].indexOf(o.type), o.x, o.y, o.w, o.h, o.kfs, o.tag, o.link, o.wait?1:0, o.dur, o.z||10, o.r||0, o.loop===false?0:1 ]); },
-    unpack(d) { this.objs=d.map(r=>({ id:Math.random(), type:['path','obs','goal','start','btn','trig'][r[0]], x:r[1], y:r[2], w:r[3], h:r[4], kfs:r[5]||[], tag:r[6]||"", link:r[7]||"", wait:!!r[8], dur:r[9]||2, z:r[10]||10, r:r[11]||0, loop:r[12]!==0 })); this.render(); },
+    
+    unpack(d) { 
+        this.objs=d.map(r=>{
+            let o = {
+                id: Math.random().toString(36),
+                type: ['path','obs','goal','start','btn','trig'][r[0]],
+                x: r[1], y: r[2], w: r[3], h: r[4],
+                kfs: [], tag: "", link: "", wait: false, dur: 2, z: 10, r: 0, loop: true
+            };
+            if (Array.isArray(r[5])) { // New Schema
+                o.kfs=r[5]; o.tag=r[6]||""; o.link=r[7]||""; o.wait=!!r[8]; o.dur=r[9]||2; o.z=r[10]||10; o.r=r[11]||0; o.loop=(r[12]!==0);
+            } else if (typeof r[5] === 'number') { // Old Schema
+                o.r=r[5]; if(Array.isArray(r[6])) o.kfs=r[6];
+            }
+            return o;
+        }); 
+        this.render(); 
+    },
 
     add(type,x=40,y=40,w=10,h=10) { 
         HistorySys.push(); 
@@ -417,8 +433,6 @@ const Ed = {
     toggleHelp() { const el=document.getElementById('help-modal'); el.style.display=(el.style.display==='flex')?'none':'flex'; },
     togDbg() { this.debug=!this.debug; document.getElementById('play-layer').classList.toggle('debug-view', this.debug); },
 
-    exportHash() { const d=this.pack(); prompt("Level Hash:", btoa(JSON.stringify(d))); },
-    importHash() { const s=prompt("Paste Hash:"); if(s) try { this.unpack(JSON.parse(atob(s))); } catch(e) { alert("Invalid"); } },
     exportCode() {
         let js = `// Level Code\n(d) => {\n`;
         this.objs.forEach(o => {
@@ -437,7 +451,7 @@ const Ed = {
         js += `}`;
         console.log(js); alert("Code logged to Console (F12)");
     },
-
+    
     togglePlay() {
         this.playing = !this.playing;
         const pl = document.getElementById('play-layer');
