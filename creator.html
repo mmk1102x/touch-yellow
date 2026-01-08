@@ -75,8 +75,13 @@
         .p-panel { position:absolute; top:10px; right:10px; background:rgba(0,0,0,0.8); border:2px solid #f2a922; padding:10px; border-radius:8px; pointer-events:auto; color:white; font-family:sans-serif; }
         #p-cursor { position:absolute; width:20px; height:20px; border-left:2px solid cyan; border-top:2px solid cyan; transform:translate(-50%,-50%) rotate(45deg); pointer-events:none; display:none; }
         
+        /* BLUE START CURTAIN */
+        #start-curtain { display:none; position:absolute; top:0; left:0; width:100%; height:100%; background-color:#26a9e1; z-index:30000; cursor:default; pointer-events:auto; }
+        #start-trigger { position:absolute; width:10%; height:10%; background:#f1a92a; border-radius:50%; border:2px solid white; box-shadow:0 0 20px white; cursor:pointer; transform:translate(-50%,-50%); animation:pulse 1s infinite alternate; pointer-events:auto; }
+        @keyframes pulse { from { transform:translate(-50%,-50%) scale(1); } to { transform:translate(-50%,-50%) scale(1.1); } }
+
         /* HELP */
-        #help-modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:20000; justify-content:center; align-items:center; }
+        #help-modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:40000; justify-content:center; align-items:center; }
         .help-content { background:#2a2a2a; padding:25px; border-radius:8px; border:2px solid #f2a922; width:500px; color:#eee; box-shadow:0 0 20px #000; }
         .help-section { margin-bottom:15px; border-bottom:1px solid #444; padding-bottom:10px; }
         .help-section h3 { margin:0 0 5px 0; color:#26a9e1; }
@@ -185,6 +190,11 @@
         <div id="p-cursor"></div>
     </div>
     
+    <!-- START CURTAIN (For Play Mode) -->
+    <div id="start-curtain">
+        <div id="start-trigger" onmousedown="Ed.activatePhysics()"></div>
+    </div>
+
     <div id="help-modal" onclick="if(event.target===this) Ed.toggleHelp()">
         <div class="help-content">
             <h2 style="color:#f2a922; margin-top:0;">Quick Guide</h2>
@@ -255,8 +265,8 @@ const IO = {
 };
 
 const Ed = {
-    objs: [], sel: null, tool: 'sel', drag: null, playing: false, dirty: false, god: false, debug: false, mx:0, my:0,
-    els: { obj:document.getElementById('l-obj'), giz:document.getElementById('l-giz'), svg:document.getElementById('l-svg'), pts:document.getElementById('l-pts'), props:document.getElementById('props'), no:document.getElementById('no-sel') },
+    objs: [], sel: null, tool: 'sel', drag: null, playing: false, dirty: false, god: false, debug: false, mx:0, my:0, physicsActive: false,
+    els: { obj:document.getElementById('l-obj'), giz:document.getElementById('l-giz'), svg:document.getElementById('l-svg'), pts:document.getElementById('l-pts'), props:document.getElementById('props'), no:document.getElementById('no-sel'), curtain:document.getElementById('start-curtain'), trig:document.getElementById('start-trigger') },
     
     init() { 
         const cvs = document.getElementById('canvas');
@@ -273,24 +283,7 @@ const Ed = {
     },
     
     pack() { return this.objs.map(o=>[ ['path','obs','goal','start','btn','trig'].indexOf(o.type), o.x, o.y, o.w, o.h, o.kfs, o.tag, o.link, o.wait?1:0, o.dur, o.z||10, o.r||0, o.loop===false?0:1 ]); },
-    
-    unpack(d) { 
-        this.objs=d.map(r=>{
-            let o = {
-                id: Math.random().toString(36),
-                type: ['path','obs','goal','start','btn','trig'][r[0]],
-                x: r[1], y: r[2], w: r[3], h: r[4],
-                kfs: [], tag: "", link: "", wait: false, dur: 2, z: 10, r: 0, loop: true
-            };
-            if (Array.isArray(r[5])) { // New Schema
-                o.kfs=r[5]; o.tag=r[6]||""; o.link=r[7]||""; o.wait=!!r[8]; o.dur=r[9]||2; o.z=r[10]||10; o.r=r[11]||0; o.loop=(r[12]!==0);
-            } else if (typeof r[5] === 'number') { // Old Schema
-                o.r=r[5]; if(Array.isArray(r[6])) o.kfs=r[6];
-            }
-            return o;
-        }); 
-        this.render(); 
-    },
+    unpack(d) { this.objs=d.map(r=>({ id:Math.random(), type:['path','obs','goal','start','btn','trig'][r[0]], x:r[1], y:r[2], w:r[3], h:r[4], kfs:r[5]||[], tag:r[6]||"", link:r[7]||"", wait:!!r[8], dur:r[9]||2, z:r[10]||10, r:r[11]||0, loop:r[12]!==0 })); this.render(); },
 
     add(type,x=40,y=40,w=10,h=10) { 
         HistorySys.push(); 
@@ -453,6 +446,9 @@ const Ed = {
         console.log(js); alert("Code logged to Console (F12)");
     },
     
+    exportHash() { const d=this.pack(); prompt("Level Hash:", btoa(JSON.stringify(d))); },
+    importHash() { const s=prompt("Paste Hash:"); if(s) try { this.unpack(JSON.parse(atob(s))); } catch(e) { alert("Invalid"); } },
+
     togglePlay() {
         this.playing = !this.playing;
         const pl = document.getElementById('play-layer');
@@ -462,6 +458,20 @@ const Ed = {
             pl.style.display='block'; pl.innerHTML='';
             document.getElementById('play-ui').style.display='block';
             this.els.obj.style.display='none'; this.els.giz.style.display='none';
+            this.els.curtain.style.display='none'; // Reset curtain
+            
+            // --- NEW: BLUE CURTAIN SETUP ---
+            const startObj = this.objs.find(o => o.type === 'start');
+            if(startObj) {
+                this.els.curtain.style.display='block';
+                Object.assign(this.els.trig.style, { 
+                    left:startObj.x+'%', top:startObj.y+'%', width:startObj.w+'%', height:startObj.h+'%' 
+                });
+                this.physicsActive = false;
+            } else {
+                this.physicsActive = true; // No start, just go (unsafe)
+            }
+
             let css = "";
             this.objs.forEach(o => {
                 const el = document.createElement('div');
@@ -481,12 +491,8 @@ const Ed = {
                     el.style.animation = `${nm} ${o.dur}s linear ${iter}`;
                 }
                 
-                if(o.type==='btn' || o.type==='trig') {
-                    el.onmouseenter = () => { if(o.link) { const t=document.getElementById("run-"+o.link); if(t) t.classList.remove('paused'); } };
-                    el.style.pointerEvents="auto";
-                }
-                pl.appendChild(el);
                 o._el = el;
+                pl.appendChild(el);
             });
             dump.innerHTML = css;
             this.physicsLoop();
@@ -494,14 +500,24 @@ const Ed = {
         } else {
             if(document.fullscreenElement) document.exitFullscreen();
             pl.style.display='none'; document.getElementById('play-ui').style.display='none';
+            this.els.curtain.style.display='none';
             this.els.obj.style.display='block'; this.els.giz.style.display='block'; 
             this.render();
         }
+    },
+    
+    activatePhysics() {
+        this.els.curtain.style.display='none';
+        this.physicsActive = true;
     },
 
     physicsLoop() {
         if(!this.playing) return;
         requestAnimationFrame(() => this.physicsLoop());
+        
+        // Don't kill if curtain is up
+        if(!this.physicsActive) return;
+
         const rect = document.getElementById('game-container').getBoundingClientRect();
         const px = ((this.mx - rect.left) / rect.width) * 100;
         const py = ((this.my - rect.top) / rect.height) * 100;
@@ -539,7 +555,9 @@ const Ed = {
             this.playing = true; 
             this.togglePlay(); this.togglePlay(); 
         }, 100);
-    }
+    },
+
+    togDbg() { this.debug=!this.debug; document.getElementById('play-layer').classList.toggle('debug-view', this.debug); }
 };
 
 Ed.init();
