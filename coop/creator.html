@@ -444,4 +444,85 @@ const Ed = {
             let css = "";
             this.objs.forEach(o => {
                 const el = document.createElement('div');
-                el.className = `obj t-${o.type} ${o.wait?'p
+                el.className = `obj t-${o.type} ${o.wait?'paused':''}`;
+                if(o.tag) el.id = "run-"+o.tag;
+                Object.assign(el.style, { left:o.x+'%', top:o.y+'%', width:o.w+'%', height:o.h+'%', zIndex:o.z||10, transform:`rotate(${o.r}deg)` });
+                
+                if(Array.isArray(o.kfs) && o.kfs.length) {
+                    const nm = `anim-${Math.random().toString(36).substr(2,5)}`;
+                    css += `@keyframes ${nm} { 0% { transform: translate(0,0) rotate(${o.r}deg); } `;
+                    o.kfs.forEach((k,i) => {
+                        const pct = Math.round((i+1)/(o.kfs.length+1)*100);
+                        css += `${pct}% { transform: translate(${k.x}%, ${k.y}%) rotate(${o.r}deg); } `;
+                    });
+                    css += `100% { transform: translate(0,0) rotate(${o.r}deg); } } `;
+                    const iter = (o.loop !== false) ? 'infinite' : 'forwards';
+                    el.style.animation = `${nm} ${o.dur}s linear ${iter}`;
+                }
+                
+                if(o.type==='btn' || o.type==='trig') {
+                    el.onmouseenter = () => { if(o.link) { const t=document.getElementById("run-"+o.link); if(t) t.classList.remove('paused'); } };
+                    el.style.pointerEvents="auto";
+                }
+                pl.appendChild(el);
+            });
+            dump.innerHTML = css;
+            this.physicsLoop();
+            
+        } else {
+            if(document.fullscreenElement) document.exitFullscreen();
+            pl.style.display='none'; document.getElementById('play-ui').style.display='none';
+            this.els.obj.style.display='block'; this.els.giz.style.display='block'; 
+            this.render();
+        }
+    },
+
+    physicsLoop() {
+        if(!this.playing) return;
+        requestAnimationFrame(() => this.physicsLoop());
+        const rect = document.getElementById('game-container').getBoundingClientRect();
+        const px = ((this.mx - rect.left) / rect.width) * 100;
+        const py = ((this.my - rect.top) / rect.height) * 100;
+        
+        if((px<0 || px>100 || py<0 || py>100) && !this.god) return this.death();
+
+        let safe = false;
+        for(let o of this.objs) {
+            if(!o._el) continue;
+            const r = o._el.getBoundingClientRect();
+            const relX = this.mx - rect.left;
+            const relY = this.my - rect.top;
+            const bx = (r.left - rect.left);
+            const by = (r.top - rect.top);
+
+            if(relX >= bx && relX <= bx+r.width && relY >= by && relY <= by+r.height) {
+                if(o.type === 'obs' && !this.god) return this.death();
+                if(o.type === 'path' || o.type === 'start') safe = true;
+                if((o.type==='btn' || o.type==='trig') && o.link) {
+                    safe = true;
+                    const t = document.getElementById("run-"+o.link);
+                    if(t) t.classList.remove('paused');
+                    if(o.type==='btn') o._el.style.backgroundColor = '#d000d0';
+                }
+            }
+        }
+        if(!safe && !this.god) this.death();
+    },
+
+    death() {
+        document.body.style.background = '#500';
+        this.playing = false;
+        setTimeout(() => {
+            document.body.style.background = '#2a002a';
+            this.playing = true; 
+            this.togglePlay(); this.togglePlay(); 
+        }, 100);
+    },
+
+    togDbg() { this.debug=!this.debug; document.getElementById('play-layer').classList.toggle('debug-view', this.debug); }
+};
+
+Ed.init();
+</script>
+</body>
+</html>
