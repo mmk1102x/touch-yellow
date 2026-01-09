@@ -4,12 +4,14 @@
     <meta charset="UTF-8">
     <title>Touch Yellow - Ultimate Creator</title>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Purple Favicon for Co-op, Yellow for Main -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%23f2a922' stroke='%23333' stroke-width='10'/></svg>">
     <style>
         /* --- LAYOUT --- */
         body { margin:0; background:#222; font-family:'Roboto', sans-serif; color:white; height:100vh; display:flex; flex-direction:column; overflow:hidden; user-select:none; }
         
         /* TOOLBAR */
-        #toolbar { height:50px; background:#1a1a1a; display:flex; align-items:center; padding:0 15px; gap:10px; border-bottom:1px solid #444; overflow: visible; }
+        #toolbar { height:50px; background:#1a1a1a; display:flex; align-items:center; padding:0 15px; gap:10px; border-bottom:1px solid #444; overflow: visible; z-index: 100; }
         button { background:#444; border:1px solid #222; color:#eee; padding:5px 10px; cursor:pointer; font-size:12px; border-radius:4px; white-space: nowrap; }
         button:hover { background:#555; } button.active { background:#666; border-color:#999; box-shadow:inset 0 0 4px #000; }
         button.prm { background:#f2a922; color:#000; border-color:#b37a15; font-weight:bold; }
@@ -27,16 +29,22 @@
         .show { display: block; }
 
         /* WORKSPACE */
-        #workspace { flex:1; display:flex; }
-        #sidebar { width:280px; background:#222; border-left:1px solid #333; padding:15px; display:flex; flex-direction:column; gap:15px; font-size:12px; overflow-y:auto; }
+        #workspace { flex:1; display:flex; position: relative; overflow: hidden; }
+        
+        /* SIDEBAR */
+        #sidebar { width:280px; background:#222; border-left:1px solid #333; padding:15px; display:flex; flex-direction:column; gap:15px; font-size:12px; overflow-y:auto; z-index: 10; }
+        
+        /* CANVAS VIEWPORT */
         #canvas { flex:1; position:relative; overflow:hidden; background-image:radial-gradient(#444 1px, transparent 1px); background-size:20px 20px; display:flex; justify-content:center; align-items:center; }
+        
+        /* GAME CONTAINER */
         #game-container { width:80%; aspect-ratio:16/9; position:relative; background:#000; box-shadow:0 0 50px #000; border:1px solid #333; }
         
         /* OBJECTS */
         .obj { position:absolute; box-sizing:border-box; box-shadow: 0 0 0 1px rgba(0,0,0,0.2); }
         .t-path { background-color:#26a9e1; opacity:0.9; } 
         .t-goal { background-color:#f1a92a; opacity:0.9; } 
-        .t-obs { background-color:#000; border:1px dashed #555; opacity:0.8; }
+        .t-obs { background-color:#000; border:1px dashed #555; opacity:0.8; } 
         .t-btn { background-color:#33cc33; opacity:0.9; } 
         .t-trig { background:rgba(150,0,255,0.3); border:2px solid #b0f; }
         .t-start { border:2px solid lime; border-radius:50%; background:transparent; display:flex; justify-content:center; align-items:center; } 
@@ -50,7 +58,7 @@
         .rotate-stem { position:absolute; top:-20px; left:50%; width:1px; height:20px; background:#fff; pointer-events:none; }
         .rotate-knob { position:absolute; top:-28px; left:50%; width:10px; height:10px; background:#f2a922; border:1px solid #fff; border-radius:50%; transform:translateX(-50%); cursor:grab; pointer-events:auto; }
 
-        /* VISUALS */
+        /* VISUALS (Paths) */
         svg { position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:9000; }
         path { stroke:#f2a922; stroke-width:2; fill:none; stroke-dasharray:5; }
         .kf-node { position:absolute; width:10px; height:10px; background:#f2a922; border:2px solid #fff; border-radius:50%; transform:translate(-50%,-50%); z-index:9500; cursor:grab; }
@@ -66,16 +74,17 @@
         #kf-list { max-height:100px; overflow-y:auto; border:1px solid #333; margin-top:5px; }
         .kf-item { display:flex; gap:5px; padding:2px; font-size:11px; }
 
+        /* PLAY MODE */
         #play-layer { position:absolute; inset:0; pointer-events:none; z-index:200; display:none; }
         .paused { animation-play-state: paused !important; }
         #style-dump { display:none; }
         
-        /* PLAY UI */
+        /* PLAY UI OVERLAY */
         #play-ui { position:fixed; top:0; left:0; width:100%; height:100%; z-index:20000; pointer-events:none; }
         .p-panel { position:absolute; top:10px; right:10px; background:rgba(0,0,0,0.8); border:2px solid #f2a922; padding:10px; border-radius:8px; pointer-events:auto; color:white; font-family:sans-serif; }
         #p-cursor { position:absolute; width:20px; height:20px; border-left:2px solid cyan; border-top:2px solid cyan; transform:translate(-50%,-50%) rotate(45deg); pointer-events:none; display:none; }
         
-        /* BLUE START CURTAIN */
+        /* START CURTAIN */
         #start-curtain { display:none; position:absolute; top:0; left:0; width:100%; height:100%; background-color:#26a9e1; z-index:30000; cursor:default; pointer-events:auto; }
         #start-trigger { position:absolute; width:10%; height:10%; background:#f1a92a; border-radius:50%; border:2px solid white; box-shadow:0 0 20px white; cursor:pointer; transform:translate(-50%,-50%); animation:pulse 1s infinite alternate; pointer-events:auto; }
         @keyframes pulse { from { transform:translate(-50%,-50%) scale(1); } to { transform:translate(-50%,-50%) scale(1.1); } }
@@ -86,19 +95,28 @@
         .help-section { margin-bottom:15px; border-bottom:1px solid #444; padding-bottom:10px; }
         .help-section h3 { margin:0 0 5px 0; color:#26a9e1; }
         .key { background:#111; padding:2px 6px; border-radius:4px; font-family:monospace; border:1px solid #555; color:#fff; }
+        
+        /* DEBUG VIEW STYLE */
+        .debug-view .obj { opacity: 0.5 !important; }
+        .debug-view .t-obs { border: 2px solid red; background: rgba(255,0,0,0.3); }
+        .debug-view .t-goal { border: 2px solid yellow; }
+        .debug-view .t-path { border: 1px solid white; }
     </style>
     <style id="style-dump"></style>
 </head>
 <body>
+    <!-- TOOLBAR -->
     <div id="toolbar">
         <div class="tool-group">
             <button class="prm" onclick="Ed.togglePlay()">▶ PLAY</button>
         </div>
+        
         <div class="tool-group">
             <button id="t-sel" class="active" onclick="Ed.setTool('sel')">Select</button>
             <button id="t-path" onclick="Ed.setTool('path')">Path</button>
             <label><input type="checkbox" id="chk-snap" checked> Snap</label>
         </div>
+        
         <div class="tool-group">
             <button onclick="Ed.add('path')">+Blk</button>
             <button onclick="Ed.add('obs')">+Obs</button>
@@ -107,13 +125,15 @@
             <button onclick="Ed.add('trig')">+Trig</button>
             <button onclick="Ed.add('start')">+Start</button>
         </div>
+        
         <div class="tool-group">
             <button onclick="HistorySys.undo()">Undo</button>
             <button onclick="HistorySys.redo()">Redo</button>
         </div>
+        
         <div style="flex:1"></div>
         
-        <!-- IMPORT -->
+        <!-- IMPORT MENU -->
         <div class="dropdown">
             <button onclick="toggleDrop('menu-imp')">IMPORT ▲</button>
             <div id="menu-imp" class="dropdown-content">
@@ -124,7 +144,7 @@
             </div>
         </div>
 
-        <!-- EXPORT -->
+        <!-- EXPORT MENU -->
         <div class="dropdown">
             <button class="prm" onclick="toggleDrop('menu-exp')">EXPORT ▼</button>
             <div id="menu-exp" class="dropdown-content">
@@ -143,12 +163,19 @@
         </div>
     </div>
 
+    <!-- MAIN WORKSPACE -->
     <div id="workspace">
         <div id="canvas">
             <div id="game-container">
-                <div id="l-obj"></div><div id="l-giz"></div><svg id="l-svg"></svg><div id="l-pts"></div><div id="play-layer"></div>
+                <div id="l-obj"></div>
+                <div id="l-giz"></div>
+                <svg id="l-svg"></svg>
+                <div id="l-pts"></div>
+                <div id="play-layer"></div>
             </div>
         </div>
+        
+        <!-- SIDEBAR PROPERTIES -->
         <div id="sidebar">
             <div id="props" style="display:none">
                 <div class="panel">
@@ -179,6 +206,7 @@
         </div>
     </div>
     
+    <!-- TEST MODE UI -->
     <div id="play-ui" style="display:none;">
         <div class="p-panel">
             <h3>TEST MODE</h3>
@@ -190,11 +218,12 @@
         <div id="p-cursor"></div>
     </div>
     
-    <!-- START CURTAIN (For Play Mode) -->
+    <!-- START CURTAIN -->
     <div id="start-curtain">
         <div id="start-trigger" onmousedown="Ed.activatePhysics()"></div>
     </div>
 
+    <!-- HELP -->
     <div id="help-modal" onclick="if(event.target===this) Ed.toggleHelp()">
         <div class="help-content">
             <h2 style="color:#f2a922; margin-top:0;">Quick Guide</h2>
@@ -215,58 +244,145 @@
     </div>
 
 <script>
-function toggleDrop(id) { document.querySelectorAll('.dropdown-content').forEach(e=>e.classList.remove('show')); document.getElementById(id).classList.toggle('show'); }
-window.onclick = function(e) { if (!e.target.matches('.dropdown button')) { document.querySelectorAll('.dropdown-content').forEach(e=>e.classList.remove('show')); } }
+// --- UI HELPERS ---
+function toggleDrop(id) { 
+    document.querySelectorAll('.dropdown-content').forEach(e => e.classList.remove('show')); 
+    document.getElementById(id).classList.toggle('show'); 
+}
+window.onclick = function(e) { 
+    if (!e.target.matches('.dropdown button') && !e.target.matches('.prm')) { 
+        document.querySelectorAll('.dropdown-content').forEach(e => e.classList.remove('show')); 
+    } 
+}
 
-const HistorySys={stack:[],future:[],push(){if(this.stack.length>50)this.stack.shift();this.stack.push(JSON.parse(JSON.stringify(Ed.objs)));this.future=[];Ed.dirty=true;},undo(){if(this.stack.length){this.future.push(JSON.parse(JSON.stringify(Ed.objs)));Ed.objs=this.stack.pop();Ed.sel=null;Ed.render();}},redo(){if(this.future.length){this.stack.push(JSON.parse(JSON.stringify(Ed.objs)));Ed.objs=this.future.pop();Ed.sel=null;Ed.render();}}};
-window.addEventListener('keydown',(e)=>{
-    if(e.target.tagName==='INPUT')return;
-    if((e.ctrlKey||e.metaKey)&&e.key==='z'){e.preventDefault();HistorySys.undo();}
-    if((e.ctrlKey||e.metaKey)&&e.key==='y'){e.preventDefault();HistorySys.redo();}
-    if(e.key==='Delete')Ed.del();
-    if(e.key==='F1'){e.preventDefault();Ed.toggleHelp();}
-    if(e.key==='`'||e.key==='Escape'){if(Ed.playing)Ed.togglePlay();}
-});
-document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement && Ed.playing) Ed.togglePlay(); });
-
-const StorageSys={
-    KEY:'ty_custom_level_data',
-    save:()=>{ try{ const d=Ed.pack(); localStorage.setItem(StorageSys.KEY, JSON.stringify(d)); Ed.dirty=false; alert("Quick Saved!"); }catch(e){alert("Error");} }, 
-    load:()=>{ const s=localStorage.getItem(StorageSys.KEY); if(s){ Ed.unpack(JSON.parse(s)); alert("Loaded!"); }else alert("No Save"); }
+// --- HISTORY SYSTEM ---
+const HistorySys = {
+    stack: [], future: [],
+    push() {
+        if(this.stack.length > 50) this.stack.shift();
+        this.stack.push(JSON.parse(JSON.stringify(Ed.objs)));
+        this.future = [];
+        Ed.dirty = true;
+    },
+    undo() {
+        if(this.stack.length) {
+            this.future.push(JSON.parse(JSON.stringify(Ed.objs)));
+            Ed.objs = this.stack.pop();
+            Ed.sel = null; Ed.render();
+        }
+    },
+    redo() {
+        if(this.future.length) {
+            this.stack.push(JSON.parse(JSON.stringify(Ed.objs)));
+            Ed.objs = this.future.pop();
+            Ed.sel = null; Ed.render();
+        }
+    }
 };
 
-const CookieSys={ save:StorageSys.save, load:StorageSys.load };
+window.addEventListener('keydown', (e) => {
+    if(e.target.tagName === 'INPUT') return;
+    if((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); HistorySys.undo(); }
+    if((e.ctrlKey || e.metaKey) && e.key === 'y') { e.preventDefault(); HistorySys.redo(); }
+    if(e.key === 'Delete') Ed.del();
+    if(e.key === 'F1') { e.preventDefault(); Ed.toggleHelp(); }
+    if(e.key === '`' || e.key === 'Escape') { if(Ed.playing) Ed.togglePlay(); }
+});
+
+// Fullscreen escape listener
+document.addEventListener('fullscreenchange', () => { 
+    if (!document.fullscreenElement && Ed.playing) Ed.togglePlay(); 
+});
+
+// --- STORAGE ---
+const StorageSys = {
+    KEY: 'ty_custom_level_data',
+    save: () => { 
+        try { 
+            const d = Ed.pack(); 
+            localStorage.setItem(StorageSys.KEY, JSON.stringify(d)); 
+            Ed.dirty = false; 
+            alert("Quick Saved to Browser!"); 
+        } catch(e) { alert("Save Error"); } 
+    }, 
+    load: () => { 
+        const s = localStorage.getItem(StorageSys.KEY); 
+        if(s) { Ed.unpack(JSON.parse(s)); alert("Loaded from Browser!"); } 
+        else alert("No Quick Save found."); 
+    }
+};
+const CookieSys = { save: StorageSys.save, load: StorageSys.load }; // Alias
 
 const FileIO = {
     export: () => {
-        const d=Ed.pack(); const b=new Blob([JSON.stringify(d)],{type:"text/plain"});
-        const a=document.createElement('a'); a.href=URL.createObjectURL(b);
-        const n=prompt("Filename:","my_level"); if(!n)return;
-        a.download=n+".level"; document.body.appendChild(a); a.click(); document.body.removeChild(a); Ed.dirty=false;
+        const d = Ed.pack(); 
+        const b = new Blob([JSON.stringify(d)], {type: "text/plain"});
+        const a = document.createElement('a'); 
+        a.href = URL.createObjectURL(b);
+        const n = prompt("Filename:", "my_level"); 
+        if(!n) return;
+        a.download = n + ".level"; 
+        document.body.appendChild(a); 
+        a.click(); 
+        document.body.removeChild(a); 
+        Ed.dirty = false;
     },
     import: () => {
-        const i=document.createElement('input'); i.type='file'; i.accept='.level';
-        i.onchange=e=>{ const f=e.target.files[0]; if(!f)return; const r=new FileReader(); r.onload=ev=>{ try{ Ed.unpack(JSON.parse(ev.target.result)); alert("Imported!"); }catch(err){alert("Invalid File");} }; r.readAsText(f); };
+        const i = document.createElement('input'); 
+        i.type = 'file'; 
+        i.accept = '.level';
+        i.onchange = e => {
+            const f = e.target.files[0]; 
+            if(!f) return; 
+            const r = new FileReader(); 
+            r.onload = ev => { 
+                try { 
+                    Ed.unpack(JSON.parse(ev.target.result)); 
+                    alert("Imported Successfully!"); 
+                } catch(err) { alert("Invalid File Format"); } 
+            }; 
+            r.readAsText(f);
+        };
         i.click();
     }
 };
 
 const IO = {
     exportLink: () => {
-        const d=Ed.pack(); const s=btoa(JSON.stringify(d));
-        if(s.length>3000) return alert("Level too big for Link!");
-        const base=window.location.href.replace('creator.html','index.html');
-        prompt("Copy Link:", `${base}?data=${s}`);
+        const d = Ed.pack(); 
+        const s = btoa(JSON.stringify(d));
+        if(s.length > 3000) return alert("Level too big for a URL Link! Use File Export.");
+        const base = window.location.href.replace('creator.html', 'index.html');
+        prompt("Copy this Playable Link:", `${base}?data=${s}`);
     },
     importLink: () => {
-        const s=prompt("Paste Link:"); if(!s)return;
-        try { const d=new URL(s).searchParams.get('data'); Ed.unpack(JSON.parse(atob(d))); alert("Imported!"); } catch(e){ alert("Invalid Link"); }
+        const s = prompt("Paste Link:"); 
+        if(!s) return;
+        try { 
+            const url = new URL(s);
+            const d = url.searchParams.get('data'); 
+            Ed.unpack(JSON.parse(atob(d))); 
+            alert("Imported from Link!"); 
+        } catch(e) { alert("Invalid Link"); }
     }
 };
 
+// --- EDITOR ENGINE ---
 const Ed = {
-    objs: [], sel: null, tool: 'sel', drag: null, playing: false, dirty: false, god: false, debug: false, mx:0, my:0, physicsActive: false,
-    els: { obj:document.getElementById('l-obj'), giz:document.getElementById('l-giz'), svg:document.getElementById('l-svg'), pts:document.getElementById('l-pts'), props:document.getElementById('props'), no:document.getElementById('no-sel'), curtain:document.getElementById('start-curtain'), trig:document.getElementById('start-trigger') },
+    objs: [], sel: null, tool: 'sel', drag: null, 
+    playing: false, dirty: false, god: false, debug: false, 
+    mx: 0, my: 0, physicsActive: false,
+    
+    els: { 
+        obj: document.getElementById('l-obj'), 
+        giz: document.getElementById('l-giz'), 
+        svg: document.getElementById('l-svg'), 
+        pts: document.getElementById('l-pts'), 
+        props: document.getElementById('props'), 
+        no: document.getElementById('no-sel'),
+        curtain: document.getElementById('start-curtain'),
+        trig: document.getElementById('start-trigger')
+    },
     
     init() { 
         const cvs = document.getElementById('canvas');
@@ -275,52 +391,94 @@ const Ed = {
         cvs.addEventListener('mouseup',   (e) => this.up(e));
         
         window.addEventListener('mousemove', e => { 
-            this.mx=e.clientX; this.my=e.clientY;
-            const c=document.getElementById('p-cursor');
-            if(this.playing && c) { c.style.display='block'; c.style.left=e.clientX+'px'; c.style.top=e.clientY+'px'; }
+            this.mx = e.clientX; 
+            this.my = e.clientY;
+            const c = document.getElementById('p-cursor');
+            if(this.playing && c) { 
+                c.style.display = 'block'; 
+                c.style.left = e.clientX + 'px'; 
+                c.style.top = e.clientY + 'px'; 
+            }
         });
         this.add('start', 5, 50, 6, 10); 
     },
     
-    pack() { return this.objs.map(o=>[ ['path','obs','goal','start','btn','trig'].indexOf(o.type), o.x, o.y, o.w, o.h, o.kfs, o.tag, o.link, o.wait?1:0, o.dur, o.z||10, o.r||0, o.loop===false?0:1 ]); },
-    unpack(d) { this.objs=d.map(r=>({ id:Math.random(), type:['path','obs','goal','start','btn','trig'][r[0]], x:r[1], y:r[2], w:r[3], h:r[4], kfs:r[5]||[], tag:r[6]||"", link:r[7]||"", wait:!!r[8], dur:r[9]||2, z:r[10]||10, r:r[11]||0, loop:r[12]!==0 })); this.render(); },
+    // PACK: [Type, X, Y, W, H, KFS, Tag, Link, Wait, Dur, Z, Rot, Loop]
+    pack() { 
+        return this.objs.map(o => [ 
+            ['path','obs','goal','start','btn','trig'].indexOf(o.type), 
+            o.x, o.y, o.w, o.h, 
+            o.kfs, o.tag, o.link, o.wait?1:0, o.dur, o.z||10, o.r||0, o.loop===false?0:1 
+        ]); 
+    },
+    
+    unpack(d) { 
+        this.objs = d.map(r => ({
+            id: Math.random().toString(36),
+            type: ['path','obs','goal','start','btn','trig'][r[0]],
+            x: r[1], y: r[2], w: r[3], h: r[4],
+            kfs: Array.isArray(r[5]) ? r[5] : [], // Safety check for old saves
+            tag: r[6] || "", link: r[7] || "", 
+            wait: !!r[8], dur: r[9] || 2, 
+            z: r[10] || 10, r: r[11] || 0, 
+            loop: r[12] !== 0
+        })); 
+        this.render(); 
+    },
 
-    add(type,x=40,y=40,w=10,h=10) { 
+    add(type, x=40, y=40, w=10, h=10) { 
         HistorySys.push(); 
-        let z=10; if(type==='obs')z=20; if(type==='btn')z=15;
-        this.objs.push({id:Math.random(), type, x, y, w, h, r:0, z, kfs:[], tag:"", link:"", wait:false, dur:2, loop:true });
+        let z = 10; if(type === 'obs') z = 20; if(type === 'btn') z = 15;
+        this.objs.push({
+            id: Math.random().toString(36),
+            type, x, y, w, h, r: 0, z, 
+            kfs: [], tag: "", link: "", wait: false, dur: 2, loop: true 
+        });
         this.render(); 
     },
 
     setTool(t) { 
-        this.tool=t; 
-        document.querySelectorAll('#toolbar button').forEach(b=>b.classList.remove('active'));
+        this.tool = t; 
+        document.querySelectorAll('#toolbar button').forEach(b => b.classList.remove('active'));
         document.getElementById(t==='sel'?'t-sel':'t-path').classList.add('active');
         this.render();
     },
 
     render() {
         if(this.playing) return;
-        ['obj','giz','pts'].forEach(k=>this.els[k].innerHTML=''); this.els.svg.innerHTML='';
-        [...this.objs].sort((a,b)=>(a.z||10)-(b.z||10)).forEach(o => {
+        ['obj','giz','pts'].forEach(k => this.els[k].innerHTML = ''); 
+        this.els.svg.innerHTML = '';
+        
+        // Z-Sort for rendering
+        [...this.objs].sort((a,b) => (a.z||10) - (b.z||10)).forEach(o => {
             const el = document.createElement('div');
             el.className = `obj t-${o.type}`;
-            Object.assign(el.style, { left:o.x+'%', top:o.y+'%', width:o.w+'%', height:o.h+'%', transform:`rotate(${o.r}deg)`, zIndex:o.z||10 });
-            el.onmousedown = (e) => this.startDrag(e, o, 'move');
+            Object.assign(el.style, { 
+                left: o.x+'%', top: o.y+'%', width: o.w+'%', height: o.h+'%', 
+                transform: `rotate(${o.r}deg)`, zIndex: o.z||10 
+            });
+            el.onmousedown = (e) => { e.stopPropagation(); this.startDrag(e, o, 'move'); };
             this.els.obj.appendChild(el);
 
             if(this.sel === o) {
-                const g = document.createElement('div'); g.className='gizmo';
-                Object.assign(g.style, { left:o.x+'%', top:o.y+'%', width:o.w+'%', height:o.h+'%', transform:`rotate(${o.r}deg)`, zIndex:9999 });
+                // Gizmo Overlay
+                const g = document.createElement('div'); g.className = 'gizmo';
+                Object.assign(g.style, { 
+                    left: o.x+'%', top: o.y+'%', width: o.w+'%', height: o.h+'%', 
+                    transform: `rotate(${o.r}deg)`, zIndex: 9999 
+                });
+                
                 ['tl','tr','bl','br'].forEach(p => {
-                    const h = document.createElement('div'); h.className=`handle h-${p}`;
-                    h.onmousedown = (e) => this.startDrag(e, o, 'scale', p);
+                    const h = document.createElement('div'); h.className = `handle h-${p}`;
+                    h.onmousedown = (e) => { e.stopPropagation(); this.startDrag(e, o, 'scale', p); };
                     g.appendChild(h);
                 });
-                const stem = document.createElement('div'); stem.className='rotate-stem';
-                const knob = document.createElement('div'); knob.className='rotate-knob';
-                knob.onmousedown = (e) => this.startDrag(e, o, 'rotate');
+                
+                const stem = document.createElement('div'); stem.className = 'rotate-stem';
+                const knob = document.createElement('div'); knob.className = 'rotate-knob';
+                knob.onmousedown = (e) => { e.stopPropagation(); this.startDrag(e, o, 'rotate'); };
                 g.append(stem, knob);
+                
                 this.els.giz.appendChild(g);
                 this.renderPath(o);
             }
@@ -329,46 +487,53 @@ const Ed = {
     },
 
     renderPath(o) {
-        if(!o.kfs.length && this.tool!=='path') return;
-        let d = `M ${o.x+o.w/2} ${o.y+o.h/2}`;
+        if(!o.kfs.length && this.tool !== 'path') return;
+        let d = `M ${o.x + o.w/2} ${o.y + o.h/2}`;
         o.kfs.forEach((k, i) => {
-            const ax = o.x+o.w/2 + (k.x/100*o.w);
-            const ay = o.y+o.h/2 + (k.y/100*o.h);
+            const ax = o.x + o.w/2 + (k.x/100 * o.w);
+            const ay = o.y + o.h/2 + (k.y/100 * o.h);
             d += ` L ${ax} ${ay}`;
-            const pt=document.createElement('div'); pt.className='kf-node';
-            pt.style.left=ax+'%'; pt.style.top=ay+'%';
-            pt.onmousedown = (e) => this.startDrag(e, o, 'kf', i);
+            const pt = document.createElement('div'); pt.className = 'kf-node';
+            pt.style.left = ax+'%'; pt.style.top = ay+'%';
+            pt.onmousedown = (e) => { e.stopPropagation(); this.startDrag(e, o, 'kf', i); };
             this.els.pts.appendChild(pt);
         });
-        const p = document.createElementNS("http://www.w3.org/2000/svg","path"); p.setAttribute("d",d); this.els.svg.appendChild(p);
+        const p = document.createElementNS("http://www.w3.org/2000/svg","path"); 
+        p.setAttribute("d", d); 
+        this.els.svg.appendChild(p);
     },
 
     startDrag(e, o, mode, handle) {
-        e.stopPropagation();
-        if(this.tool==='path' && mode==='move') { this.addKf(e,o); return; }
+        if(this.tool === 'path' && mode === 'move') { this.addKf(e,o); return; }
         this.sel = o; this.render(); HistorySys.push();
-        this.drag = { mode, o, sx:e.clientX, sy:e.clientY, handle, ox:o.x, oy:o.y, ow:o.w, oh:o.h, or:o.r,
-                      kfIdx: (mode==='kf'?handle:null), kfx: (mode==='kf'?o.kfs[handle].x:0), kfy: (mode==='kf'?o.kfs[handle].y:0) };
+        this.drag = { 
+            mode, o, 
+            sx: e.clientX, sy: e.clientY, handle, 
+            ox: o.x, oy: o.y, ow: o.w, oh: o.h, or: o.r,
+            kfIdx: (mode==='kf' ? handle : null), 
+            kfx: (mode==='kf' ? o.kfs[handle].x : 0), 
+            kfy: (mode==='kf' ? o.kfs[handle].y : 0) 
+        };
     },
 
     move(e) {
         if(!this.drag) return;
         const r = document.getElementById('game-container').getBoundingClientRect();
-        const dx = (e.clientX - this.drag.sx)/r.width*100;
-        const dy = (e.clientY - this.drag.sy)/r.height*100;
+        const dx = (e.clientX - this.drag.sx) / r.width * 100;
+        const dy = (e.clientY - this.drag.sy) / r.height * 100;
         const o = this.drag.o;
         const snap = document.getElementById('chk-snap').checked;
 
         if(this.drag.mode === 'kf') {
             const i = this.drag.kfIdx;
-            let nx = this.drag.kfx + (dx/o.w*100);
-            let ny = this.drag.kfy + (dy/o.h*100);
-            if(snap) { nx=Math.round(nx/10)*10; ny=Math.round(ny/10)*10; }
+            let nx = this.drag.kfx + (dx * (100/o.w));
+            let ny = this.drag.kfy + (dy * (100/o.h));
+            if(snap) { nx = Math.round(nx/10)*10; ny = Math.round(ny/10)*10; }
             o.kfs[i].x = nx; o.kfs[i].y = ny;
         }
         else if(this.drag.mode === 'move') {
             o.x = this.drag.ox + dx; o.y = this.drag.oy + dy;
-            if(snap) { o.x=Math.round(o.x); o.y=Math.round(o.y); }
+            if(snap) { o.x = Math.round(o.x); o.y = Math.round(o.y); }
         } 
         else if(this.drag.mode === 'scale') {
             let nw=o.w, nh=o.h, nx=o.x, ny=o.y;
@@ -376,8 +541,9 @@ const Ed = {
             if(this.drag.handle.includes('l')) { let d = Math.min(this.drag.ow-1, dx); nw = this.drag.ow - d; nx = this.drag.ox + d; }
             if(this.drag.handle.includes('b')) nh = Math.max(1, this.drag.oh + dy);
             if(this.drag.handle.includes('t')) { let d = Math.min(this.drag.oh-1, dy); nh = this.drag.oh - d; ny = this.drag.oy + d; }
+            
             if(snap) { nw=Math.round(nw); nh=Math.round(nh); nx=Math.round(nx); ny=Math.round(ny); }
-            o.x=nx; o.y=ny; o.w=nw; o.h=nh;
+            o.x = nx; o.y = ny; o.w = nw; o.h = nh;
         }
         else if(this.drag.mode === 'rotate') {
             const cx = r.left + (o.x + o.w/2)/100 * r.width;
@@ -391,15 +557,20 @@ const Ed = {
     },
 
     up() { this.drag = null; },
-    down(e) { if(e.target.id === 'game-container') { this.sel=null; this.render(); } },
+    down(e) { if(e.target.id === 'game-container') { this.sel = null; this.render(); } },
 
+    // --- UI UPDATES ---
     updateUI() {
-        if(!this.sel) { this.els.props.style.display='none'; this.els.no.style.display='block'; return; }
-        this.els.props.style.display='block'; this.els.no.style.display='none';
+        if(!this.sel) { 
+            this.els.props.style.display = 'none'; 
+            this.els.no.style.display = 'block'; return; 
+        }
+        this.els.props.style.display = 'block'; 
+        this.els.no.style.display = 'none';
         
         ['x','y','w','h','r','dur','z'].forEach(k => {
             const el = document.getElementById('v-'+k);
-            if(el) el.value = Math.round((this.sel[k]||(k==='z'?10:0))*100)/100;
+            if(el) el.value = Math.round((this.sel[k] || (k==='z'?10:0)) * 100) / 100;
         });
         document.getElementById('p-id').innerText = this.sel.type;
         document.getElementById('v-tag').value = this.sel.tag;
@@ -407,8 +578,10 @@ const Ed = {
         document.getElementById('v-wait').checked = this.sel.wait;
         document.getElementById('v-loop').checked = (this.sel.loop !== false);
         
-        const l = document.getElementById('kf-list'); l.innerHTML='';
-        this.sel.kfs.forEach((k,i) => l.innerHTML += `<div class="kf-item"><span class="kf-idx">#${i+1}</span> X:<input type="number" value="${Math.round(k.x)}" onchange="Ed.setKf(${i},'x',this.value)"> Y:<input type="number" value="${Math.round(k.y)}" onchange="Ed.setKf(${i},'y',this.value)"></div>`);
+        const l = document.getElementById('kf-list'); l.innerHTML = '';
+        this.sel.kfs.forEach((k, i) => {
+            l.innerHTML += `<div class="kf-item"><span class="kf-idx">#${i+1}</span> X:<input type="number" value="${Math.round(k.x)}" onchange="Ed.setKf(${i},'x',this.value)"> Y:<input type="number" value="${Math.round(k.y)}" onchange="Ed.setKf(${i},'y',this.value)"></div>`;
+        });
     },
 
     set(k,v) { if(this.sel) { HistorySys.push(); this.sel[k]=parseFloat(v); this.render(); } },
@@ -418,7 +591,7 @@ const Ed = {
     setKf(i,k,v) { if(this.sel) { HistorySys.push(); this.sel.kfs[i][k]=parseFloat(v); this.render(); } },
     
     del() { if(this.sel) { HistorySys.push(); this.objs=this.objs.filter(o=>o!==this.sel); this.sel=null; this.render(); } },
-    clear() { if(confirm("Clear?")) { HistorySys.push(); this.objs=[]; this.render(); } },
+    clear() { if(confirm("Clear All?")) { HistorySys.push(); this.objs=[]; this.render(); } },
     addKf(e,o) { const t=o||this.sel; if(t) { HistorySys.push(); t.kfs.push({x:10,y:10}); this.render(); } },
     clearKf() { if(this.sel) { HistorySys.push(); this.sel.kfs=[]; this.render(); } },
 
@@ -427,40 +600,21 @@ const Ed = {
     toggleHelp() { const el=document.getElementById('help-modal'); el.style.display=(el.style.display==='flex')?'none':'flex'; },
     togDbg() { this.debug=!this.debug; document.getElementById('play-layer').classList.toggle('debug-view', this.debug); },
 
-    exportCode() {
-        let js = `// Level Code\n(d) => {\n`;
-        this.objs.forEach(o => {
-            let animStr = "null";
-            if(o.kfs.length) {
-                const iter = (o.loop !== false) ? 'infinite' : 'forwards';
-                animStr = `"customAnim ${o.dur}s linear ${iter}"`; 
-            }
-            const z = o.z && o.z !== 10 ? `, z:${o.z}` : '';
-            if(o.type==='path') js += `    d.path(${o.x}, ${o.y}, ${o.w}, ${o.h}${z});\n`;
-            if(o.type==='obs') js += `    const obs = d.obs(${o.x}, ${o.y}, ${o.w}, ${o.h}, ${animStr}); ${z?`obs.vis.style.zIndex=${o.z};`:''}\n`;
-            if(o.type==='goal') js += `    d.goal(${o.x}, ${o.y}, ${o.w}, ${o.h}, 'next');\n`;
-            if(o.type==='start') js += `    d.start(${o.x}, ${o.y}, ${o.w}, ${o.h});\n`;
-            if(o.type==='btn') js += `    const b = d.btn(${o.x}, ${o.y}, ${o.w}, ${o.h});\n`;
-        });
-        js += `}`;
-        console.log(js); alert("Code logged to Console (F12)");
-    },
-    
-    exportHash() { const d=this.pack(); prompt("Level Hash:", btoa(JSON.stringify(d))); },
-    importHash() { const s=prompt("Paste Hash:"); if(s) try { this.unpack(JSON.parse(atob(s))); } catch(e) { alert("Invalid"); } },
-
+    // --- PLAY MODE ---
     togglePlay() {
         this.playing = !this.playing;
         const pl = document.getElementById('play-layer');
         const dump = document.getElementById('style-dump');
+        document.getElementById('game-container').style.transform = ''; 
+        
         if(this.playing) {
             document.documentElement.requestFullscreen().catch(e=>{});
             pl.style.display='block'; pl.innerHTML='';
             document.getElementById('play-ui').style.display='block';
             this.els.obj.style.display='none'; this.els.giz.style.display='none';
-            this.els.curtain.style.display='none'; // Reset curtain
-            
-            // --- NEW: BLUE CURTAIN SETUP ---
+            this.els.curtain.style.display='none';
+
+            // Show Blue Curtain if Start exists
             const startObj = this.objs.find(o => o.type === 'start');
             if(startObj) {
                 this.els.curtain.style.display='block';
@@ -468,16 +622,17 @@ const Ed = {
                     left:startObj.x+'%', top:startObj.y+'%', width:startObj.w+'%', height:startObj.h+'%' 
                 });
                 this.physicsActive = false;
-            } else {
-                this.physicsActive = true; // No start, just go (unsafe)
-            }
+            } else { this.physicsActive = true; }
 
             let css = "";
             this.objs.forEach(o => {
                 const el = document.createElement('div');
                 el.className = `obj t-${o.type} ${o.wait?'paused':''}`;
                 if(o.tag) el.id = "run-"+o.tag;
-                Object.assign(el.style, { left:o.x+'%', top:o.y+'%', width:o.w+'%', height:o.h+'%', zIndex:o.z||10, transform:`rotate(${o.r}deg)` });
+                Object.assign(el.style, { 
+                    left:o.x+'%', top:o.y+'%', width:o.w+'%', height:o.h+'%', 
+                    zIndex:o.z||10, transform:`rotate(${o.r}deg)` 
+                });
                 
                 if(Array.isArray(o.kfs) && o.kfs.length) {
                     const nm = `anim-${Math.random().toString(36).substr(2,5)}`;
@@ -502,22 +657,18 @@ const Ed = {
             pl.style.display='none'; document.getElementById('play-ui').style.display='none';
             this.els.curtain.style.display='none';
             this.els.obj.style.display='block'; this.els.giz.style.display='block'; 
+            View.update();
             this.render();
         }
     },
     
-    activatePhysics() {
-        this.els.curtain.style.display='none';
-        this.physicsActive = true;
-    },
+    activatePhysics() { this.els.curtain.style.display='none'; this.physicsActive = true; },
 
     physicsLoop() {
         if(!this.playing) return;
         requestAnimationFrame(() => this.physicsLoop());
-        
-        // Don't kill if curtain is up
         if(!this.physicsActive) return;
-
+        
         const rect = document.getElementById('game-container').getBoundingClientRect();
         const px = ((this.mx - rect.left) / rect.width) * 100;
         const py = ((this.my - rect.top) / rect.height) * 100;
@@ -528,10 +679,8 @@ const Ed = {
         for(let o of this.objs) {
             if(!o._el) continue;
             const r = o._el.getBoundingClientRect();
-            const relX = this.mx - rect.left;
-            const relY = this.my - rect.top;
-            const bx = (r.left - rect.left);
-            const by = (r.top - rect.top);
+            const relX = this.mx - rect.left; const relY = this.my - rect.top;
+            const bx = (r.left - rect.left); const by = (r.top - rect.top);
 
             if(relX >= bx && relX <= bx+r.width && relY >= by && relY <= by+r.height) {
                 if(o.type === 'obs' && !this.god) return this.death();
@@ -557,7 +706,28 @@ const Ed = {
         }, 100);
     },
 
-    togDbg() { this.debug=!this.debug; document.getElementById('play-layer').classList.toggle('debug-view', this.debug); }
+    togDbg() { this.debug=!this.debug; document.getElementById('play-layer').classList.toggle('debug-view', this.debug); },
+
+    // --- CODE EXPORT ---
+    exportCode() {
+        let js = `// Level Code\n(d) => {\n`;
+        this.objs.forEach(o => {
+            let animStr = "null";
+            if(Array.isArray(o.kfs) && o.kfs.length) {
+                const iter = (o.loop !== false) ? 'infinite' : 'forwards';
+                animStr = `"customAnim ${o.dur}s linear ${iter}"`; 
+            }
+            const z = o.z && o.z !== 10 ? `, z:${o.z}` : '';
+            
+            if(o.type==='path') js += `    d.path(${o.x}, ${o.y}, ${o.w}, ${o.h}${z});\n`;
+            if(o.type==='obs') js += `    const obs = d.obs(${o.x}, ${o.y}, ${o.w}, ${o.h}, ${animStr}); ${z?`obs.vis.style.zIndex=${o.z};`:''}\n`;
+            if(o.type==='goal') js += `    d.goal(${o.x}, ${o.y}, ${o.w}, ${o.h}, 'next');\n`;
+            if(o.type==='start') js += `    d.start(${o.x}, ${o.y}, ${o.w}, ${o.h});\n`;
+            if(o.type==='btn') js += `    const b = d.btn(${o.x}, ${o.y}, ${o.w}, ${o.h});\n`;
+        });
+        js += `}`;
+        console.log(js); alert("Code logged to Console (F12)");
+    }
 };
 
 Ed.init();
