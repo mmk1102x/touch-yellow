@@ -194,9 +194,20 @@ const Engine = {
 
             if(mx>bx && mx<bx+bw && my>by && my<by+bh) {
                 if(hb.type === 'obs' && this.state==='playing') return this.die();
+                
                 if(hb.type === 'path') safe = true;
-                if(hb.type === 'start') { safe = true; if(this.state === 'waiting') { this.state = 'playing'; console.log("Game Active"); } }
+                
+                // Ghost Mode Logic
+                if(hb.type === 'start') { 
+                    safe = true; 
+                    if(this.state === 'waiting') { 
+                        this.state = 'playing'; 
+                        console.log("Game Active");
+                    } 
+                }
+                
                 if(hb.type === 'goal') { safe=true; this.start(hb.next); }
+                
                 if((hb.type==='btn' || hb.type==='trig') && hb.link) {
                     safe=true;
                     this.hitboxes.forEach(t => { if(t.tag === hb.link) { t.vis.classList.remove('paused'); t.hit.classList.remove('paused'); }});
@@ -204,7 +215,10 @@ const Engine = {
                 }
             }
         }
+        
         document.getElementById('game').style.cursor = (this.state==='playing' && safe) ? 'crosshair' : 'default';
+        
+        // Void Death
         if(this.state==='playing' && !safe) this.die();
     },
     die() { if(this.noclip) return; this.active = false; this.start(6); },

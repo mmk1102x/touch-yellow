@@ -165,11 +165,18 @@ const Net = {
     setup: () => {
         document.getElementById('lobby').style.display='none';
         document.getElementById('hud').style.display='block';
+        
+        Net.conn.on('open', () => {
+            // Client sends Ready to ensure they get the start command
+            if(!Engine.isHost) Net.send({type: 'ready'});
+        });
+
         Net.conn.on('data', d => {
             if(d.type === 'sync') Engine.handleSync(d);
             if(d.type === 'start') Engine.start(d.level);
             if(d.type === 'win') Engine.p2.atGoal = true;
             if(d.type === 'die') Engine.die(); // Shared death
+            if(d.type === 'ready' && Engine.isHost) setTimeout(() => Net.send({type:'start', level:1}), 500);
         });
         Engine.init();
     },
@@ -179,7 +186,7 @@ const Net = {
 // --- ENGINE ---
 const Engine = {
     active: false, physicsActive: false, mx:0, my:0, isHost: false, currentLevel: 1, hitboxes: [], 
-    p2: { x:0, y:0, buttons:[], atGoal: false }, lastSync: 0,
+    p2: { x:0, y:0, buttons:[], atGoal: false }, lastSync: 0, cursorX: 0, cursorY: 0,
     els: { gfx:document.getElementById('gfx'), phy:document.getElementById('phy'), p2:document.getElementById('p2-cursor'), curtain:document.getElementById('start-curtain'), trig:document.getElementById('start-trigger') },
 
     init() {
@@ -195,7 +202,8 @@ const Engine = {
             } else {
                 px = ((x - r.left) / r.width) * 100; py = ((y - r.top) / r.height) * 100;
             }
-            Engine.mx = px; Engine.my = py; // Store as %
+            Engine.cursorX = px; Engine.cursorY = py;
+            Engine.mx = x; Engine.my = y; // Raw for UI if needed
         };
         
         window.addEventListener('mousemove', e => move(e.clientX, e.clientY));
@@ -256,19 +264,22 @@ const Engine = {
         requestAnimationFrame(()=>this.loop());
         if(!this.active) return;
 
-        const myPx = this.mx; // Already %
-        const myPy = this.my;
+        const r = document.getElementById('game').getBoundingClientRect();
+        const myPx = this.cursorX;
+        const myPy = this.cursorY;
 
         let myButtons = [];
         let safe = false;
         let atGoal = false;
         
+        // Loop through hitboxes
         for(let hb of this.hitboxes) {
-            // Collision using % directly
-            const bx = parseFloat(hb.hit.style.left);
-            const by = parseFloat(hb.hit.style.top);
-            const bw = parseFloat(hb.hit.style.width);
-            const bh = parseFloat(hb.hit.style.height);
+            // PHYSICS FIX: Use getBoundingClientRect for Rotated Walls
+            const rect = hb.hit.getBoundingClientRect();
+            const bx=(rect.left-r.left)/r.width*100;
+            const by=(rect.top-r.top)/r.height*100;
+            const bw=rect.width/r.width*100;
+            const bh=rect.height/r.height*100;
             
             const hit = (myPx>bx && myPx<bx+bw && myPy>by && myPy<by+bh);
 
@@ -276,6 +287,7 @@ const Engine = {
             if(hb.type === 'btn') {
                 if(hit) { safe=true; myButtons.push(hb.tag); }
                 const active = hit || Engine.p2.buttons.includes(hb.tag);
+                
                 if(active) {
                     hb.vis.classList.add('active');
                     if(hb.link) this.toggleDoor(hb.link, true);
@@ -288,8 +300,10 @@ const Engine = {
             if(hit) {
                 if(hb.type==='path' || hb.type==='start') safe=true;
                 
+                // Only kill if physics active (Blue screen gone)
                 if(this.physicsActive) {
                     if(hb.type==='obs' && !hb.vis.classList.contains('open')) this.die(); 
+                    
                     if(hb.type==='goal') { 
                         safe=true; atGoal=true; 
                         if(this.p2.atGoal && this.isHost) {
@@ -297,7 +311,10 @@ const Engine = {
                             this.start(hb.next);
                         }
                     }
-                } else { safe = true; }
+                } else {
+                    // Safe while on blue screen
+                    safe = true;
+                }
             }
         }
         
@@ -306,11 +323,9 @@ const Engine = {
         // Throttled Sync (~15 FPS)
         const now = Date.now();
         if (now - this.lastSync > 66) {
-            Net.send({ type:'sync', x: myPx, y: myPy, btns: myButtons });
+            Net.send({ type:'sync', x: myPx, y: myPy, btns: myButtons, win: atGoal });
             this.lastSync = now;
         }
-        // Win packet is critical, send immediately if status changed
-        if(atGoal && !this.p2.atGoal) Net.send({ type:'win' });
     },
     
     toggleDoor(tag, open) {
@@ -324,6 +339,8 @@ const Engine = {
 
     handleSync(d) {
         Engine.p2.x = d.x; Engine.p2.y = d.y; Engine.p2.buttons = d.btns || [];
+        if(d.win) Engine.p2.atGoal = true; else Engine.p2.atGoal = false;
+        
         const r = document.getElementById('game').getBoundingClientRect();
         this.els.p2.style.display = 'block';
         this.els.p2.style.left = (d.x/100 * r.width) + 'px';

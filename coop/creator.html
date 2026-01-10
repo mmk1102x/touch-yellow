@@ -355,7 +355,19 @@ const Ed = {
     modZ(d) { if(this.sel) { HistorySys.push(); this.sel.z=(this.sel.z||10)+d; this.render(); } },
     setKf(i,k,v) { if(this.sel) { HistorySys.push(); this.sel.kfs[i][k]=parseFloat(v); this.render(); } },
     
-    del() { if(this.sel) { HistorySys.push(); this.objs=this.objs.filter(o=>o!==this.sel); this.sel=null; this.render(); } },
+    del() { 
+        if(this.drag && this.drag.mode === 'kf' && this.sel) {
+            HistorySys.push();
+            this.sel.kfs.splice(this.drag.kfIdx, 1);
+            this.drag = null;
+            this.render();
+        } else if(this.sel) { 
+            HistorySys.push(); 
+            this.objs = this.objs.filter(o => o !== this.sel); 
+            this.sel = null; 
+            this.render(); 
+        } 
+    },
     clear() { if(confirm("Clear?")) { HistorySys.push(); this.objs=[]; this.render(); } },
     addKf(e,o) { const t=o||this.sel; if(t) { HistorySys.push(); t.kfs.push({x:10,y:10}); this.render(); } },
     clearKf() { if(this.sel) { HistorySys.push(); this.sel.kfs=[]; this.render(); } },
@@ -366,8 +378,7 @@ const Ed = {
     togDbg() { this.debug=!this.debug; document.getElementById('play-layer').classList.toggle('debug-view', this.debug); },
 
     exportCode() {
-        // Prompt for next level
-        const nextLvl = prompt("Enter Goal Destination (e.g. 'menu', 2, 6):", "menu") || "menu";
+        const nextLvl = prompt("Enter Next Level ID (e.g. 2, 'menu'):", "menu") || "menu";
         const nextArg = isNaN(nextLvl) ? `'${nextLvl}'` : nextLvl;
 
         let js = `// Level Code\n(d) => {\n`;
@@ -468,10 +479,8 @@ const Ed = {
         for(let o of this.objs) {
             if(!o._el) continue;
             const r = o._el.getBoundingClientRect();
-            const relX = this.mx - rect.left;
-            const relY = this.my - rect.top;
-            const bx = (r.left - rect.left);
-            const by = (r.top - rect.top);
+            const relX = this.mx - rect.left; const relY = this.my - rect.top;
+            const bx = (r.left - rect.left); const by = (r.top - rect.top);
 
             if(relX >= bx && relX <= bx+r.width && relY >= by && relY <= by+r.height) {
                 if(o.type === 'obs' && !this.god) return this.death();

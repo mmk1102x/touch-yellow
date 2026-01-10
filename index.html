@@ -32,6 +32,7 @@
         
         #grp-saves   { top:22%; right:5%; }
         #grp-creator { top:38%; right:5%; }
+        #grp-custom  { top:54%; right:5%; }
         #grp-start   { bottom:28%; left:15%; }
         #grp-exit    { bottom:8%; left:15%; }
 
@@ -76,7 +77,7 @@
         
         #cheat-ind { position:absolute; top:10px; left:10px; color:yellow; font-weight:bold; display:none; z-index:999; font-family:monospace; font-size:2vh; text-shadow:1px 1px 0 #000; }
         #debug-ind { position:absolute; top:35px; left:10px; color:lime; font-weight:bold; display:none; z-index:999; font-family:monospace; font-size:2vh; text-shadow:1px 1px 0 #000; }
-        #catch-meter { position:fixed; display:none; width:40px; height:6px; background:#333; border:1px solid white; border-radius:3px; pointer-events:none; z-index:9999; transform:translate(-50%,-20px); }
+        #catch-meter { position:absolute; display:none; width:40px; height:6px; background:#333; border:1px solid white; border-radius:3px; pointer-events:none; z-index:9999; transform:translate(-50%,-20px); }
         #catch-fill { width:0%; height:100%; background:#00ff00; transition:width 0.05s linear; }
         #dynamic-css { display:none; }
         
@@ -110,7 +111,6 @@
     </style>
 </head>
 <body oncontextmenu="return false;" ondragstart="return false;">
-    <div id="catch-meter"><div id="catch-fill"></div></div>
     
     <div id="game">
         <div class="debug-overlay">
@@ -128,22 +128,32 @@
                     <div id="t-left"><span class="title-text">Touch</span></div>
                     <div id="t-right"><span class="title-text">Yellow</span><div class="title-sub">Web</div></div>
                 </div>
+
                 <div id="grp-saves" class="btn-group">
                     <span class="btn-label">Saves -&gt;</span>
                     <div class="circle-btn" onmousedown="Engine.openSavesMenu()"></div>
                 </div>
+                
                 <div id="grp-creator" class="btn-group">
                     <span class="btn-label">Creator -&gt;</span>
                     <div class="circle-btn" onmousedown="location.href='creator.html'"></div>
                 </div>
+
+                <div id="grp-custom" class="btn-group">
+                    <span class="btn-label">Custom -&gt;</span>
+                    <div class="circle-btn" style="background:#b0f; border-color:#80c;" onmousedown="Engine.loadCustom()"></div>
+                </div>
+                
                 <div id="grp-start" class="btn-group">
                     <div class="circle-btn" onmousedown="Engine.start(1)"></div>
                     <span class="btn-label">&lt;- Start/Restart</span>
                 </div>
+                
                 <div id="grp-exit" class="btn-group">
                     <div class="circle-btn" onmousedown="if(document.fullscreenElement) document.exitFullscreen(); Engine.toMenu();"></div>
                     <span class="btn-label">&lt;- Exit</span>
                 </div>
+                
                 <div id="mode-btn" onmousedown="Engine.toggleMode()">HOVER MODE</div>
             </div>
 
@@ -171,6 +181,7 @@
 
             <div id="cheat-ind">NOCLIP ON</div>
             <div id="debug-ind">HITBOXES ON</div>
+            <div id="catch-meter"><div id="catch-fill"></div></div>
         </div>
     </div>
 
@@ -240,12 +251,12 @@ const Engine = {
         }
 
         const move = (x,y) => { 
+            this.mx=x; this.my=y; 
             const r = document.getElementById('game').getBoundingClientRect();
             const isPortrait = window.matchMedia("(orientation: portrait)").matches;
             let px, py;
 
             if (isPortrait && this.mobile) {
-                // Mobile Portrait Fix: Swap Axes
                 const relX = x - r.left; const relY = y - r.top;
                 const visualX = (relX / r.width) * 100; const visualY = (relY / r.height) * 100;
                 px = visualY; py = 100 - visualX;
@@ -255,13 +266,11 @@ const Engine = {
             }
             
             this.cursorX = px; this.cursorY = py;
-            this.mx = x; this.my = y; // Keep raw for UI
 
             const cx = document.getElementById('db-cross-x');
             const cy = document.getElementById('db-cross-y');
             const ct = document.getElementById('db-coords');
             if(cx && cy) { 
-                // Visual crosshair always follows raw mouse
                 const ly = y - r.top; const lx = x - r.left;
                 cx.style.top = ly + 'px'; cy.style.left = lx + 'px';
                 if(ct) ct.innerText = `X: ${px.toFixed(2)}% Y: ${py.toFixed(2)}%`;
@@ -274,7 +283,7 @@ const Engine = {
         const up = () => { this.holding=false; if(this.state==='playing' && this.holdMode) this.die(); };
         window.addEventListener('mousedown', down); window.addEventListener('touchstart', down);
         window.addEventListener('mouseup', up); window.addEventListener('touchend', up);
-        window.addEventListener('touchcancel', up); // Safety
+        window.addEventListener('touchcancel', up);
         
         window.addEventListener('mousedown', e => { if(e.button===2 && this.active && !this.noclip) this.die(); });
 
@@ -312,6 +321,7 @@ const Engine = {
             goal: (x,y,w,h,n,t) => this.spawn(x,y,w,h,'goal',null,n,t),
             trig: (x,y,w,h) => this.spawn(x,y,w,h,'trig')
         };
+
         if(id === 'custom') this.loadCustom(builder);
         else if(LevelData[id]) LevelData[id](builder);
         else { alert("You Win!"); this.toMenu(); }
@@ -319,8 +329,8 @@ const Engine = {
 
     loadCustom(builder) {
         const raw = localStorage.getItem('ty_custom_level_data');
-        if (!raw) { alert("No custom level."); this.toMenu(); return; }
-        try { this.parseCookie(raw, builder); } catch(e) { alert("Corrupt"); this.toMenu(); }
+        if (!raw) { alert("No custom level data."); this.toMenu(); return; }
+        try { this.parseCookie(raw, builder); } catch(e) { alert("Level Corrupt"); this.toMenu(); }
         
         const startObj = this.hitboxes.find(o => o.type === 'start');
         if(startObj) {
@@ -347,7 +357,7 @@ const Engine = {
                 anim = `${nm} ${o[9]||2}s linear ${iter}`;
             }
             const type = (t==='start') ? 'start' : t;
-            // FIXED: Use Link (Index 7) for Next Level ID
+            // Use Link (Index 7) for Next Level ID
             let next = (t==='goal' && o[7]) ? o[7] : 'menu';
             
             const obj = this.spawn(o[1],o[2],o[3],o[4], type, anim, next);
@@ -386,8 +396,7 @@ const Engine = {
         
         for(let hb of this.hitboxes) {
             const hr = hb.hit.getBoundingClientRect();
-            // Calculate hitbox % relative to game container (which might be rotated)
-            // Since getBoundingClientRect handles rotation, we need to map it back to 0-100 relative to container
+            // Calculate hitbox % relative to game container
             const bx=(hr.left-r.left)/r.width*100, by=(hr.top-r.top)/r.height*100;
             const bw=hr.width/r.width*100, bh=hr.height/r.height*100;
 
@@ -400,8 +409,9 @@ const Engine = {
                     if(hb.hold > 0) {
                         this.goalTimer += 16;
                         this.els.hud.style.display='block';
-                        // Visual HUD position uses raw mouse X/Y
-                        this.els.hud.style.left = this.mx+'px'; this.els.hud.style.top = (this.my-20)+'px';
+                        // HUD uses % coordinates
+                        this.els.hud.style.left = this.cursorX+'%'; 
+                        this.els.hud.style.top = (this.cursorY-5)+'%';
                         this.els.fill.style.width = (this.goalTimer/hb.hold*100)+'%';
                         if(this.goalTimer >= hb.hold) this.win(hb.next);
                     } else { this.win(hb.next); }
@@ -432,6 +442,7 @@ const Engine = {
     checkSave(n) { const has = localStorage.getItem(`touchYellow_save${n}`) === 'true'; document.getElementById(`circle-${n}`).className = `slot-btn slot-${has?'unlocked':'locked'}`; },
     loadSave(n) { if(localStorage.getItem(`touchYellow_save${n}`) === 'true') location.href=`save/save${n}.html`; else alert("Locked!"); }
 };
+
 Engine.init();
 
 Object.defineProperties(window, {
