@@ -8,13 +8,13 @@
     <link href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Roboto:wght@900&display=swap" rel="stylesheet">
     <style>
         /* --- CO-OP THEME (Purple/Cyan) --- */
-        body { margin:0; background:#110011; overflow:hidden; font-family:'Roboto',sans-serif; height:100vh; display:flex; justify-content:center; align-items:center; user-select:none; touch-action:none; }
+        body { margin:0; background:#110011; overflow:hidden; font-family:'Roboto',sans-serif; height:100vh; display:flex; justify-content:center; align-items:center; user-select:none; touch-action:none; -webkit-user-select:none; }
         #game { width:100%; max-width:177.7vh; aspect-ratio:16/9; position:relative; background:#000; box-shadow:0 0 50px #800080; }
         .layer { position:absolute; inset:0; pointer-events:none; }
         #ui { z-index:500; pointer-events:auto; }
 
         /* LOBBY STYLES */
-        .menu-bg { background-color:#2a002a; width:100%; height:100%; position:absolute; top:0; left:0; pointer-events:auto; display:flex; flex-direction:column; align-items:center; justify-content:center; color:cyan; }
+        .menu-bg { background-color:#2a002a; width:100%; height:100%; position:absolute; top:0; left:0; pointer-events:auto; display:flex; flex-direction:column; align-items:center; justify-content:center; color:cyan; cursor:default; }
         .title { font-family:'Luckiest Guy',cursive; font-size:12vh; color:#d000d0; text-shadow:0.5vh 0.5vh 0 #000; margin-bottom: 2vh; }
         .sub { font-size: 3vh; color: cyan; margin-bottom: 4vh; font-family: monospace; }
         
@@ -28,17 +28,27 @@
         .goal { background:#f1a92a; color:#f1a92a; } 
         .obs { background:#000; color:transparent; border: 2px dashed #f00; } 
         
-        /* CO-OP SPECIFIC */
+        /* Pressure Plates (Purple) */
         .btn { background:#330033; border: 2px solid #d0d; color:#d0d; transition: 0.1s; } 
         .btn.active { background:#d0d; color:#fff; box-shadow: 0 0 20px #d0d; transform: scale(0.95); }
+        
+        /* Start Zone */
         .start { border: 2px solid cyan; border-radius: 50%; background: rgba(0,255,255,0.1); }
-        #p2-cursor { position:absolute; width:2.5vh; height:2.5vh; background:rgba(0,255,255,0.7); border:2px solid white; border-radius:50%; z-index:450; pointer-events:none; display:none; transition: top 0.05s linear, left 0.05s linear; box-shadow: 0 0 10px cyan; }
+
+        /* GHOST CURSOR (Partner) */
+        #p2-cursor { 
+            position:absolute; width:2.5vh; height:2.5vh; 
+            background:rgba(0,255,255,0.7); border:2px solid white; border-radius:50%; 
+            z-index:450; pointer-events:none; display:none; 
+            transition: top 0.05s linear, left 0.05s linear; 
+            box-shadow: 0 0 10px cyan;
+        }
         
         /* DOOR ANIMATIONS */
         .door-obj { transition: transform 0.2s ease-out, opacity 0.2s; }
         .door-obj.open { transform: scale(0) !important; opacity: 0; pointer-events: none; }
         
-        /* START CURTAIN (Blue Screen) */
+        /* START CURTAIN */
         #start-curtain { display:none; position:absolute; top:0; left:0; width:100%; height:100%; background-color:#26a9e1; z-index:9000; cursor:default; pointer-events:auto; }
         #start-trigger { position:absolute; width:10%; height:10%; background:#f1a92a; border-radius:50%; border:2px solid white; box-shadow:0 0 20px white; cursor:pointer; transform:translate(-50%,-50%); animation:pulse 1s infinite alternate; pointer-events:auto; }
         @keyframes pulse { from { transform:translate(-50%,-50%) scale(1); } to { transform:translate(-50%,-50%) scale(1.1); } }
@@ -52,7 +62,7 @@
         }
     </style>
 </head>
-<body oncontextmenu="return false;">
+<body oncontextmenu="return false;" ondragstart="return false;">
 
     <div id="game">
         <div id="gfx" class="layer" style="z-index:10"></div>
@@ -97,22 +107,34 @@
     </div>
 
 <script>
-// --- LEVEL DATA ---
+// --- LEVEL DATA (Official Co-op Levels) ---
 const LevelData = {
     1: (d) => {
-        d.path(10, 40, 80, 20); d.start(15, 45, 10, 10);
-        const btn = d.btn(50, 45, 10, 10); btn.tag = "plate1"; btn.link = "door1";
-        const door = d.obs(70, 40, 5, 20); door.tag = "door1"; door.vis.classList.add('door-obj');
+        d.path(10, 40, 80, 20); // Main hallway
+        d.start(15, 45, 10, 10); // Start
+        
+        const btn = d.btn(50, 45, 10, 10);
+        btn.tag = "plate1"; btn.link = "door1";
+        
+        const door = d.obs(70, 40, 5, 20);
+        door.tag = "door1"; door.vis.classList.add('door-obj');
+        
         d.goal(85, 45, 10, 10, 2);
     },
     2: (d) => {
-        d.path(10, 10, 10, 80); d.start(10, 50, 10, 10);
-        d.path(20, 20, 60, 10); d.path(20, 70, 60, 10); d.path(80, 20, 10, 60);
+        d.path(10, 10, 10, 80); // Start shaft
+        d.start(10, 50, 10, 10);
+        d.path(20, 20, 60, 10); // Top path
+        d.path(20, 70, 60, 10); // Bottom path
+        d.path(80, 20, 10, 60); // Goal shaft
+        
         const b1 = d.btn(50, 20, 8, 8); b1.tag="b1"; b1.link="d1";
         const d1 = d.obs(60, 70, 5, 10); d1.tag="d1"; d1.vis.classList.add('door-obj');
+        
         const b2 = d.btn(50, 70, 8, 8); b2.tag="b2"; b2.link="d2";
         const d2 = d.obs(60, 20, 5, 10); d2.tag="d2"; d2.vis.classList.add('door-obj');
-        d.goal(80, 50, 10, 10, 1);
+        
+        d.goal(80, 50, 10, 10, 1); // Loop back to 1 for now
     }
 };
 
@@ -128,8 +150,10 @@ const Net = {
             document.getElementById('id-display').innerText = id;
         });
         Net.peer.on('connection', c => { 
-            Net.conn = c; Net.setup(); Engine.isHost=true; 
-            setTimeout(() => Net.send({type:'start', level: Engine.startLevelId || 1, customData: Engine.customData}), 1000);
+            Net.conn = c; 
+            Net.setup(); 
+            Engine.isHost=true; 
+            setTimeout(() => Net.send({type:'start', level:1}), 1000);
         });
     },
     join: () => {
@@ -143,112 +167,72 @@ const Net = {
         document.getElementById('hud').style.display='block';
         Net.conn.on('data', d => {
             if(d.type === 'sync') Engine.handleSync(d);
-            if(d.type === 'start') {
-                if(d.customData) { localStorage.setItem('ty_coop_level_data', d.customData); Engine.start('custom'); }
-                else Engine.start(d.level);
-            }
+            if(d.type === 'start') Engine.start(d.level);
             if(d.type === 'win') Engine.p2.atGoal = true;
-            if(d.type === 'die') Engine.die();
+            if(d.type === 'die') Engine.die(); // Shared death
         });
         Engine.init();
     },
     send: (d) => { if(Net.conn && Net.conn.open) Net.conn.send(d); }
 };
 
-// --- GAME ENGINE ---
+// --- ENGINE ---
 const Engine = {
     active: false, physicsActive: false, mx:0, my:0, isHost: false, currentLevel: 1, hitboxes: [], 
-    startLevelId: 1, customData: null,
-    p2: { x:0, y:0, buttons:[], atGoal: false },
+    p2: { x:0, y:0, buttons:[], atGoal: false }, lastSync: 0,
     els: { gfx:document.getElementById('gfx'), phy:document.getElementById('phy'), p2:document.getElementById('p2-cursor'), curtain:document.getElementById('start-curtain'), trig:document.getElementById('start-trigger') },
 
     init() {
-        const urlParams = new URLSearchParams(window.location.search);
-        if(urlParams.has('data')) {
-            try {
-                this.customData = JSON.stringify(JSON.parse(atob(urlParams.get('data'))));
-                localStorage.setItem('ty_coop_level_data', this.customData);
-                this.startLevelId = 'custom';
-            } catch(e) { alert("Corrupt Link"); }
-        }
-
-        window.addEventListener('mousemove', e => { Engine.mx=e.clientX; Engine.my=e.clientY; });
+        const move = (x,y) => { 
+            const r = document.getElementById('game').getBoundingClientRect();
+            const isPortrait = window.matchMedia("(orientation: portrait)").matches;
+            let px, py;
+            // Mobile Portrait Fix
+            if (isPortrait && /Android|iPhone/i.test(navigator.userAgent)) {
+                const relX = x - r.left; const relY = y - r.top;
+                const visualX = (relX / r.width) * 100; const visualY = (relY / r.height) * 100;
+                px = visualY; py = 100 - visualX;
+            } else {
+                px = ((x - r.left) / r.width) * 100; py = ((y - r.top) / r.height) * 100;
+            }
+            Engine.mx = px; Engine.my = py; // Store as %
+        };
+        
+        window.addEventListener('mousemove', e => move(e.clientX, e.clientY));
+        window.addEventListener('touchmove', e => { e.preventDefault(); move(e.touches[0].clientX, e.touches[0].clientY); }, {passive:false});
         window.addEventListener('contextmenu', e => e.preventDefault());
         this.loop();
     },
 
     start(id) {
         this.active = true;
-        this.physicsActive = false; 
+        this.physicsActive = false; // Wait for blue screen
         this.currentLevel = id;
         document.getElementById('lvl-stat').innerText = id;
         
         this.hitboxes=[]; this.els.gfx.innerHTML=''; this.els.phy.innerHTML='';
         this.p2.atGoal = false;
         
-        // Add CSS container for dynamic keyframes
-        let css = document.getElementById('dyn-css');
-        if(!css) { css = document.createElement('style'); css.id='dyn-css'; document.head.appendChild(css); }
-        css.innerHTML = '';
-        
         const builder = {
             path: (x,y,w,h) => this.spawn(x,y,w,h,'path'),
-            obs: (x,y,w,h,a) => this.spawn(x,y,w,h,'obs',a),
-            goal: (x,y,w,h,n) => this.spawn(x,y,w,h,'goal',null,n),
+            obs: (x,y,w,h) => this.spawn(x,y,w,h,'obs'),
+            goal: (x,y,w,h,n) => this.spawn(x,y,w,h,'goal',n),
             start: (x,y,w,h) => this.spawn(x,y,w,h,'start'),
             btn: (x,y,w,h) => this.spawn(x,y,w,h,'btn')
         };
         
-        if(id === 'custom') this.loadCustom(builder, css);
-        else if(LevelData[id]) LevelData[id](builder);
+        if(LevelData[id]) LevelData[id](builder);
         else alert("No Level Data");
         
-        // Safe Start (Blue Screen)
+        // Show Blue Screen Logic
         const startObj = this.hitboxes.find(o => o.type === 'start');
         if(startObj) {
             this.els.curtain.style.display = 'block';
             Object.assign(this.els.trig.style, { 
-                left:startObj.vis.style.left, top:startObj.vis.style.top, 
-                width:startObj.vis.style.width, height:startObj.vis.style.height 
+                left:startObj.hit.style.left, top:startObj.hit.style.top, 
+                width:startObj.hit.style.width, height:startObj.hit.style.height 
             });
         }
-    },
-
-    loadCustom(d, cssEl) {
-        const raw = localStorage.getItem('ty_coop_level_data');
-        if(!raw) return;
-        const data = JSON.parse(raw);
-        let css = "";
-        data.forEach(o => {
-            const types = ['path','obs','goal','start','btn','trig'];
-            const t = types[o[0]];
-            const rot = o[11] || 0;
-            const loop = (o[12] !== 0) ? 'infinite' : 'forwards';
-            
-            let anim = null;
-            if(o[5] && o[5].length) {
-                const nm = `a-${Math.random().toString(36).substr(2)}`;
-                css += `@keyframes ${nm} { 0%{transform:translate(0,0) rotate(${rot}deg)} `;
-                o[5].forEach((k,i) => css += `${Math.round((i+1)/(o[5].length+1)*100)}%{transform:translate(${k[0]}%,${k[1]}%) rotate(${rot}deg)} `);
-                css += `100%{transform:translate(0,0) rotate(${rot}deg)} } `;
-                anim = `${nm} ${o[9]||2}s linear ${loop}`;
-            }
-
-            const type = (t==='start')?'start':t;
-            const obj = this.spawn(o[1],o[2],o[3],o[4], type, anim, (t==='goal'?'menu':null));
-            
-            // Apply Rotation
-            obj.vis.style.transform = `rotate(${rot}deg)`;
-            obj.hit.style.transform = `rotate(${rot}deg)`;
-            
-            if(o[6]) obj.tag = o[6]; 
-            if(o[7]) obj.link = o[7];
-            if(o[8]) { obj.vis.classList.add('door-obj'); obj.vis.classList.add('open'); }
-            if(type === 'obs' && obj.link) obj.vis.classList.add('door-obj');
-            
-            if(o[10]) obj.vis.style.zIndex = o[10];
-        });
-        cssEl.innerHTML = css;
     },
     
     activatePhysics() {
@@ -256,13 +240,12 @@ const Engine = {
         this.physicsActive = true;
     },
 
-    spawn(x,y,w,h,type,anim,next) {
+    spawn(x,y,w,h,type,next) {
         const s = {left:x+'%', top:y+'%', width:w+'%', height:h+'%'};
         const v = document.createElement('div'); v.className=`obj ${type}`; Object.assign(v.style, s);
-        if(anim) v.style.animation = anim;
+        if(type==='obs') v.classList.add('door-obj'); // Helper for CSS
         this.els.gfx.appendChild(v);
         const p = document.createElement('div'); p.className=`hitbox`; Object.assign(p.style, s);
-        if(anim) p.style.animation = anim;
         this.els.phy.appendChild(p);
         const obj = { vis:v, hit:p, type, next, tag:"", link:"" };
         this.hitboxes.push(obj);
@@ -273,20 +256,23 @@ const Engine = {
         requestAnimationFrame(()=>this.loop());
         if(!this.active) return;
 
-        const r = document.getElementById('game').getBoundingClientRect();
-        const mx = (this.mx - r.left)/r.width*100;
-        const my = (this.my - r.top)/r.height*100;
+        const myPx = this.mx; // Already %
+        const myPy = this.my;
 
         let myButtons = [];
         let safe = false;
         let atGoal = false;
         
         for(let hb of this.hitboxes) {
-            const hr = hb.hit.getBoundingClientRect(); // Native Rotation Support
-            const bx=(hr.left-r.left)/r.width*100, by=(hr.top-r.top)/r.height*100;
-            const bw=hr.width/r.width*100, bh=hr.height/r.height*100;
-            const hit = (mx>bx && mx<bx+bw && my>by && my<by+bh);
+            // Collision using % directly
+            const bx = parseFloat(hb.hit.style.left);
+            const by = parseFloat(hb.hit.style.top);
+            const bw = parseFloat(hb.hit.style.width);
+            const bh = parseFloat(hb.hit.style.height);
+            
+            const hit = (myPx>bx && myPx<bx+bw && myPy>by && myPy<by+bh);
 
+            // Button Logic (Pressure Plate)
             if(hb.type === 'btn') {
                 if(hit) { safe=true; myButtons.push(hb.tag); }
                 const active = hit || Engine.p2.buttons.includes(hb.tag);
@@ -303,15 +289,12 @@ const Engine = {
                 if(hb.type==='path' || hb.type==='start') safe=true;
                 
                 if(this.physicsActive) {
-                    // Die if obstacle is NOT open (door)
                     if(hb.type==='obs' && !hb.vis.classList.contains('open')) this.die(); 
-                    
                     if(hb.type==='goal') { 
                         safe=true; atGoal=true; 
                         if(this.p2.atGoal && this.isHost) {
-                            const next = (this.currentLevel === 'custom') ? 'custom' : hb.next;
-                            setTimeout(() => Net.send({type:'start', level:next}), 500);
-                            this.start(next);
+                            setTimeout(() => Net.send({type:'start', level:hb.next}), 500);
+                            this.start(hb.next);
                         }
                     }
                 } else { safe = true; }
@@ -320,8 +303,14 @@ const Engine = {
         
         if(this.physicsActive && !safe) this.die();
 
-        Net.send({ type:'sync', x: mx, y: my, btns: myButtons });
-        if(atGoal) Net.send({ type:'win' });
+        // Throttled Sync (~15 FPS)
+        const now = Date.now();
+        if (now - this.lastSync > 66) {
+            Net.send({ type:'sync', x: myPx, y: myPy, btns: myButtons });
+            this.lastSync = now;
+        }
+        // Win packet is critical, send immediately if status changed
+        if(atGoal && !this.p2.atGoal) Net.send({ type:'win' });
     },
     
     toggleDoor(tag, open) {
@@ -351,8 +340,6 @@ const Engine = {
         }, 200);
     }
 };
-
-Engine.init();
 </script>
 </body>
 </html>
