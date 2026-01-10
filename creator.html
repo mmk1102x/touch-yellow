@@ -402,7 +402,10 @@ const Ed = {
     },
 
     up() { this.drag = null; },
-    down(e) { if(e.target.id === 'game-container') { this.sel=null; this.render(); } },
+    down(e) { 
+        if(this.playing) return;
+        if(e.target.id === 'game-container') { this.sel=null; this.render(); } 
+    },
 
     updateUI() {
         if(!this.sel) { this.els.props.style.display='none'; this.els.no.style.display='block'; return; }
@@ -451,7 +454,7 @@ const Ed = {
     togDbg() { this.debug=!this.debug; document.getElementById('play-layer').classList.toggle('debug-view', this.debug); },
 
     exportCode() {
-        const nextLvl = prompt("Enter Next Level ID (e.g. 2, 'menu'):", "menu") || "menu";
+        const nextLvl = prompt("Enter Goal Destination (e.g. 'menu', 2, 6):", "menu") || "menu";
         const nextArg = isNaN(nextLvl) ? `'${nextLvl}'` : nextLvl;
 
         let js = `// Level Code\n(d) => {\n`;
@@ -491,7 +494,10 @@ const Ed = {
             if(startObj) {
                 this.els.curtain.style.display='block';
                 Object.assign(this.els.trig.style, { 
-                    left:startObj.x+'%', top:startObj.y+'%', width:startObj.w+'%', height:startObj.h+'%' 
+                    left: (startObj.x + startObj.w/2) + '%', 
+                    top: (startObj.y + startObj.h/2) + '%', 
+                    width: startObj.w + '%', 
+                    height: startObj.h + '%' 
                 });
                 this.physicsActive = false;
             } else { this.physicsActive = true; }

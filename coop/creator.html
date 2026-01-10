@@ -28,7 +28,7 @@
         .show { display: block; }
 
         /* WORKSPACE */
-        #workspace { flex:1; display:flex; }
+        #workspace { flex:1; display:flex; position: relative; overflow: hidden; }
         #sidebar { width:280px; background:#2a002a; border-left:1px solid #505; padding:15px; display:flex; flex-direction:column; gap:15px; font-size:12px; overflow-y:auto; z-index:5; }
         #canvas { flex:1; position:relative; overflow:hidden; background-image:radial-gradient(#505 1px, transparent 1px); background-size:20px 20px; display:flex; justify-content:center; align-items:center; }
         #game-container { width:80%; aspect-ratio:16/9; position:relative; background:#000; box-shadow:0 0 50px #800080; border:1px solid #505; }
@@ -96,11 +96,13 @@
         <div class="tool-group">
             <button class="prm" onclick="Ed.togglePlay()">▶ PLAY</button>
         </div>
+        
         <div class="tool-group">
             <button id="t-sel" class="active" onclick="Ed.setTool('sel')">Select</button>
             <button id="t-path" onclick="Ed.setTool('path')">Path</button>
             <label><input type="checkbox" id="chk-snap" checked> Snap</label>
         </div>
+        
         <div class="tool-group">
             <button onclick="Ed.add('path')">+Blk</button>
             <button onclick="Ed.add('obs')">+Obs</button>
@@ -109,10 +111,12 @@
             <button onclick="Ed.add('trig')">+Trig</button>
             <button onclick="Ed.add('start')">+Start</button>
         </div>
+        
         <div class="tool-group">
             <button onclick="HistorySys.undo()">Undo</button>
             <button onclick="HistorySys.redo()">Redo</button>
         </div>
+        
         <div style="flex:1"></div>
         
         <!-- IMPORT -->
@@ -193,14 +197,33 @@
     </div>
     
     <!-- START CURTAIN -->
-    <div id="start-curtain"><div id="start-trigger" onmousedown="Ed.activatePhysics()"></div></div>
+    <div id="start-curtain">
+        <div id="start-trigger" onmousedown="Ed.activatePhysics()"></div>
+    </div>
     
-    <div id="help-modal" onclick="if(event.target===this) Ed.toggleHelp()"><div class="help-content"><h2 style="color:#d0d">Co-op Guide</h2><div class="help-section"><h3>Controls</h3><p><strong>Move/Resize:</strong> Drag object/corners.</p><p><strong>Path:</strong> 'Edit Path' -> Click object to add keyframes.</p></div><div class="help-section"><h3>Logic</h3><p><strong>Buttons:</strong> Pressure Plates (Active while standing).</p><p><strong>Doors:</strong> Tag an obstacle. Link button to Tag. Door hides when active.</p></div><button onclick="Ed.toggleHelp()" style="width:100%; padding:10px; background:#303; border:1px solid #d0d; color:#f0f;">CLOSE</button></div></div>
+    <div id="help-modal" onclick="if(event.target===this) Ed.toggleHelp()">
+        <div class="help-content">
+            <h2 style="color:#d0d">Co-op Guide</h2>
+            <div class="help-section">
+                <h3>🎮 Controls</h3>
+                <p><strong>Move/Resize:</strong> Drag object/corners.</p>
+                <p><strong>Path:</strong> 'Edit Path' -> Click object to add keyframes.</p>
+            </div>
+            <div class="help-section">
+                <h3>⚡ Logic</h3>
+                <p><strong>Buttons:</strong> Pressure Plates (Active while standing).</p>
+                <p><strong>Doors:</strong> Tag an obstacle. Link button to Tag. Door hides when active.</p>
+            </div>
+            <button onclick="Ed.toggleHelp()" style="width:100%; padding:10px; background:#303; border:1px solid #d0d; color:#f0f;">CLOSE</button>
+        </div>
+    </div>
 
 <script>
 // --- CO-OP EDITOR LOGIC ---
 function toggleDrop(id) { document.querySelectorAll('.dropdown-content').forEach(e=>e.classList.remove('show')); document.getElementById(id).classList.toggle('show'); }
 window.onclick = function(e) { if (!e.target.matches('.dropdown button')) { document.querySelectorAll('.dropdown-content').forEach(e=>e.classList.remove('show')); } }
+
+const View={x:0,y:0,scale:1,panning:false,startX:0,startY:0,zoom(e){e.preventDefault();const d=e.deltaY>0?0.9:1.1;this.scale=Math.min(Math.max(0.2,this.scale*d),5);this.update();},down(e){if(e.button===1||(e.button===0&&e.shiftKey)){e.preventDefault();this.panning=true;this.startX=e.clientX-this.x;this.startY=e.clientY-this.y;document.getElementById('viewport').classList.add('panning');}else{Ed.down(e);}},move(e){if(this.panning){this.x=e.clientX-this.startX;this.y=e.clientY-this.startY;this.update();}else{Ed.move(e);}},up(e){this.panning=false;document.getElementById('viewport').classList.remove('panning');Ed.up(e);},update(){document.getElementById('game-container').style.transform=`translate(calc(-50% + ${this.x}px), calc(-50% + ${this.y}px)) scale(${this.scale})`;}};View.update();
 
 const HistorySys={stack:[],future:[],push(){if(this.stack.length>50)this.stack.shift();this.stack.push(JSON.parse(JSON.stringify(Ed.objs)));this.future=[];Ed.dirty=true;},undo(){if(this.stack.length){this.future.push(JSON.parse(JSON.stringify(Ed.objs)));Ed.objs=this.stack.pop();Ed.sel=null;Ed.render();}},redo(){if(this.future.length){this.stack.push(JSON.parse(JSON.stringify(Ed.objs)));Ed.objs=this.future.pop();Ed.sel=null;Ed.render();}}};
 window.addEventListener('keydown',(e)=>{if(e.target.tagName==='INPUT')return;if((e.ctrlKey||e.metaKey)&&e.key==='z'){e.preventDefault();HistorySys.undo();}if((e.ctrlKey||e.metaKey)&&e.key==='y'){e.preventDefault();HistorySys.redo();}if(e.key==='Delete')Ed.del();if(e.key==='F1'){e.preventDefault();Ed.toggleHelp();}if(e.key==='`'||e.key==='Escape'){if(Ed.playing)Ed.togglePlay();}});
@@ -268,15 +291,15 @@ const Ed = {
             const el = document.createElement('div');
             el.className = `obj t-${o.type}`;
             Object.assign(el.style, { left:o.x+'%', top:o.y+'%', width:o.w+'%', height:o.h+'%', transform:`rotate(${o.r}deg)`, zIndex:o.z||10 });
-            el.onmousedown = (e) => this.startDrag(e, o, 'move');
+            el.onmousedown = (e) => { e.stopPropagation(); this.startDrag(e, o, 'move'); };
             this.els.obj.appendChild(el);
 
             if(this.sel === o) {
                 const g = document.createElement('div'); g.className='gizmo';
                 Object.assign(g.style, { left:o.x+'%', top:o.y+'%', width:o.w+'%', height:o.h+'%', transform:`rotate(${o.r}deg)`, zIndex:9999 });
-                ['tl','tr','bl','br'].forEach(p => { const h = document.createElement('div'); h.className=`handle h-${p}`; h.onmousedown = (e) => this.startDrag(e, o, 'scale', p); g.appendChild(h); });
+                ['tl','tr','bl','br'].forEach(p => { const h = document.createElement('div'); h.className=`handle h-${p}`; h.onmousedown = (e) => { e.stopPropagation(); this.startDrag(e, o, 'scale', p); }; g.appendChild(h); });
                 const stem = document.createElement('div'); stem.className='rotate-stem'; const knob = document.createElement('div'); knob.className='rotate-knob';
-                knob.onmousedown = (e) => this.startDrag(e, o, 'rotate'); g.append(stem, knob);
+                knob.onmousedown = (e) => { e.stopPropagation(); this.startDrag(e, o, 'rotate'); }; g.append(stem, knob);
                 this.els.giz.appendChild(g);
                 this.renderPath(o);
             }
@@ -290,14 +313,13 @@ const Ed = {
         o.kfs.forEach((k, i) => {
             const ax = o.x+o.w/2 + (k.x/100*o.w); const ay = o.y+o.h/2 + (k.y/100*o.h); d += ` L ${ax} ${ay}`;
             const pt=document.createElement('div'); pt.className='kf-node'; pt.style.left=ax+'%'; pt.style.top=ay+'%';
-            pt.onmousedown = (e) => this.startDrag(e, o, 'kf', i);
+            pt.onmousedown = (e) => { e.stopPropagation(); this.startDrag(e, o, 'kf', i); };
             this.els.pts.appendChild(pt);
         });
         const p = document.createElementNS("http://www.w3.org/2000/svg","path"); p.setAttribute("d",d); this.els.svg.appendChild(p);
     },
 
     startDrag(e, o, mode, handle) {
-        e.stopPropagation();
         if(this.tool==='path' && mode==='move') { this.addKf(e,o); return; }
         this.sel = o; this.render(); HistorySys.push();
         this.drag = { mode, o, sx:e.clientX, sy:e.clientY, handle, ox:o.x, oy:o.y, ow:o.w, oh:o.h, or:o.r, kfIdx: (mode==='kf'?handle:null), kfx: (mode==='kf'?o.kfs[handle].x:0), kfy: (mode==='kf'?o.kfs[handle].y:0) };
@@ -305,13 +327,17 @@ const Ed = {
 
     move(e) {
         if(!this.drag) return;
-        const r = document.getElementById('game-container').getBoundingClientRect();
-        const dx = (e.clientX - this.drag.sx)/r.width*100; const dy = (e.clientY - this.drag.sy)/r.height*100;
+        const r = document.getElementById('game-container').getBoundingClientRect(); // Uses VISUAL rect (scaled by View)
+        // Convert mouse delta to Percentage of the GAME CONTAINER, factoring in Zoom
+        const dx = (e.clientX - this.drag.sx) / r.width * 100;
+        const dy = (e.clientY - this.drag.sy) / r.height * 100;
         const o = this.drag.o; const snap = document.getElementById('chk-snap').checked;
 
         if(this.drag.mode === 'kf') {
             const i = this.drag.kfIdx;
-            let nx = this.drag.kfx + (dx/o.w*100); let ny = this.drag.kfy + (dy/o.h*100);
+            // Keyframe relative motion
+            let nx = this.drag.kfx + (dx * (100/o.w)); // Adjust for object size relative to container
+            let ny = this.drag.kfy + (dy * (100/o.h));
             if(snap) { nx=Math.round(nx/10)*10; ny=Math.round(ny/10)*10; }
             o.kfs[i].x = nx; o.kfs[i].y = ny;
         }
@@ -329,77 +355,34 @@ const Ed = {
             o.x=nx; o.y=ny; o.w=nw; o.h=nh;
         }
         else if(this.drag.mode === 'rotate') {
-            const cx = r.left + (o.x + o.w/2)/100 * r.width; const cy = r.top + (o.y + o.h/2)/100 * r.height;
-            const angle = Math.atan2(e.clientY - cy, e.clientX - cx) * (180/Math.PI);
+            // Rotation is visual, calc angle from center
+            const cx = r.left + r.width/2; const cy = r.top + r.height/2; // Center of Object... wait, need Obj Center relative to screen
+            // Re-calc obj center in screen space
+            const ox = r.left + (o.x + o.w/2)/100 * r.width;
+            const oy = r.top + (o.y + o.h/2)/100 * r.height;
+            const angle = Math.atan2(e.clientY - oy, e.clientX - ox) * (180/Math.PI);
             let rot = angle + 90; if(snap) rot = Math.round(rot/15)*15; o.r = rot;
         }
         this.render(); this.updateUI();
     },
 
-    up() { this.drag = null; }, down(e) { if(e.target.id === 'game-container') { this.sel=null; this.render(); } },
-
-    updateUI() {
-        if(!this.sel) { this.els.props.style.display='none'; this.els.no.style.display='block'; return; }
-        this.els.props.style.display='block'; this.els.no.style.display='none';
-        ['x','y','w','h','r','dur','z'].forEach(k => { const el = document.getElementById('v-'+k); if(el) el.value = Math.round((this.sel[k]||(k==='z'?10:0))*100)/100; });
-        document.getElementById('p-id').innerText = this.sel.type;
-        document.getElementById('v-tag').value = this.sel.tag; document.getElementById('v-link').value = this.sel.link;
-        document.getElementById('v-wait').checked = this.sel.wait; document.getElementById('v-loop').checked = (this.sel.loop !== false);
-        const l = document.getElementById('kf-list'); l.innerHTML='';
-        this.sel.kfs.forEach((k,i) => l.innerHTML += `<div class="kf-item"><span class="kf-idx">#${i+1}</span> X:<input type="number" value="${Math.round(k.x)}" onchange="Ed.setKf(${i},'x',this.value)"> Y:<input type="number" value="${Math.round(k.y)}" onchange="Ed.setKf(${i},'y',this.value)"></div>`);
+    up() { this.drag = null; },
+    down(e) { 
+        if(this.playing) return;
+        if(e.target.id === 'game-container') { this.sel=null; this.render(); } 
     },
 
-    set(k,v) { if(this.sel) { HistorySys.push(); this.sel[k]=parseFloat(v); this.render(); } },
-    setStr(k,v) { if(this.sel) { HistorySys.push(); this.sel[k]=v; } },
-    setBool(k,v) { if(this.sel) { HistorySys.push(); this.sel[k]=v; } },
-    modZ(d) { if(this.sel) { HistorySys.push(); this.sel.z=(this.sel.z||10)+d; this.render(); } },
-    setKf(i,k,v) { if(this.sel) { HistorySys.push(); this.sel.kfs[i][k]=parseFloat(v); this.render(); } },
-    
-    del() { 
-        if(this.drag && this.drag.mode === 'kf' && this.sel) {
-            HistorySys.push();
-            this.sel.kfs.splice(this.drag.kfIdx, 1);
-            this.drag = null;
-            this.render();
-        } else if(this.sel) { 
-            HistorySys.push(); 
-            this.objs = this.objs.filter(o => o !== this.sel); 
-            this.sel = null; 
-            this.render(); 
-        } 
-    },
-    clear() { if(confirm("Clear?")) { HistorySys.push(); this.objs=[]; this.render(); } },
-    addKf(e,o) { const t=o||this.sel; if(t) { HistorySys.push(); t.kfs.push({x:10,y:10}); this.render(); } },
-    clearKf() { if(this.sel) { HistorySys.push(); this.sel.kfs=[]; this.render(); } },
-
-    exit() { if(this.dirty) { if(confirm("Unsaved changes! Exit?")) window.location.href='../index.html'; } else window.location.href='../index.html'; },
-    
-    toggleHelp() { const el=document.getElementById('help-modal'); el.style.display=(el.style.display==='flex')?'none':'flex'; },
-    togDbg() { this.debug=!this.debug; document.getElementById('play-layer').classList.toggle('debug-view', this.debug); },
-
-    exportCode() {
+    // ... (updateUI, set, del, clear, etc - same as before) ...
+    updateUI(){if(!this.sel){this.els.props.style.display='none';this.els.no.style.display='block';return;}this.els.props.style.display='block';this.els.no.style.display='none';['x','y','w','h','r','dur','z'].forEach(k=>{const el=document.getElementById('v-'+k);if(el)el.value=Math.round((this.sel[k]||(k==='z'?10:0))*100)/100;});document.getElementById('p-id').innerText=this.sel.type;document.getElementById('v-tag').value=this.sel.tag;document.getElementById('v-link').value=this.sel.link;document.getElementById('v-wait').checked=this.sel.wait;document.getElementById('v-loop').checked=(this.sel.loop!==false);const l=document.getElementById('kf-list');l.innerHTML='';this.sel.kfs.forEach((k,i)=>l.innerHTML+=`<div class="kf-item"><span class="kf-idx">#${i+1}</span>X:<input type="number" value="${Math.round(k.x)}" onchange="Ed.setKf(${i},'x',this.value)">Y:<input type="number" value="${Math.round(k.y)}" onchange="Ed.setKf(${i},'y',this.value)"></div>`);},
+    set(k,v){if(this.sel){HistorySys.push();this.sel[k]=parseFloat(v);this.render();}},setStr(k,v){if(this.sel){HistorySys.push();this.sel[k]=v;}},setBool(k,v){if(this.sel){HistorySys.push();this.sel[k]=v;}},modZ(d){if(this.sel){HistorySys.push();this.sel.z=(this.sel.z||10)+d;this.render();}},setKf(i,k,v){if(this.sel){HistorySys.push();this.sel.kfs[i][k]=parseFloat(v);this.render();}},
+    del(){if(this.sel){HistorySys.push();this.objs=this.objs.filter(o=>o!==this.sel);this.sel=null;this.render();}},clear(){if(confirm("Clear?")){HistorySys.push();this.objs=[];this.render();}},addKf(e,o){const t=o||this.sel;if(t){HistorySys.push();t.kfs.push({x:10,y:10});this.render();}},clearKf(){if(this.sel){HistorySys.push();this.sel.kfs=[];this.render();}},
+    exit(){if(this.dirty){if(confirm("Unsaved changes! Exit?"))window.location.href='../index.html';}else window.location.href='../index.html';},
+    toggleHelp(){const el=document.getElementById('help-modal');el.style.display=(el.style.display==='flex')?'none':'flex';},togDbg(){this.debug=!this.debug;document.getElementById('play-layer').classList.toggle('debug-view',this.debug);},
+    exportHash(){const d=this.pack();prompt("Hash:",btoa(JSON.stringify(d)));},importHash(){const s=prompt("Hash:");if(s)try{this.unpack(JSON.parse(atob(s)));}catch(e){alert("Invalid");}},exportCode(){
         const nextLvl = prompt("Enter Next Level ID (e.g. 2, 'menu'):", "menu") || "menu";
         const nextArg = isNaN(nextLvl) ? `'${nextLvl}'` : nextLvl;
+        let js=`// Code\n(d)=>{\n`;this.objs.forEach(o=>{let a="null";if(o.kfs.length){const i=(o.loop!==false)?'infinite':'forwards';a=`"c ${o.dur}s linear ${i}"`;}const z=o.z&&o.z!==10?`, z:${o.z}`:'';if(o.type==='path')js+=` d.path(${o.x},${o.y},${o.w},${o.h}${z});\n`;if(o.type==='obs')js+=` const obs=d.obs(${o.x},${o.y},${o.w},${o.h},${a}); ${z?`obs.vis.style.zIndex=${o.z};`:''}\n`;if(o.type==='goal')js+=` d.goal(${o.x},${o.y},${o.w},${o.h},${nextArg});\n`;if(o.type==='start')js+=` d.start(${o.x},${o.y},${o.w},${o.h});\n`;if(o.type==='btn')js+=` const b=d.btn(${o.x},${o.y},${o.w},${o.h});\n`;});js+=`}`;console.log(js);alert("Console");},
 
-        let js = `// Level Code\n(d) => {\n`;
-        this.objs.forEach(o => {
-            let animStr = "null";
-            if(Array.isArray(o.kfs) && o.kfs.length) {
-                const iter = (o.loop !== false) ? 'infinite' : 'forwards';
-                animStr = `"customAnim ${o.dur}s linear ${iter}"`; 
-            }
-            const z = o.z && o.z !== 10 ? `, z:${o.z}` : '';
-            
-            if(o.type==='path') js += `    d.path(${o.x}, ${o.y}, ${o.w}, ${o.h}${z});\n`;
-            if(o.type==='obs') js += `    const obs = d.obs(${o.x}, ${o.y}, ${o.w}, ${o.h}, ${animStr}); ${z?`obs.vis.style.zIndex=${o.z};`:''}\n`;
-            if(o.type==='goal') js += `    d.goal(${o.x}, ${o.y}, ${o.w}, ${o.h}, ${nextArg});\n`;
-            if(o.type==='start') js += `    d.start(${o.x}, ${o.y}, ${o.w}, ${o.h});\n`;
-            if(o.type==='btn') js += `    const b = d.btn(${o.x}, ${o.y}, ${o.w}, ${o.h});\n`;
-        });
-        js += `}`;
-        console.log(js); alert("Code logged to Console (F12)");
-    },
-    
     togglePlay() {
         this.playing = !this.playing;
         const pl = document.getElementById('play-layer');
@@ -413,13 +396,11 @@ const Ed = {
             this.els.obj.style.display='none'; this.els.giz.style.display='none';
             this.els.curtain.style.display='none';
 
-            // Show Blue Curtain if Start exists
+            // Show Blue Curtain
             const startObj = this.objs.find(o => o.type === 'start');
             if(startObj) {
                 this.els.curtain.style.display='block';
-                Object.assign(this.els.trig.style, { 
-                    left:startObj.x+'%', top:startObj.y+'%', width:startObj.w+'%', height:startObj.h+'%' 
-                });
+                Object.assign(this.els.trig.style, { left:startObj.x+'%', top:startObj.y+'%', width:startObj.w+'%', height:startObj.h+'%' });
                 this.physicsActive = false;
             } else { this.physicsActive = true; }
 
@@ -429,24 +410,15 @@ const Ed = {
                 el.className = `obj t-${o.type} ${o.wait?'paused':''}`;
                 if(o.tag) el.id = "run-"+o.tag;
                 Object.assign(el.style, { left:o.x+'%', top:o.y+'%', width:o.w+'%', height:o.h+'%', zIndex:o.z||10, transform:`rotate(${o.r}deg)` });
-                
                 if(Array.isArray(o.kfs) && o.kfs.length) {
                     const nm = `anim-${Math.random().toString(36).substr(2,5)}`;
                     css += `@keyframes ${nm} { 0% { transform: translate(0,0) rotate(${o.r}deg); } `;
-                    o.kfs.forEach((k,i) => {
-                        const pct = Math.round((i+1)/(o.kfs.length+1)*100);
-                        css += `${pct}% { transform: translate(${k.x}%, ${k.y}%) rotate(${o.r}deg); } `;
-                    });
+                    o.kfs.forEach((k,i) => { const pct = Math.round((i+1)/(o.kfs.length+1)*100); css += `${pct}% { transform: translate(${k.x}%, ${k.y}%) rotate(${o.r}deg); } `; });
                     css += `100% { transform: translate(0,0) rotate(${o.r}deg); } } `;
                     const iter = (o.loop !== false) ? 'infinite' : 'forwards';
                     el.style.animation = `${nm} ${o.dur}s linear ${iter}`;
                 }
-                
-                if(o.type==='btn' || o.type==='trig') {
-                    el.onmouseenter = () => { if(o.link) { const t=document.getElementById("run-"+o.link); if(t) t.classList.remove('paused'); } };
-                    el.style.pointerEvents="auto";
-                }
-                pl.appendChild(el);
+                o._el = el; pl.appendChild(el);
             });
             dump.innerHTML = css;
             this.physicsLoop();
@@ -456,7 +428,7 @@ const Ed = {
             pl.style.display='none'; document.getElementById('play-ui').style.display='none';
             this.els.curtain.style.display='none';
             this.els.obj.style.display='block'; this.els.giz.style.display='block'; 
-            this.render();
+            View.update(); this.render();
         }
     },
     
@@ -465,10 +437,8 @@ const Ed = {
     physicsLoop() {
         if(!this.playing) return;
         requestAnimationFrame(() => this.physicsLoop());
-        
-        // Don't kill if curtain is up
         if(!this.physicsActive) return;
-
+        
         const rect = document.getElementById('game-container').getBoundingClientRect();
         const px = ((this.mx - rect.left) / rect.width) * 100;
         const py = ((this.my - rect.top) / rect.height) * 100;
@@ -489,7 +459,7 @@ const Ed = {
                     safe = true;
                     const t = document.getElementById("run-"+o.link);
                     if(t) t.classList.remove('paused');
-                    if(o.type==='btn') o._el.style.backgroundColor = '#d000d0';
+                    if(o.type==='btn') o._el.style.backgroundColor = '#d000d0'; // Purple Feedback
                 }
             }
         }
@@ -499,11 +469,7 @@ const Ed = {
     death() {
         document.body.style.background = '#500';
         this.playing = false;
-        setTimeout(() => {
-            document.body.style.background = '#2a002a';
-            this.playing = true; 
-            this.togglePlay(); this.togglePlay(); 
-        }, 100);
+        setTimeout(() => { document.body.style.background = '#2a002a'; this.playing = true; this.togglePlay(); this.togglePlay(); }, 100);
     },
 
     togDbg() { this.debug=!this.debug; document.getElementById('play-layer').classList.toggle('debug-view', this.debug); }

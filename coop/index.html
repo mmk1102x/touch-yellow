@@ -209,6 +209,10 @@ const Engine = {
         window.addEventListener('mousemove', e => move(e.clientX, e.clientY));
         window.addEventListener('touchmove', e => { e.preventDefault(); move(e.touches[0].clientX, e.touches[0].clientY); }, {passive:false});
         window.addEventListener('contextmenu', e => e.preventDefault());
+        
+        // Touch Cancel Safety
+        window.addEventListener('touchcancel', () => { /* Handle cancel if needed */ });
+        
         this.loop();
     },
 
@@ -236,9 +240,14 @@ const Engine = {
         const startObj = this.hitboxes.find(o => o.type === 'start');
         if(startObj) {
             this.els.curtain.style.display = 'block';
+            // Center the trigger
+            const s = startObj.hit.style;
+            const sx=parseFloat(s.left), sy=parseFloat(s.top), sw=parseFloat(s.width), sh=parseFloat(s.height);
             Object.assign(this.els.trig.style, { 
-                left:startObj.hit.style.left, top:startObj.hit.style.top, 
-                width:startObj.hit.style.width, height:startObj.hit.style.height 
+                left: (sx + sw/2) + '%', 
+                top: (sy + sh/2) + '%', 
+                width: sw + '%', 
+                height: sh + '%' 
             });
         }
     },
@@ -326,6 +335,8 @@ const Engine = {
             Net.send({ type:'sync', x: myPx, y: myPy, btns: myButtons, win: atGoal });
             this.lastSync = now;
         }
+        // Win packet is critical, send immediately if status changed
+        if(atGoal && !this.p2.atGoal) Net.send({ type:'win' });
     },
     
     toggleDoor(tag, open) {
