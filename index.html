@@ -31,8 +31,7 @@
         .circle-btn:active { transform:scale(0.9); }
         
         #grp-saves   { top:22%; right:5%; }
-        #grp-creator { top:38%; right:5%; }
-        #grp-custom  { top:54%; right:5%; }
+        #grp-custom  { top:38%; right:5%; } /* Replaces Creator */
         #grp-start   { bottom:28%; left:15%; }
         #grp-exit    { bottom:8%; left:15%; }
 
@@ -59,6 +58,11 @@
         .btn { background:#33cc33; color:#33cc33; } .btn.on { background:#228822; color:#228822; }
         .paused { animation-play-state: paused !important; }
         
+        /* START CURTAIN */
+        #start-curtain { display:none; position:absolute; top:0; left:0; width:100%; height:100%; background-color:#26a9e1; z-index:9000; cursor:default; pointer-events:auto; }
+        #start-trigger { position:absolute; width:10%; height:10%; background:#f1a92a; border-radius:50%; border:2px solid white; box-shadow:0 0 20px white; cursor:pointer; transform:translate(-50%,-50%); animation:pulse 1s infinite alternate; pointer-events:auto; }
+        @keyframes pulse { from { transform:translate(-50%,-50%) scale(1); } to { transform:translate(-50%,-50%) scale(1.1); } }
+
         /* DEBUG */
         .hitbox { position:absolute; z-index:400; opacity:0; pointer-events:none; }
         .debug .hitbox { opacity:1 !important; }
@@ -80,11 +84,6 @@
         #catch-meter { position:fixed; display:none; width:40px; height:6px; background:#333; border:1px solid white; border-radius:3px; pointer-events:none; z-index:9999; transform:translate(-50%,-20px); }
         #catch-fill { width:0%; height:100%; background:#00ff00; transition:width 0.05s linear; }
         #dynamic-css { display:none; }
-        
-        /* START CURTAIN */
-        #start-curtain { display:none; position:absolute; top:0; left:0; width:100%; height:100%; background-color:#26a9e1; z-index:9000; cursor:default; pointer-events:auto; }
-        #start-trigger { position:absolute; width:10%; height:10%; background:#f1a92a; border-radius:50%; border:2px solid white; box-shadow:0 0 20px white; cursor:pointer; transform:translate(-50%,-50%); animation:pulse 1s infinite alternate; pointer-events:auto; }
-        @keyframes pulse { from { transform:translate(-50%,-50%) scale(1); } to { transform:translate(-50%,-50%) scale(1.1); } }
 
         @keyframes slicerMove { 0% { transform: translateY(0%); } 50% { transform: translateY(200%); } 100% { transform: translateY(0%); } }
         @keyframes waterfallDrop { 0% { transform: translateY(-250%); } 100% { transform: translateY(250%); } }
@@ -92,15 +91,9 @@
         @keyframes safeRoomPatrol { 0% {transform:translate(0,0)} 25%{transform:translate(1000%,-20%)} 50%{transform:translate(500%,20%)} 75%{transform:translate(1000%,20%)} 90%{transform:translate(500%,-20%)} 100%{transform:translate(0,0)} }
         @keyframes superCrazyMove { 0% { transform: translate(0,0); } 10% { transform: translate(800%, 200%); } 20% { transform: translate(200%, 400%); } 30% { transform: translate(600%, 0%); } 40% { transform: translate(0%, 300%); } 50% { transform: translate(900%, 300%); } 60% { transform: translate(400%, 100%); } 70% { transform: translate(100%, 0%); } 80% { transform: translate(700%, 400%); } 90% { transform: translate(300%, 100%); } 100% { transform: translate(0,0); } }
 
-        /* MOBILE */
         @media screen and (orientation: portrait) {
             body { position: fixed; width: 100%; height: 100%; }
-            #game {
-                position: absolute; top: 50%; left: 50%;
-                width: 100vh !important; height: 100vw !important;
-                transform: translate(-50%, -50%) rotate(90deg);
-                max-width: none !important; aspect-ratio: auto !important; box-shadow: none !important;
-            }
+            #game { position: absolute; top: 50%; left: 50%; width: 100vh !important; height: 100vw !important; transform: translate(-50%, -50%) rotate(90deg); max-width: none !important; aspect-ratio: auto !important; box-shadow: none !important; }
             .circle-btn { width: 8vw !important; height: 8vw !important; border-width: 0.5vw !important; }
             .btn-label { font-size: 3.5vw !important; text-shadow: none !important; }
             .title-text { font-size: 14vw !important; }
@@ -135,12 +128,8 @@
                     <div class="circle-btn" onmousedown="Engine.openSavesMenu()"></div>
                 </div>
                 
-                <div id="grp-creator" class="btn-group">
-                    <span class="btn-label">Creator -&gt;</span>
-                    <div class="circle-btn" onmousedown="location.href='creator.html'"></div>
-                </div>
-
-                <div id="grp-custom" class="btn-group">
+                <!-- CREATOR BUTTON REMOVED. REPLACED BY CUSTOM LEVEL LOADER -->
+                <div id="grp-custom" class="btn-group" style="top:38%; right:5%;">
                     <span class="btn-label">Custom -&gt;</span>
                     <div class="circle-btn" style="background:#b0f; border-color:#80c;" onmousedown="Engine.loadCustom()"></div>
                 </div>
@@ -186,50 +175,18 @@
     </div>
 
 <script>
-const DrawStandard = (d) => {
-    const H = 14; const W = 7.875; const sY = 62;
-    const p2X = 55 - W; const p2Y = sY - 20;
-    const p4X = p2X + 35 - W; const p4Y = p2Y - 24; const topX = p4X - 45 + W;
-    d.path(0, sY, 55, H); d.path(p2X, p2Y, W, 20 + H); d.path(p2X, p2Y, 35, H);
-    d.path(p4X, p4Y, W, 24 + H); d.path(topX, p4Y, 45, H);
-    return { topX, p4Y, W, H, sY, midY: p2Y };
-};
-
-const LevelData = {
-    1: (d) => { const g = DrawStandard(d); d.goal(g.topX, g.p4Y - g.H, g.W, g.H, 2); },
-    2: (d) => { 
-        const g = DrawStandard(d); d.path(g.topX, g.p4Y - g.H, g.W, g.H * 2); d.goal(20, 63, 6.75, 12, 3);
-        d.obs(35, g.sY - (g.H * 1.5), g.W * 0.6, g.H * 1.5, "slicerMove 2s linear infinite");
-    },
-    3: (d) => {
-        const g = DrawStandard(d); d.path(0, g.sY, 30, g.H); 
-        d.goal(55, g.p4Y - g.H, g.W, g.H, 4); 
-        const oW = g.W * 0.6; const oH = g.H * 1.5;
-        d.obs(32, g.sY - oH, oW, oH, "slicerMove 2s linear infinite"); d.obs(42, g.midY - oH, oW, oH, "slicerMove 3s linear infinite");
-        d.obs(75, g.p4Y, oW, g.H*1.5, "waterfallDrop 4s linear infinite"); d.obs(75, g.p4Y, oW, g.H*1.5, "waterfallDrop 4s linear infinite -1.3s");
-    },
-    4: (d) => { 
-        const H = 14; const W = 7.875;
-        d.path(50, 0, 50, 50); d.path(0, 50, 100, 50); 
-        const g = d.goal(10, 65, W, H, 5, 500); 
-        g.vis.style.animation = "crazyMove 3s linear infinite"; g.hit.style.animation = "crazyMove 3s linear infinite";
-        g.vis.classList.add('paused'); g.hit.classList.add('paused'); g.tag="runner";
-        const t = d.trig(35, 50, 2, 50); t.link = "runner";
-    },
-    5: (d) => { 
-        d.path(5, 5, 90, 90); 
-        const g = d.goal(10, 10, 10, 10, "redirect_save1", 500); 
-        g.vis.style.animation = "superCrazyMove 4s linear infinite"; g.hit.style.animation = "superCrazyMove 4s linear infinite";
-        g.vis.classList.add('paused'); g.hit.classList.add('paused'); g.tag="run";
-        const t = d.trig(5,5,90,90); t.link="run";
-    }
-};
+let GlobalLevels = {};
 
 const Engine = {
     active: false, state: 'menu', mx:0, my:0, mobile:false, holding:false, holdMode:false, hitboxes:[], noclip: false, goalTimer:0, linkPlay: false, cursorX:0, cursorY:0,
     els: { gfx:document.getElementById('gfx'), phy:document.getElementById('phy'), menu:document.getElementById('menu'), hud:document.getElementById('catch-meter'), fill:document.getElementById('catch-fill'), css:document.getElementById('dynamic-css'), curtain:document.getElementById('start-curtain'), trig:document.getElementById('start-trigger') },
 
-    init() {
+    async init() {
+        try {
+            const response = await fetch('levels.json');
+            GlobalLevels = await response.json();
+        } catch (e) { console.error("Levels missing"); }
+
         const urlParams = new URLSearchParams(window.location.search);
         if(urlParams.has('data')) {
             try {
@@ -252,28 +209,14 @@ const Engine = {
 
         const move = (x,y) => { 
             this.mx=x; this.my=y; 
-            const r = document.getElementById('game').getBoundingClientRect();
-            const isPortrait = window.matchMedia("(orientation: portrait)").matches;
-            let px, py;
-
-            if (isPortrait && this.mobile) {
-                const relX = x - r.left; const relY = y - r.top;
-                const visualX = (relX / r.width) * 100; const visualY = (relY / r.height) * 100;
-                px = visualY; py = 100 - visualX;
-            } else {
-                px = ((x - r.left) / r.width) * 100;
-                py = ((y - r.top) / r.height) * 100;
-            }
-            
-            this.cursorX = px; this.cursorY = py;
-
             const cx = document.getElementById('db-cross-x');
             const cy = document.getElementById('db-cross-y');
             const ct = document.getElementById('db-coords');
             if(cx && cy) { 
+                const r = document.getElementById('game').getBoundingClientRect();
                 const ly = y - r.top; const lx = x - r.left;
                 cx.style.top = ly + 'px'; cy.style.left = lx + 'px';
-                if(ct) ct.innerText = `X: ${px.toFixed(2)}% Y: ${py.toFixed(2)}%`;
+                if(ct) ct.innerText = `X: ${(lx/r.width*100).toFixed(2)}% Y: ${(ly/r.height*100).toFixed(2)}%`;
             }
         };
         window.addEventListener('mousemove', e => move(e.clientX, e.clientY));
@@ -284,7 +227,6 @@ const Engine = {
         window.addEventListener('mousedown', down); window.addEventListener('touchstart', down);
         window.addEventListener('mouseup', up); window.addEventListener('touchend', up);
         window.addEventListener('touchcancel', up);
-        
         window.addEventListener('mousedown', e => { if(e.button===2 && this.active && !this.noclip) this.die(); });
 
         if(localStorage.getItem('touchYellow_noclip')==='true'){ this.noclip=true; document.getElementById('cheat-ind').style.display='block'; }
@@ -315,37 +257,43 @@ const Engine = {
         this.state = (id==='custom') ? 'waiting' : 'playing'; 
         document.getElementById('db-room').innerText = (id==='custom') ? "ROOM: CUSTOM" : "ROOM: LEVEL " + id;
         
-        const builder = {
-            path: (x,y,w,h) => this.spawn(x,y,w,h,'path'),
-            obs: (x,y,w,h,a) => this.spawn(x,y,w,h,'obs',a),
-            goal: (x,y,w,h,n,t) => this.spawn(x,y,w,h,'goal',null,n,t),
-            trig: (x,y,w,h) => this.spawn(x,y,w,h,'trig')
-        };
-
-        if(id === 'custom') this.loadCustom(builder);
-        else if(LevelData[id]) LevelData[id](builder);
-        else { alert("You Win!"); this.toMenu(); }
+        if (id === 'custom') {
+            this.loadCustom();
+        } else if (GlobalLevels[id]) {
+            if (GlobalLevels[id].world !== 1) { alert("Wrong World"); location.href='save/save1.html'; return; }
+            this.buildLevel(GlobalLevels[id].objects);
+        } else { 
+            alert("You Win!"); this.toMenu(); 
+        }
     },
 
-    loadCustom(builder) {
+    buildLevel(data) {
+        data.forEach(o => {
+            const obj = this.spawn(o.x, o.y, o.w, o.h, o.type, o.anim, o.next, o.hold);
+            if(o.tag) obj.tag = o.tag;
+            if(o.link) obj.link = o.link;
+            if(o.wait) { obj.vis.classList.add('paused'); obj.hit.classList.add('paused'); }
+            if(o.z) obj.vis.style.zIndex = o.z;
+        });
+    },
+
+    loadCustom() {
         const raw = localStorage.getItem('ty_custom_level_data');
-        if (!raw) { alert("No custom level data."); this.toMenu(); return; }
-        try { this.parseCookie(raw, builder); } catch(e) { alert("Level Corrupt"); this.toMenu(); }
+        if (!raw) { alert("No custom level."); this.toMenu(); return; }
+        try { this.parseCookie(raw); } catch(e) { alert("Corrupt"); this.toMenu(); }
         
         const startObj = this.hitboxes.find(o => o.type === 'start');
         if(startObj) {
             this.els.curtain.style.display = 'block';
-            const s = startObj.style;
+            const s = startObj.hit.style;
             const sx=parseFloat(s.left), sy=parseFloat(s.top), sw=parseFloat(s.width), sh=parseFloat(s.height);
-            Object.assign(this.els.trig.style, { 
-                left: (sx + sw/2) + '%', top: (sy + sh/2) + '%', width: sw + '%', height: sh + '%' 
-            });
+            Object.assign(this.els.trig.style, { left: (sx + sw/2) + '%', top: (sy + sh/2) + '%', width: sw + '%', height: sh + '%' });
         } else { alert("Level has no Start!"); this.toMenu(); }
     },
     
     activateCustom() { this.els.curtain.style.display = 'none'; this.state = 'playing'; },
 
-    parseCookie(jsonStr, d) {
+    parseCookie(jsonStr) {
         const data = JSON.parse(jsonStr);
         let css = "";
         data.forEach(o => {
@@ -360,9 +308,7 @@ const Engine = {
                 anim = `${nm} ${o[9]||2}s linear infinite`;
             }
             const type = (t==='start') ? 'start' : t;
-            let next = (t==='goal' && o[7]) ? o[7] : 'menu';
-            
-            const obj = this.spawn(o[1], o[2], o[3], o[4], type, anim, next);
+            const obj = this.spawn(o[1], o[2], o[3], o[4], type, anim, (t==='goal'?'menu':null));
             if(o[6]) obj.tag = o[6]; if(o[7]) obj.link = o[7];
             if(o[8]) { obj.vis.classList.add('paused'); obj.hit.classList.add('paused'); }
             if(o[10]) obj.vis.style.zIndex = o[10];
@@ -387,8 +333,8 @@ const Engine = {
         requestAnimationFrame(()=>this.loop());
         if(!this.active) return;
         const r = document.getElementById('game').getBoundingClientRect();
-        const mx = this.cursorX;
-        const my = this.cursorY;
+        const mx = (this.mx - r.left)/r.width*100;
+        const my = (this.my - r.top)/r.height*100;
         
         if((mx<0||mx>100||my<0||my>100) && this.state==='playing') return this.die();
         if(this.holdMode && !this.holding) return;
@@ -408,8 +354,7 @@ const Engine = {
                     if(hb.hold > 0) {
                         this.goalTimer += 16;
                         this.els.hud.style.display='block';
-                        this.els.hud.style.left = this.cursorX+'%'; 
-                        this.els.hud.style.top = (this.cursorY-5)+'%';
+                        this.els.hud.style.left = this.mx+'px'; this.els.hud.style.top = (this.my-20)+'px';
                         this.els.fill.style.width = (this.goalTimer/hb.hold*100)+'%';
                         if(this.goalTimer >= hb.hold) this.win(hb.next);
                     } else { this.win(hb.next); }
@@ -443,7 +388,6 @@ const Engine = {
 
 Engine.init();
 
-// --- COMMANDS ---
 Object.defineProperties(window, {
     'debug': { get: function() { const g=document.getElementById('game'); g.classList.toggle('debug'); const on=g.classList.contains('debug'); document.getElementById('debug-ind').style.display=on?'block':'none'; localStorage.setItem('touchYellow_debug', on); return `Debug: ${on?"ON":"OFF"}`; } },
     'noclip': { get: function() { Engine.noclip=!Engine.noclip; document.getElementById('cheat-ind').style.display=Engine.noclip?'block':'none'; localStorage.setItem('touchYellow_noclip', Engine.noclip); return `God Mode: ${Engine.noclip?"ON":"OFF"}`; } },

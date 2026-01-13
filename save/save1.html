@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Touch Yellow - World 2</title>
     <style>
-        body { margin:0; background:#000; overflow:hidden; font-family:'Roboto',sans-serif; height:100vh; display:none; justify-content:center; align-items:center; user-select:none; touch-action:none; }
+        body { margin:0; background:#000; overflow:hidden; font-family:'Roboto',sans-serif; height:100vh; display:flex; justify-content:center; align-items:center; user-select:none; touch-action:none; }
         #game { width:100%; max-width:177.7vh; aspect-ratio:16/9; position:relative; background:#000; box-shadow:0 0 50px #00b0f0; }
         .layer { position:absolute; inset:0; pointer-events:none; }
         #ui { z-index:50; pointer-events:auto; text-align:center; display:flex; flex-direction:column; justify-content:center; background:#00b0f0; }
@@ -90,46 +90,29 @@ if (localStorage.getItem('touchYellow_save1') !== 'true') {
     alert("Save File Locked! Completing Level 5 is required.");
     window.location.href = "../index.html";
     throw new Error("Redirecting...");
-} else {
-    document.body.style.display = 'flex';
 }
 
-const LevelData = {
-    6: (d) => {
-        d.start(2, 67, 10, 10);
-        d.path(0, 65, 45, 15); d.path(35, 0, 20, 80); d.path(55, 0, 45, 20); d.path(72, 20, 6, 55); d.path(72, 65, 18, 15); d.path(90, 65, 10, 15);
-        const btn1 = d.btn(80, 5, 8, 10); btn1.link = "btn2";
-        const btn2 = d.btn(75, 68, 6, 8); btn2.vis.style.animation = "spawnIn 0.5s forwards"; btn2.hit.style.animation = "spawnIn 0.5s forwards"; btn2.vis.classList.add('paused'); btn2.hit.classList.add('paused'); btn2.tag = "btn2"; btn2.link = "gate";
-        const door = d.obs(88, 65, 4, 15, "openDoor 1s forwards"); door.vis.classList.add('paused'); door.hit.classList.add('paused'); door.tag = "gate"; door.vis.style.zIndex = 20;
-        d.goal(92, 67, 6, 10, 7);
-    },
-    7: (d) => { d.start(10, 20, 10, 15); d.path(10, 20, 10, 60); d.path(10, 80, 80, 14); d.goal(80, 20, 8, 14, 'win'); }
-};
+let GlobalLevels = {};
 
 const Engine = {
-    active: false, state: 'menu', mx:0, my:0, mobile:false, holding:false, hitboxes:[], noclip: false, cursorX:0, cursorY:0,
-    els: { gfx:document.getElementById('gfx'), phy:document.getElementById('phy'), ui:document.getElementById('ui') },
-    init() {
+    active: false, state: 'menu', mx:0, my:0, mobile:false, holding:false, hitboxes:[], noclip: false,
+    els: { gfx:document.getElementById('gfx'), phy:document.getElementById('phy'), ui:document.getElementById('ui'), curtain:null, trig:null },
+    
+    async init() {
+        try {
+            const response = await fetch('../levels.json');
+            GlobalLevels = await response.json();
+        } catch (e) { alert("Error loading levels.json"); }
+
         this.mobile = 'ontouchstart' in window;
         const move = (x,y) => { 
             this.mx=x; this.my=y;
-            const r = document.getElementById('game').getBoundingClientRect();
-            const isPortrait = window.matchMedia("(orientation: portrait)").matches;
-            let px, py;
-            if (isPortrait && this.mobile) {
-                const relX = x - r.left; const relY = y - r.top;
-                const visualX = (relX / r.width) * 100; const visualY = (relY / r.height) * 100;
-                px = visualY; py = 100 - visualX;
-            } else {
-                px = ((x - r.left) / r.width) * 100; py = ((y - r.top) / r.height) * 100;
-            }
-            this.cursorX = px; this.cursorY = py;
-
             const cx=document.getElementById('db-cross-x'); const cy=document.getElementById('db-cross-y'); const ct=document.getElementById('db-coords');
             if(cx&&cy){
+                const r=document.getElementById('game').getBoundingClientRect();
                 const ly=y-r.top; const lx=x-r.left;
                 cx.style.top=ly+'px'; cy.style.left=lx+'px';
-                if(ct){ ct.innerText=`X: ${px.toFixed(2)}% Y: ${py.toFixed(2)}%`; }
+                if(ct){ const px=((lx/r.width*100).toFixed(2)); const py=((ly/r.height*100).toFixed(2)); ct.innerText=`X: ${px}% Y: ${py}%`; }
             }
         };
         window.addEventListener('mousemove', e => move(e.clientX, e.clientY));
@@ -138,7 +121,6 @@ const Engine = {
         const up = () => { this.holding=false; if(this.active && this.mobile) this.die(); };
         window.addEventListener('mousedown', down); window.addEventListener('touchstart', down);
         window.addEventListener('mouseup', up); window.addEventListener('touchend', up);
-        window.addEventListener('touchcancel', up);
         window.addEventListener('mousedown', e => { if(e.button===2 && this.active && !this.noclip) this.die(); });
         
         if(localStorage.getItem('touchYellow_noclip')==='true'){ this.noclip=true; document.getElementById('cheat-ind').style.display='block'; }
@@ -146,6 +128,7 @@ const Engine = {
         
         this.loop();
     },
+    
     start(id) {
         if (!document.fullscreenElement) { document.documentElement.requestFullscreen().catch(e=>{}); }
         this.active = true; 
@@ -154,18 +137,24 @@ const Engine = {
         this.hitboxes=[]; this.els.gfx.innerHTML=''; this.els.phy.innerHTML='';
         document.getElementById('db-room').innerText = "ROOM: LEVEL " + id;
         
-        const builder = {
-            path: (x,y,w,h) => this.spawn(x,y,w,h,'path'),
-            obs: (x,y,w,h,a) => this.spawn(x,y,w,h,'obs',a),
-            goal: (x,y,w,h,n) => this.spawn(x,y,w,h,'goal',n),
-            start: (x,y,w,h) => this.spawn(x,y,w,h,'start'),
-            btn: (x,y,w,h) => this.spawn(x,y,w,h,'btn'),
-            trig: (x,y,w,h) => this.spawn(x,y,w,h,'trig')
-        };
-
-        if(LevelData[id]) LevelData[id](builder); 
-        else { alert("World 2 Complete!"); location.href='../index.html'; }
+        if (GlobalLevels[id]) {
+            if (GlobalLevels[id].world !== 2) { alert("Wrong World"); location.href='../index.html'; return; }
+            this.buildLevel(GlobalLevels[id].objects);
+        } else { 
+            alert("World 2 Complete!"); location.href='../index.html'; 
+        }
     },
+
+    buildLevel(objects) {
+        objects.forEach(o => {
+            const obj = this.spawn(o.x, o.y, o.w, o.h, o.type, o.anim, o.next, o.hold);
+            if(o.tag) obj.tag = o.tag;
+            if(o.link) obj.link = o.link;
+            if(o.wait) { obj.vis.classList.add('paused'); obj.hit.classList.add('paused'); }
+            if(o.z) obj.vis.style.zIndex = o.z;
+        });
+    },
+
     spawn(x,y,w,h,type,anim,next) {
         const s = {left:x+'%', top:y+'%', width:w+'%', height:h+'%'};
         const v = document.createElement('div'); v.className=`obj ${type}`; Object.assign(v.style, s);
@@ -177,12 +166,13 @@ const Engine = {
         const obj = { vis:v, hit:p, type, next, tag:"", link:"" };
         this.hitboxes.push(obj); return obj;
     },
+
     loop() {
         requestAnimationFrame(()=>this.loop());
         if(!this.active) return;
         const r = document.getElementById('game').getBoundingClientRect();
-        const mx = this.cursorX;
-        const my = this.cursorY;
+        const mx = (this.mx - r.left)/r.width*100;
+        const my = (this.my - r.top)/r.height*100;
         
         if((mx<0||mx>100||my<0||my>100) && this.state==='playing') return this.die();
         if(this.mobile && !this.holding) return;
@@ -197,7 +187,6 @@ const Engine = {
                 
                 if(hb.type === 'path') safe = true;
                 
-                // Ghost Mode Logic
                 if(hb.type === 'start') { 
                     safe = true; 
                     if(this.state === 'waiting') { 
@@ -215,15 +204,17 @@ const Engine = {
                 }
             }
         }
-        
         document.getElementById('game').style.cursor = (this.state==='playing' && safe) ? 'crosshair' : 'default';
-        
-        // Void Death
         if(this.state==='playing' && !safe) this.die();
     },
     die() { if(this.noclip) return; this.active = false; this.start(6); },
     reset() { this.active=false; this.hitboxes=[]; this.els.gfx.innerHTML=''; this.els.phy.innerHTML=''; document.getElementById('game').style.cursor='default'; },
-    toMenu() { this.reset(); document.getElementById('menu-screen').style.display='flex'; document.getElementById('db-room').innerText="ROOM: MENU"; }
+    toMenu() { this.reset(); document.getElementById('menu-screen').style.display='flex'; document.getElementById('db-room').innerText="ROOM: MENU"; },
+    
+    openSavesMenu() { document.getElementById('saves-screen').style.display='block'; document.getElementById('menu').style.display='none'; this.checkSave(1); this.checkSave(2); },
+    closeSaves() { document.getElementById('saves-screen').style.display='none'; document.getElementById('menu').style.display='block'; },
+    checkSave(n) { const has = localStorage.getItem(`touchYellow_save${n}`) === 'true'; document.getElementById(`circle-${n}`).className = `slot-btn slot-${has?'unlocked':'locked'}`; },
+    loadSave(n) { if(localStorage.getItem(`touchYellow_save${n}`) === 'true') location.href=`save/save${n}.html`; else alert("Locked!"); }
 };
 
 Engine.init();
