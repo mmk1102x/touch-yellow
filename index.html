@@ -16,7 +16,7 @@
         .layer { position:absolute; inset:0; pointer-events:none; }
         #ui { z-index:500; pointer-events:auto; }
 
-        /* MENU */
+        /* MENU STYLES */
         .menu-bg { background-color:#4d4d4d; width:100%; height:100%; position:absolute; top:0; left:0; pointer-events:auto; cursor:default; }
         .grid-line { position:absolute; border:1px dashed rgba(255,255,255,0.3); pointer-events:none; }
         .grid-x { width:100%; height:0; top:50%; left:0; }
@@ -58,7 +58,7 @@
         .back-circle:active { transform:scale(0.9); }
 
         /* MOD MANAGER UI */
-        #mod-screen { position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:2000; display:flex; justify-content:center; align-items:center; }
+        #mod-screen { position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:2000; display:none; justify-content:center; align-items:center; }
         .mod-window { width:80vh; height:80vh; background-color:#3c2a4d; border:3px solid #1d1226; border-radius:10px; display:flex; flex-direction:column; box-shadow:0 0 50px #000; }
         .mod-header { background:#261a33; padding:15px; border-bottom:2px solid #1d1226; display:flex; justify-content:space-between; align-items:center; }
         .mod-title { font-family:'Luckiest Guy',cursive; font-size:4vh; color:#fff; text-shadow:2px 2px 0 #000; }
@@ -120,7 +120,12 @@
 
         @media screen and (orientation: portrait) {
             body { position: fixed; width: 100%; height: 100%; }
-            #game { position: absolute; top: 50%; left: 50%; width: 100vh !important; height: 100vw !important; transform: translate(-50%, -50%) rotate(90deg); max-width: none !important; aspect-ratio: auto !important; box-shadow: none !important; }
+            #game {
+                position: absolute; top: 50%; left: 50%;
+                width: 100vh !important; height: 100vw !important;
+                transform: translate(-50%, -50%) rotate(90deg);
+                max-width: none !important; aspect-ratio: auto !important; box-shadow: none !important;
+            }
             .circle-btn { width: 8vw !important; height: 8vw !important; border-width: 0.5vw !important; }
             .btn-label { font-size: 3.5vw !important; text-shadow: none !important; }
             .title-text { font-size: 14vw !important; }
@@ -155,13 +160,11 @@
                     <div class="circle-btn" onmousedown="Engine.openSavesMenu()"></div>
                 </div>
                 
-                <!-- CUSTOM LEVEL BUTTON -->
                 <div id="grp-custom" class="btn-group">
                     <span class="btn-label">Custom -&gt;</span>
                     <div class="circle-btn" style="background:#b0f; border-color:#80c;" onmousedown="Engine.loadCustom()"></div>
                 </div>
 
-                <!-- MODS BUTTON -->
                 <div id="grp-mods" class="btn-group">
                     <span class="btn-label">Mods -&gt;</span>
                     <div class="circle-btn" style="background:#800080; border-color:#500050;" onmousedown="ModUI.open()"></div>
@@ -228,9 +231,8 @@
 <script>
 // --- MOD LOADER (Async IndexedDB) ---
 const ModDB={db:null,open:()=>new Promise((r,j)=>{const q=indexedDB.open("TouchYellowMods",1);q.onupgradeneeded=e=>{if(!e.target.result.objectStoreNames.contains('mods'))e.target.result.createObjectStore('mods',{keyPath:'id'});};q.onsuccess=e=>{ModDB.db=e.target.result;r();};q.onerror=e=>j(e);}),save:m=>new Promise((r,j)=>{const t=ModDB.db.transaction(['mods'],'readwrite');t.objectStore('mods').put(m);t.oncomplete=()=>r();t.onerror=()=>j(t.error);}),getAll:()=>new Promise(r=>{if(!ModDB.db)return r([]);const t=ModDB.db.transaction(['mods'],'readonly');const q=t.objectStore('mods').getAll();q.onsuccess=()=>r(q.result);}),delete:id=>{ModDB.db.transaction(['mods'],'readwrite').objectStore('mods').delete(id);}};
-const ModLoader={mods:[],init:async()=>{await ModDB.open();ModLoader.mods=await ModDB.getAll();ModLoader.mods.forEach(m=>{if(m.enabled){try{if(m.code.length>1e7)console.warn("Mod too big");else{const f=new Function('ModAPI','Engine','Net',m.code);f(window.ModAPI,(window.Engine||{}),(window.Net||{}));console.log(`[Mod] Loaded: ${m.name}`);}}catch(e){console.error(e);}}});},install:async(d)=>{const s=new Blob([JSON.stringify(d)]).size;if(s>50*1024*1024)return alert("File too big");d.id=Date.now().toString();d.enabled=true;await ModDB.save(d);if(confirm("Installed! Reload?"))location.reload();},delete:async(id)=>{if(confirm("Delete?")){ModLoader.mods=ModLoader.mods.filter(m=>m.id!==id);await ModDB.delete(id);ModUI.render();ModUI.triggerRestart();}},toggle:async(id)=>{const m=ModLoader.mods.find(x=>x.id===id);if(m){m.enabled=!m.enabled;await ModDB.save(m);ModUI.render();ModUI.triggerRestart();}}};
+const ModLoader={mods:[],init:async(cb)=>{console.log("[System] Booting ModLoader...");try{await ModDB.open();ModLoader.mods=await ModDB.getAll();ModLoader.mods.forEach(m=>{if(m.enabled){try{const f=new Function('ModAPI','Engine','Net',m.code);f(window.ModAPI,(window.Engine||{}),(window.Net||{}));console.log(`[Mod] Loaded: ${m.name}`);}catch(e){console.error(e);}}});}catch(e){console.error(e);}if(cb)cb();},install:async(d)=>{if(!d.name||!d.code)return alert("Invalid Mod");d.id=Date.now().toString();d.enabled=true;await ModDB.save(d);ModLoader.mods.push(d);ModUI.render();ModUI.triggerRestart();},delete:async(id)=>{if(confirm("Delete?")){ModLoader.mods=ModLoader.mods.filter(m=>m.id!==id);await ModDB.delete(id);ModUI.render();ModUI.triggerRestart();}},toggle:async(id)=>{const m=ModLoader.mods.find(x=>x.id===id);if(m){m.enabled=!m.enabled;await ModDB.save(m);ModUI.render();ModUI.triggerRestart();}}};
 window.ModAPI={hook:(t,f)=>{const p=t.split('.');const o=window[p[0]];if(o&&o[p[1]]){const org=o[p[1]].bind(o);o[p[1]]=(...a)=>f(org,...a);}}};
-ModLoader.init();
 
 // --- MOD UI ---
 const ModUI={
@@ -239,7 +241,7 @@ const ModUI={
     render:()=>{
         const l=document.getElementById('mod-list'); l.innerHTML='';
         const f=document.getElementById('mod-search').value.toLowerCase();
-        if(!ModLoader.mods.length){l.innerHTML='<div style="text-align:center;color:#666;margin-top:50px">No Mods</div>';return;}
+        if(!ModLoader.mods.length){l.innerHTML='<div style="text-align:center;color:#888;margin-top:50px">No Mods Installed.<br>Drag & Drop .addon file here.</div>';return;}
         ModLoader.mods.forEach(m=>{
             if(!m.name.toLowerCase().includes(f))return;
             const d=document.createElement('div'); d.className='mod-item';
@@ -250,7 +252,7 @@ const ModUI={
     triggerRestart:()=>{document.getElementById('mod-restart-btn').style.display='block';},
     importFile:()=>{
         const i=document.createElement('input'); i.type='file'; i.accept='.addon,.json';
-        i.onchange=e=>{const f=e.target.files[0]; if(!f)return; if(f.size>1e8)return alert("Too big"); const r=new FileReader(); r.onload=ev=>{try{const d=JSON.parse(ev.target.result); if(!d.name||!d.code)throw 0; ModLoader.install(d); ModUI.render(); ModUI.triggerRestart();}catch(e){alert("Invalid Mod");}}; r.readAsText(f);};
+        i.onchange=e=>{const f=e.target.files[0]; if(!f)return; if(f.size>1e8)return alert("Too big"); const r=new FileReader(); r.onload=ev=>{try{const d=JSON.parse(ev.target.result); if(!d.name||!d.code)throw 0; ModLoader.install(d);}catch(e){alert("Invalid Mod");}}; r.readAsText(f);};
         i.click();
     },
     initDrag:()=>{
@@ -261,7 +263,7 @@ const ModUI={
     },
     processFile:(f)=>{
         if(!f.name.endsWith('.addon')&&!f.name.endsWith('.json'))return alert("Invalid type");
-        const r=new FileReader(); r.onload=e=>{try{const d=JSON.parse(e.target.result); if(!d.name)throw 0; ModLoader.install(d); ModUI.render(); ModUI.triggerRestart();}catch(e){alert("Invalid");}}; r.readAsText(f);
+        const r=new FileReader(); r.onload=e=>{try{const d=JSON.parse(e.target.result); if(!d.name)throw 0; ModLoader.install(d);}catch(e){alert("Invalid");}}; r.readAsText(f);
     },
     filter:()=>ModUI.render()
 };
@@ -300,28 +302,14 @@ const Engine = {
 
         const move = (x,y) => { 
             this.mx=x; this.my=y; 
-            const r = document.getElementById('game').getBoundingClientRect();
-            const isPortrait = window.matchMedia("(orientation: portrait)").matches;
-            let px, py;
-
-            if (isPortrait && this.mobile) {
-                const relX = x - r.left; const relY = y - r.top;
-                const visualX = (relX / r.width) * 100; const visualY = (relY / r.height) * 100;
-                px = visualY; py = 100 - visualX;
-            } else {
-                px = ((x - r.left) / r.width) * 100;
-                py = ((y - r.top) / r.height) * 100;
-            }
-            
-            this.cursorX = px; this.cursorY = py;
-
             const cx = document.getElementById('db-cross-x');
             const cy = document.getElementById('db-cross-y');
             const ct = document.getElementById('db-coords');
             if(cx && cy) { 
+                const r = document.getElementById('game').getBoundingClientRect();
                 const ly = y - r.top; const lx = x - r.left;
                 cx.style.top = ly + 'px'; cy.style.left = lx + 'px';
-                if(ct) ct.innerText = `X: ${px.toFixed(2)}% Y: ${py.toFixed(2)}%`;
+                if(ct) ct.innerText = `X: ${(lx/r.width*100).toFixed(2)}% Y: ${(ly/r.height*100).toFixed(2)}%`;
             }
         };
         window.addEventListener('mousemove', e => move(e.clientX, e.clientY));
@@ -472,8 +460,18 @@ const Engine = {
 
             if(mx>bx && mx<bx+bw && my>by && my<by+bh) {
                 if(hb.type === 'obs' && this.state==='playing') return this.die();
+                
                 if(hb.type === 'path') safe = true;
-                if(hb.type === 'start') { safe = true; if(this.state === 'waiting') { this.state = 'playing'; } }
+                
+                // Ghost Mode Logic
+                if(hb.type === 'start') { 
+                    safe = true; 
+                    if(this.state === 'waiting') { 
+                        this.state = 'playing'; 
+                        console.log("Game Active");
+                    } 
+                }
+                
                 if(hb.type === 'goal') { 
                     safe=true; touchingGoal=true; 
                     if(hb.hold > 0) {
@@ -485,6 +483,7 @@ const Engine = {
                         if(this.goalTimer >= hb.hold) this.win(hb.next);
                     } else { this.win(hb.next); }
                 }
+                
                 if((hb.type==='btn' || hb.type==='trig') && hb.link) {
                     safe=true;
                     this.hitboxes.forEach(t => { if(t.tag === hb.link) { t.vis.classList.remove('paused'); t.hit.classList.remove('paused'); }});
@@ -492,6 +491,7 @@ const Engine = {
                 }
             }
         }
+        
         document.getElementById('game').style.cursor = (this.state==='playing' && safe) ? 'crosshair' : 'default';
         if(!touchingGoal) { this.goalTimer=0; this.els.hud.style.display='none'; }
         if(this.state === 'playing' && !safe) this.die();
@@ -511,8 +511,14 @@ const Engine = {
     checkSave(n) { const has = localStorage.getItem(`touchYellow_save${n}`) === 'true'; document.getElementById(`circle-${n}`).className = `slot-btn slot-${has?'unlocked':'locked'}`; },
     loadSave(n) { if(localStorage.getItem(`touchYellow_save${n}`) === 'true') location.href=`save/save${n}.html`; else alert("Locked!"); }
 };
-Engine.init();
 
+// BOOTSTRAP
+ModLoader.init(() => {
+    console.log("[System] Starting Engine...");
+    Engine.init();
+});
+
+// --- COMMANDS ---
 Object.defineProperties(window, {
     'debug': { get: function() { const g=document.getElementById('game'); g.classList.toggle('debug'); const on=g.classList.contains('debug'); document.getElementById('debug-ind').style.display=on?'block':'none'; localStorage.setItem('touchYellow_debug', on); return `Debug: ${on?"ON":"OFF"}`; } },
     'noclip': { get: function() { Engine.noclip=!Engine.noclip; document.getElementById('cheat-ind').style.display=Engine.noclip?'block':'none'; localStorage.setItem('touchYellow_noclip', Engine.noclip); return `God Mode: ${Engine.noclip?"ON":"OFF"}`; } },

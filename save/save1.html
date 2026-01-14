@@ -4,88 +4,66 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Touch Yellow - World 2</title>
-    <link href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Roboto:wght@900&display=swap" rel="stylesheet">
     <style>
-        /* --- SHARED CORE (Matches index.html) --- */
-        body { margin:0; background:#000; overflow:hidden; font-family:'Roboto',sans-serif; height:100vh; display:flex; justify-content:center; align-items:center; user-select:none; touch-action:none; -webkit-user-select:none; }
-        #game { width:100%; max-width:177.7vh; aspect-ratio:16/9; position:relative; background:#000; box-shadow:0 0 50px #00b0f0; } /* Blue Shadow */
+        body { margin:0; background:#000; overflow:hidden; font-family:'Roboto',sans-serif; height:100vh; display:flex; justify-content:center; align-items:center; user-select:none; touch-action:none; }
+        #game { width:100%; max-width:177.7vh; aspect-ratio:16/9; position:relative; background:#000; box-shadow:0 0 50px #00b0f0; }
         .layer { position:absolute; inset:0; pointer-events:none; }
-        #ui { z-index:500; pointer-events:auto; }
-
-        /* --- WORLD 2 MENU (Blue Screen) --- */
-        #menu-screen { position:absolute; top:0; left:0; width:100%; height:100%; background-color:#2cb5e9; display:flex; flex-direction:column; align-items:center; justify-content:center; pointer-events:auto; cursor:default; }
-        .save-title { font-family:'Luckiest Guy',cursive; font-size:10vh; color:#000; margin-bottom:5vh; text-align:center; }
+        #ui { z-index:50; pointer-events:auto; text-align:center; display:flex; flex-direction:column; justify-content:center; background:#00b0f0; }
         
+        #menu-screen { position:absolute; top:0; left:0; width:100%; height:100%; background-color:#2cb5e9; display:flex; flex-direction:column; align-items:center; justify-content:center; pointer-events:auto; cursor:default; }
+        .save-title { font-family:'Roboto',sans-serif; font-weight:900; font-size:10vh; color:#000; margin-bottom:5vh; text-align:center; }
         .menu-btn-row { display:flex; align-items:center; gap:2vh; margin-bottom:3vh; cursor:pointer; transition:transform 0.1s; pointer-events:none; }
         .menu-btn-row:active { transform:scale(0.95); }
         .btn-circle { width:8vh; height:8vh; background-color:#f2a922; border:0.4vh solid #bf8310; border-radius:50%; box-shadow:0 0.5vh 0 rgba(0,0,0,0.2); cursor:pointer; pointer-events:auto; transition:transform 0.05s; }
         .btn-circle:active { transform:scale(0.9); }
         .btn-text { font-family:'Roboto',sans-serif; font-weight:900; font-size:5vh; color:#000; pointer-events:none; user-select:none; }
 
-        /* --- GAME ELEMENTS --- */
-        .obj { position:absolute; box-shadow: 0 0 0 1px currentColor; }
+        .obj { position:absolute; transition:background 0.3s; box-shadow: 0 0 0 1px currentColor; }
         .path { background:#26a9e1; color:#26a9e1; } .goal { background:#f1a92a; color:#f1a92a; } 
-        .obs { background:#000; color:transparent; border: 2px dashed #555; } /* Visible Border */
+        .obs { background:#000; color:transparent; border: 2px dashed #555; } 
         .btn { background:#33cc33; color:#33cc33; } .btn.on { background:#228822; color:#228822; }
-        .paused { animation-play-state: paused !important; }
-
-        /* --- DEBUG VISUALS --- */
+        .start { background:transparent; border: 2px solid lime; border-radius: 50%; z-index: 50; }
+        
         .hitbox { position:absolute; z-index:400; opacity:0; pointer-events:none; }
         .debug .hitbox { opacity:1 !important; }
         .debug .hitbox.path { background:transparent; border:none; }
-        .debug .hitbox.goal { background:rgba(0,255,0,0.5); border:2px solid lime; }
-        .debug .hitbox.obs { background:rgba(255,0,0,0.5); border:2px solid red; background-image: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0,0,0,0.5) 10px, rgba(0,0,0,0.5) 20px); }
+        .debug .hitbox.goal { background:rgba(0,255,0,0.5); border:2px solid yellow; }
+        .debug .hitbox.obs { background:rgba(255,0,0,0.6); border:2px solid red; }
         .debug .hitbox.trig, .debug .hitbox.btn { background:rgba(148,0,211,0.5); border:2px dashed magenta; }
-        .debug .hitbox.start { background:rgba(0,255,0,0.1); border:1px dotted lime; }
+        .debug .hitbox.start { background:rgba(0,255,0,0.2); border:1px dotted lime; }
 
-        /* DEBUG OVERLAY */
         .debug-overlay { display:none; pointer-events:none; position:absolute; top:0; left:0; width:100%; height:100%; z-index:9999; }
         .debug .debug-overlay { display:block; }
         #db-cross-x { position:absolute; width:100%; height:1px; background-color:cyan; left:0; }
         #db-cross-y { position:absolute; width:1px; height:100%; background-color:cyan; top:0; }
         #db-coords { position:absolute; bottom:5px; right:5px; color:cyan; font-family:monospace; font-size:2vh; font-weight:bold; background:rgba(0,0,0,0.8); padding:2px 5px; border:1px solid cyan; }
         #db-room { position:absolute; bottom:5px; left:5px; color:cyan; font-family:monospace; font-size:2vh; font-weight:bold; background:rgba(0,0,0,0.8); padding:2px 5px; border:1px solid cyan; }
-
-        /* INDICATORS */
+        
+        .paused { animation-play-state: paused !important; }
         #cheat-ind { position:absolute; top:10px; left:10px; color:yellow; font-weight:bold; display:none; z-index:999; font-family:monospace; font-size:2vh; text-shadow:1px 1px 0 #000; }
         #debug-ind { position:absolute; top:35px; left:10px; color:lime; font-weight:bold; display:none; z-index:999; font-family:monospace; font-size:2vh; text-shadow:1px 1px 0 #000; }
-        #catch-meter { position:fixed; display:none; width:40px; height:6px; background:#333; border:1px solid white; border-radius:3px; pointer-events:none; z-index:9999; transform:translate(-50%,-20px); }
-        #catch-fill { width:0%; height:100%; background:#00ff00; transition:width 0.05s linear; }
-        #dynamic-css { display:none; }
-
-        /* ANIMATIONS */
+        
         @keyframes spawnIn { 0% { transform: scale(0); } 100% { transform: scale(1); } }
         @keyframes openDoor { 100% { transform:translateY(-150%); } }
-        @keyframes crazyMove { 0% { transform: translate(0, 0); } 20% { transform: translate(250%, -350%); } 40% { transform: translate(250%, 0%); } 60% { transform: translate(120%, -150%); } 80% { transform: translate(0, -350%); } 100% { transform: translate(0, 0); } }
 
-        /* MOBILE ROTATION */
         @media screen and (orientation: portrait) {
             body { position: fixed; width: 100%; height: 100%; }
-            #game {
-                position: absolute; top: 50%; left: 50%;
-                width: 100vh !important; height: 100vw !important;
-                transform: translate(-50%, -50%) rotate(90deg);
-                max-width: none !important; aspect-ratio: auto !important; box-shadow: none !important;
-            }
+            #game { position: absolute; top: 50%; left: 50%; width: 100vh !important; height: 100vw !important; transform: translate(-50%, -50%) rotate(90deg); max-width: none !important; aspect-ratio: auto !important; box-shadow: none !important; }
             .btn-circle { width: 8vw !important; height: 8vw !important; border-width: 0.5vw !important; }
             .btn-text { font-size: 5vw !important; }
         }
     </style>
 </head>
-<body oncontextmenu="return false;" ondragstart="return false;">
-    <div id="catch-meter"><div id="catch-fill"></div></div>
-    
+<body>
     <div id="game">
         <div class="debug-overlay">
             <div id="db-cross-x"></div><div id="db-cross-y"></div>
             <div id="db-coords">X: 0.00% Y: 0.00%</div><div id="db-room">ROOM: MENU</div>
         </div>
-
+        
         <div id="gfx" class="layer" style="z-index:10"></div>
         <div id="phy" class="layer"></div>
         <div id="ui" class="layer">
-            
-            <!-- WORLD 2 MENU -->
             <div id="menu-screen">
                 <div class="save-title">Got Save!</div>
                 <div class="menu-btn-row">
@@ -101,14 +79,12 @@
                     <div class="btn-text">&lt;-Exit</div>
                 </div>
             </div>
-
             <div id="cheat-ind">NOCLIP ON</div>
             <div id="debug-ind">HITBOXES ON</div>
         </div>
     </div>
 
 <script>
-// --- SECURITY ---
 if (localStorage.getItem('touchYellow_save1') !== 'true') {
     document.body.innerHTML = ""; document.body.style.background = "#000";
     alert("Save File Locked! Completing Level 5 is required.");
@@ -147,7 +123,7 @@ if (localStorage.getItem('touchYellow_save1') !== 'true') {
 let GlobalLevels = {};
 
 const Engine = {
-    active: false, state: 'menu', mx:0, my:0, mobile:false, holding:false, hitboxes:[], noclip: false, goalTimer:0, cursorX:0, cursorY:0,
+    active: false, state: 'menu', mx:0, my:0, mobile:false, holding:false, hitboxes:[], noclip: false, cursorX:0, cursorY:0,
     els: { gfx:document.getElementById('gfx'), phy:document.getElementById('phy'), ui:document.getElementById('ui'), css:document.getElementById('dynamic-css') },
 
     async init() {
@@ -158,47 +134,52 @@ const Engine = {
 
         this.mobile = 'ontouchstart' in window;
         const move = (x,y) => { 
-            this.mx=x; this.my=y; 
-            const cx = document.getElementById('db-cross-x');
-            const cy = document.getElementById('db-cross-y');
-            const ct = document.getElementById('db-coords');
-            if(cx && cy) { 
-                const r = document.getElementById('game').getBoundingClientRect();
-                const ly = y - r.top; const lx = x - r.left;
-                cx.style.top = ly + 'px'; cy.style.left = lx + 'px';
-                if(ct) ct.innerText = `X: ${(lx/r.width*100).toFixed(2)}% Y: ${(ly/r.height*100).toFixed(2)}%`;
+            this.mx=x; this.my=y;
+            const cx=document.getElementById('db-cross-x'); const cy=document.getElementById('db-cross-y'); const ct=document.getElementById('db-coords');
+            if(cx&&cy){
+                const r=document.getElementById('game').getBoundingClientRect();
+                const ly=y-r.top; const lx=x-r.left;
+                cx.style.top=ly+'px'; cy.style.left=lx+'px';
+                if(ct){ const px=((lx/r.width*100).toFixed(2)); const py=((ly/r.height*100).toFixed(2)); ct.innerText=`X: ${px}% Y: ${py}%`; }
             }
         };
         window.addEventListener('mousemove', e => move(e.clientX, e.clientY));
         window.addEventListener('touchmove', e => { e.preventDefault(); move(e.touches[0].clientX, e.touches[0].clientY); }, {passive:false});
-        
         const down = () => this.holding=true;
-        const up = () => { this.holding=false; if(this.state==='playing' && this.mobile) this.die(); };
+        const up = () => { this.holding=false; if(this.active && this.mobile) this.die(); };
         window.addEventListener('mousedown', down); window.addEventListener('touchstart', down);
         window.addEventListener('mouseup', up); window.addEventListener('touchend', up);
         window.addEventListener('touchcancel', up);
         window.addEventListener('mousedown', e => { if(e.button===2 && this.active && !this.noclip) this.die(); });
-
+        
         if(localStorage.getItem('touchYellow_noclip')==='true'){ this.noclip=true; document.getElementById('cheat-ind').style.display='block'; }
         if(localStorage.getItem('touchYellow_debug')==='true'){ document.getElementById('game').classList.add('debug'); document.getElementById('debug-ind').style.display='block'; }
         
         this.loop();
     },
-
+    
     start(id) {
         if (!document.fullscreenElement) { document.documentElement.requestFullscreen().catch(e=>{}); }
-        this.reset();
-        this.active = true;
-        document.getElementById('menu-screen').style.display='none';
+        this.active = true; 
         
-        // World 2 uses Hardcore Start (No Ghost Mode needed if level design is safe)
-        // BUT if you want Ghost Mode here, set state='waiting' and ensure levels have 'start' objects.
-        // Based on your previous request, we removed Ghost Mode from official levels.
-        this.state = 'playing'; 
+        // Ghost Mode (Waiting for player to touch Start)
+        this.state = 'waiting'; 
+        
+        document.getElementById('menu-screen').style.display='none';
+        this.hitboxes=[]; this.els.gfx.innerHTML=''; this.els.phy.innerHTML='';
         
         document.getElementById('db-room').innerText = "ROOM: LEVEL " + id;
         
-        if (GlobalLevels[id]) {
+        const builder = {
+            path: (x,y,w,h) => this.spawn(x,y,w,h,'path'),
+            obs: (x,y,w,h,a) => this.spawn(x,y,w,h,'obs',a),
+            goal: (x,y,w,h,n) => this.spawn(x,y,w,h,'goal',n),
+            start: (x,y,w,h) => this.spawn(x,y,w,h,'start'),
+            btn: (x,y,w,h) => this.spawn(x,y,w,h,'btn'),
+            trig: (x,y,w,h) => this.spawn(x,y,w,h,'trig')
+        };
+
+        if(GlobalLevels[id]) {
             if (GlobalLevels[id].world !== 2) { alert("Wrong World"); location.href='../index.html'; return; }
             this.buildLevel(GlobalLevels[id].objects);
         } else { 
@@ -253,44 +234,32 @@ const Engine = {
         requestAnimationFrame(()=>this.loop());
         if(!this.active) return;
         const r = document.getElementById('game').getBoundingClientRect();
-        const mx = this.mx; // Use raw mouse for now, or implement the mobile fix here too if needed
-        // Note: Mobile rotation fix is in CSS, getBoundingClientRect handles it.
-        // But for input mapping, we rely on the same logic as index.html.
-        // Since I am copying the engine, I should use the robust input from index.html.
-        // For brevity in this file, I am using direct mx/my which works for desktop.
+        const mx = this.cursorX;
+        const my = this.cursorY;
         
-        // Bounds Check
-        const px = ((this.mx - r.left) / r.width) * 100;
-        const py = ((this.my - r.top) / r.height) * 100;
-        
-        if((px<0||px>100||py<0||py>100) && this.state==='playing') return this.die();
+        if((mx<0||mx>100||my<0||my>100) && this.state==='playing') return this.die();
         if(this.mobile && !this.holding) return;
-
-        let safe = false; let touchingGoal = false;
-        
+        let safe = false;
         for(let hb of this.hitboxes) {
             const hr = hb.hit.getBoundingClientRect();
             const bx=(hr.left-r.left)/r.width*100, by=(hr.top-r.top)/r.height*100;
             const bw=hr.width/r.width*100, bh=hr.height/r.height*100;
 
-            if(px>bx && px<bx+bw && py>by && py<by+bh) {
+            if(mx>bx && mx<bx+bw && my>by && my<by+bh) {
                 if(hb.type === 'obs' && this.state==='playing') return this.die();
-                if(hb.type === 'path') safe = true;
-                if(hb.type === 'start') { safe = true; if(this.state === 'waiting') { this.state = 'playing'; } }
                 
-                if(hb.type === 'goal') { 
-                    safe=true; touchingGoal=true; 
-                    if(hb.hold > 0) {
-                        // Hold logic requires HUD elements which are in index.html but maybe not here?
-                        // I see catch-meter in HTML above. Good.
-                        this.goalTimer += 16;
-                        document.getElementById('catch-meter').style.display='block';
-                        document.getElementById('catch-meter').style.left = this.mx+'px'; 
-                        document.getElementById('catch-meter').style.top = (this.my-20)+'px';
-                        document.getElementById('catch-fill').style.width = (this.goalTimer/hb.hold*100)+'%';
-                        if(this.goalTimer >= hb.hold) this.win(hb.next);
-                    } else { this.win(hb.next); }
+                if(hb.type === 'path') safe = true;
+                
+                // Ghost Mode Logic
+                if(hb.type === 'start') { 
+                    safe = true; 
+                    if(this.state === 'waiting') { 
+                        this.state = 'playing'; 
+                        console.log("Game Active");
+                    } 
                 }
+                
+                if(hb.type === 'goal') { safe=true; this.start(hb.next); }
                 
                 if((hb.type==='btn' || hb.type==='trig') && hb.link) {
                     safe=true;
@@ -301,36 +270,27 @@ const Engine = {
         }
         
         document.getElementById('game').style.cursor = (this.state==='playing' && safe) ? 'crosshair' : 'default';
-        if(!touchingGoal) { this.goalTimer=0; document.getElementById('catch-meter').style.display='none'; }
-        if(this.state === 'playing' && !safe) this.die();
+        if(this.state==='playing' && !safe) this.die();
     },
-
-    win(next) { alert("Complete!"); this.start(next); },
-    die() { if(this.noclip) return; this.active = false; this.start(6); }, // Restart Level 6 (Checkpoint)
+    die() { if(this.noclip) return; this.active = false; this.start(6); },
+    reset() { this.active=false; this.hitboxes=[]; this.els.gfx.innerHTML=''; this.els.phy.innerHTML=''; document.getElementById('game').style.cursor='default'; },
+    toMenu() { this.reset(); document.getElementById('menu-screen').style.display='flex'; document.getElementById('db-room').innerText="ROOM: MENU"; },
     
-    reset() { 
-        this.active=false; this.hitboxes=[]; 
-        this.els.gfx.innerHTML=''; this.els.phy.innerHTML=''; 
-        document.getElementById('game').style.cursor='default';
-    },
-    toMenu() { window.location.href = '../index.html'; },
-    
-    // UI LOGIC (Simplified for Save1)
-    openSavesMenu() { /* Not needed here */ },
-    closeSaves() { /* Not needed here */ },
-    checkSave(n) { /* Not needed here */ },
-    loadSave(n) { /* Not needed here */ }
+    openSavesMenu() { document.getElementById('saves-screen').style.display='block'; document.getElementById('menu').style.display='none'; this.checkSave(1); this.checkSave(2); },
+    closeSaves() { document.getElementById('saves-screen').style.display='none'; document.getElementById('menu').style.display='block'; },
+    checkSave(n) { const has = localStorage.getItem(`touchYellow_save${n}`) === 'true'; document.getElementById(`circle-${n}`).className = `slot-btn slot-${has?'unlocked':'locked'}`; },
+    loadSave(n) { if(localStorage.getItem(`touchYellow_save${n}`) === 'true') location.href=`save/save${n}.html`; else alert("Locked!"); }
 };
 
 Engine.init();
 
 // --- COMMANDS ---
 Object.defineProperties(window, {
-    'debug': { get: function() { const g=document.getElementById('game'); g.classList.toggle('debug'); const on=g.classList.contains('debug'); document.getElementById('debug-ind').style.display=on?'block':'none'; localStorage.setItem('touchYellow_debug', on); return `Debug: ${on?"ON":"OFF"}`; } },
-    'noclip': { get: function() { Engine.noclip=!Engine.noclip; document.getElementById('cheat-ind').style.display=Engine.noclip?'block':'none'; localStorage.setItem('touchYellow_noclip', Engine.noclip); return `God Mode: ${Engine.noclip?"ON":"OFF"}`; } },
+    'debug': { get: function() { const g=document.getElementById('game'); g.classList.toggle('debug'); return `Debug: ${g.classList.contains('debug')?"ON":"OFF"}`; } },
+    'noclip': { get: function() { Engine.noclip=!Engine.noclip; document.getElementById('cheat-ind').style.display=Engine.noclip?'block':'none'; return `God Mode: ${Engine.noclip?"ON":"OFF"}`; } },
     'clear': { get: function() { localStorage.clear(); alert("Wiped"); window.location.href='../index.html'; return "Resetting..."; } }
 });
-window.menu='menu';
+window.s1='save1'; window.s2='save2'; window.menu='menu';
 window.load = function(t) {
     if(typeof t==='number') { Engine.start(t); return `Level ${t}`; }
     const s=String(t).toLowerCase();
