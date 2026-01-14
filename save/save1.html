@@ -67,7 +67,7 @@
             <div id="menu-screen">
                 <div class="save-title">Got Save!</div>
                 <div class="menu-btn-row">
-                    <div class="btn-circle" onmousedown="Engine.start(6)"></div>
+                    <div class="btn-circle" onmousedown="window.Engine.start(6)"></div>
                     <div class="btn-text">&lt;-Continue</div>
                 </div>
                 <div class="menu-btn-row">
@@ -128,7 +128,7 @@ if (localStorage.getItem('touchYellow_save1') !== 'true') {
 
 let GlobalLevels = {};
 
-const Engine = {
+window.Engine = {
     active: false, state: 'menu', mx:0, my:0, mobile:false, holding:false, hitboxes:[], noclip: false, cursorX:0, cursorY:0,
     els: { gfx:document.getElementById('gfx'), phy:document.getElementById('phy'), ui:document.getElementById('ui'), css:document.getElementById('dynamic-css') },
 
@@ -176,16 +176,7 @@ const Engine = {
         
         document.getElementById('db-room').innerText = "ROOM: LEVEL " + id;
         
-        const builder = {
-            path: (x,y,w,h) => this.spawn(x,y,w,h,'path'),
-            obs: (x,y,w,h,a) => this.spawn(x,y,w,h,'obs',a),
-            goal: (x,y,w,h,n) => this.spawn(x,y,w,h,'goal',n),
-            start: (x,y,w,h) => this.spawn(x,y,w,h,'start'),
-            btn: (x,y,w,h) => this.spawn(x,y,w,h,'btn'),
-            trig: (x,y,w,h) => this.spawn(x,y,w,h,'trig')
-        };
-
-        if(GlobalLevels[id]) {
+        if (GlobalLevels[id]) {
             if (GlobalLevels[id].world !== 2) { alert("Wrong World"); location.href='../index.html'; return; }
             this.buildLevel(GlobalLevels[id].objects);
         } else { 
@@ -288,17 +279,17 @@ const Engine = {
     loadSave(n) { if(localStorage.getItem(`touchYellow_save${n}`) === 'true') location.href=`save/save${n}.html`; else alert("Locked!"); }
 };
 
-Engine.init();
+window.Engine.init();
 
 // --- COMMANDS ---
 Object.defineProperties(window, {
     'debug': { get: function() { const g=document.getElementById('game'); g.classList.toggle('debug'); const on=g.classList.contains('debug'); document.getElementById('debug-ind').style.display=on?'block':'none'; localStorage.setItem('touchYellow_debug', on); return `Debug: ${on?"ON":"OFF"}`; } },
-    'noclip': { get: function() { Engine.noclip=!Engine.noclip; document.getElementById('cheat-ind').style.display=Engine.noclip?'block':'none'; localStorage.setItem('touchYellow_noclip', Engine.noclip); return `God Mode: ${Engine.noclip?"ON":"OFF"}`; } },
+    'noclip': { get: function() { window.Engine.noclip=!window.Engine.noclip; document.getElementById('cheat-ind').style.display=window.Engine.noclip?'block':'none'; localStorage.setItem('touchYellow_noclip', window.Engine.noclip); return `God Mode: ${window.Engine.noclip?"ON":"OFF"}`; } },
     'clear': { get: function() { localStorage.clear(); alert("Wiped"); window.location.href='../index.html'; return "Resetting..."; } }
 });
 window.s1='save1'; window.s2='save2'; window.menu='menu';
 window.load = function(t) {
-    if(typeof t==='number') { Engine.start(t); return `Level ${t}`; }
+    if(typeof t==='number') { window.Engine.start(t); return `Level ${t}`; }
     const s=String(t).toLowerCase();
     if(s==='menu'||s==='save') { window.location.href='../index.html'; return "Returning..."; }
     if(s==='save1'||s==='s1') { location.reload(); return "Reloading..."; }

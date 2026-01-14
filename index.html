@@ -6,6 +6,7 @@
     <title>Touch Yellow Web</title>
     <link href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Roboto:wght@900&display=swap" rel="stylesheet">
     <script>
+        // Clean URL
         if(window.location.pathname.endsWith('index.html')) {
             window.history.replaceState({}, document.title, window.location.pathname.replace('index.html', ''));
         }
@@ -102,8 +103,8 @@
         #db-coords { position:absolute; bottom:5px; right:5px; color:cyan; font-family:monospace; font-size:2vh; font-weight:bold; background:rgba(0,0,0,0.8); padding:2px 5px; border:1px solid cyan; }
         #db-room { position:absolute; bottom:5px; left:5px; color:cyan; font-family:monospace; font-size:2vh; font-weight:bold; background:rgba(0,0,0,0.8); padding:2px 5px; border:1px solid cyan; }
         
-        #cheat-ind { position:absolute; top:10px; left:10px; color:yellow; font-weight:bold; display:none; z-index:999; font-family:monospace; font-size:2vh; text-shadow:1px 1px 0 #000; }
-        #debug-ind { position:absolute; top:35px; left:10px; color:lime; font-weight:bold; display:none; z-index:999; font-family:monospace; font-size:2vh; text-shadow:1px 1px 0 #000; }
+        #cheat-ind { position:absolute; bottom:10px; left:10px; color:yellow; font-weight:bold; display:none; z-index:999; font-family:monospace; font-size:2vh; }
+        #debug-ind { position:absolute; bottom:35px; left:10px; color:lime; font-weight:bold; display:none; z-index:999; font-family:monospace; font-size:2vh; }
         #catch-meter { position:fixed; display:none; width:40px; height:6px; background:#333; border:1px solid white; border-radius:3px; pointer-events:none; z-index:9999; transform:translate(-50%,-20px); }
         #catch-fill { width:0%; height:100%; background:#00ff00; transition:width 0.05s linear; }
         #dynamic-css { display:none; }
@@ -150,6 +151,7 @@
         <div id="phy" class="layer"></div>
         <div id="ui" class="layer">
             
+            <!-- MAIN MENU -->
             <div id="menu" class="menu-bg">
                 <div class="grid-line grid-x"></div><div class="grid-line grid-y"></div>
                 <div id="title-wrapper">
@@ -159,12 +161,12 @@
 
                 <div id="grp-saves" class="btn-group">
                     <span class="btn-label">Saves -&gt;</span>
-                    <div class="circle-btn" onmousedown="Engine.openSavesMenu()"></div>
+                    <div class="circle-btn" onmousedown="window.Engine.openSavesMenu()"></div>
                 </div>
                 
                 <div id="grp-custom" class="btn-group">
                     <span class="btn-label">Custom -&gt;</span>
-                    <div class="circle-btn" style="background:#b0f; border-color:#80c;" onmousedown="Engine.loadCustom()"></div>
+                    <div class="circle-btn" style="background:#b0f; border-color:#80c;" onmousedown="window.Engine.loadCustom()"></div>
                 </div>
 
                 <div id="grp-mods" class="btn-group">
@@ -173,32 +175,33 @@
                 </div>
                 
                 <div id="grp-start" class="btn-group">
-                    <div class="circle-btn" onmousedown="Engine.start(1)"></div>
+                    <div class="circle-btn" onmousedown="window.Engine.start(1)"></div>
                     <span class="btn-label">&lt;- Start/Restart</span>
                 </div>
                 
                 <div id="grp-exit" class="btn-group">
-                    <div class="circle-btn" onmousedown="if(document.fullscreenElement) document.exitFullscreen(); Engine.toMenu();"></div>
+                    <div class="circle-btn" onmousedown="if(document.fullscreenElement) document.exitFullscreen(); window.Engine.toMenu();"></div>
                     <span class="btn-label">&lt;- Exit</span>
                 </div>
                 
-                <div id="mode-btn" onmousedown="Engine.toggleMode()">HOVER MODE</div>
+                <div id="mode-btn" onmousedown="window.Engine.toggleMode()">HOVER MODE</div>
             </div>
 
+            <!-- SAVE SELECT OVERLAY -->
             <div id="saves-screen">
                 <div class="save-title">SELECT SAVE</div>
                 <div class="save-row">
                     <div id="slot-1" class="slot-group">
-                        <div id="circle-1" class="slot-btn slot-locked" onmousedown="Engine.loadSave(1)"></div>
+                        <div id="circle-1" class="slot-btn slot-locked" onmousedown="window.Engine.loadSave(1)"></div>
                         <span class="btn-label">&lt;- Save 1</span>
                     </div>
                     <div id="slot-2" class="slot-group">
-                        <div id="circle-2" class="slot-btn slot-locked" onmousedown="Engine.loadSave(2)"></div>
+                        <div id="circle-2" class="slot-btn slot-locked" onmousedown="window.Engine.loadSave(2)"></div>
                         <span class="btn-label">&lt;- Save 2</span>
                     </div>
                 </div>
                 <div id="btn-back">
-                    <div class="back-circle" onmousedown="Engine.closeSaves()"></div>
+                    <div class="back-circle" onmousedown="window.Engine.closeSaves()"></div>
                     <span class="btn-label">&lt;- Back</span>
                 </div>
             </div>
@@ -222,7 +225,7 @@
             </div>
 
             <div id="start-curtain">
-                <div id="start-trigger" onmousedown="Engine.activateCustom()"></div>
+                <div id="start-trigger" onmousedown="window.Engine.activateCustom()"></div>
             </div>
 
             <div id="cheat-ind">NOCLIP ON</div>
@@ -272,7 +275,7 @@ const ModUI={
 
 let GlobalLevels = {};
 
-const Engine = {
+window.Engine = {
     active: false, state: 'menu', mx:0, my:0, mobile:false, holding:false, holdMode:false, hitboxes:[], noclip: false, goalTimer:0, linkPlay: false, cursorX:0, cursorY:0,
     els: { gfx:document.getElementById('gfx'), phy:document.getElementById('phy'), menu:document.getElementById('menu'), hud:document.getElementById('catch-meter'), fill:document.getElementById('catch-fill'), css:document.getElementById('dynamic-css'), curtain:document.getElementById('start-curtain'), trig:document.getElementById('start-trigger') },
 
@@ -352,16 +355,10 @@ const Engine = {
         this.state = (id==='custom') ? 'waiting' : 'playing'; 
         document.getElementById('db-room').innerText = (id==='custom') ? "ROOM: CUSTOM" : "ROOM: LEVEL " + id;
         
-        const builder = {
-            path: (x,y,w,h) => this.spawn(x,y,w,h,'path'),
-            obs: (x,y,w,h,a) => this.spawn(x,y,w,h,'obs',a),
-            goal: (x,y,w,h,n,t) => this.spawn(x,y,w,h,'goal',null,n,t),
-            trig: (x,y,w,h) => this.spawn(x,y,w,h,'trig')
-        };
-
-        if(id === 'custom') this.loadCustom(builder);
-        else if(GlobalLevels[id]) {
-            if(GlobalLevels[id].world !== 1) { alert("Wrong World"); location.href='save/save1.html'; return; }
+        if (id === 'custom') {
+            this.loadCustom();
+        } else if (GlobalLevels[id]) {
+            if (GlobalLevels[id].world !== 1) { alert("Wrong World"); location.href='save/save1.html'; return; }
             this.buildLevel(GlobalLevels[id].objects);
         } else { 
             alert("You Win!"); this.toMenu(); 
@@ -401,7 +398,7 @@ const Engine = {
     loadCustom(builder) {
         const raw = localStorage.getItem('ty_custom_level_data');
         if (!raw) { alert("No custom level."); this.toMenu(); return; }
-        try { this.parseCookie(raw, builder); } catch(e) { alert("Corrupt"); this.toMenu(); }
+        try { this.parseCookie(raw); } catch(e) { alert("Corrupt"); this.toMenu(); }
         
         const startObj = this.hitboxes.find(o => o.type === 'start');
         if(startObj) {
@@ -414,27 +411,21 @@ const Engine = {
     
     activateCustom() { this.els.curtain.style.display = 'none'; this.state = 'playing'; },
 
-    parseCookie(jsonStr, d) {
+    parseCookie(jsonStr) {
         const data = JSON.parse(jsonStr);
-        let css = "";
-        data.forEach(o => {
-            const types = ['path','obs','goal','start','btn','trig'];
-            const t = types[o[0]];
-            let anim = null;
-            if(o[5] && o[5].length) {
-                const nm = `a-${Math.random().toString(36).substr(2)}`;
-                css += `@keyframes ${nm} { 0%{transform:translate(0,0)} `;
-                o[5].forEach((k,i) => css += `${Math.round((i+1)/(o[5].length+1)*100)}%{transform:translate(${k[0]}%,${k[1]}%)} `);
-                css += `100%{transform:translate(0,0)} } `;
-                anim = `${nm} ${o[9]||2}s linear infinite`;
-            }
-            const type = (t==='start') ? 'start' : t;
-            const obj = this.spawn(o[1], o[2], o[3], o[4], type, anim, (t==='goal'?'menu':null));
-            if(o[6]) obj.tag = o[6]; if(o[7]) obj.link = o[7];
-            if(o[8]) { obj.vis.classList.add('paused'); obj.hit.classList.add('paused'); }
-            if(o[10]) obj.vis.style.zIndex = o[10];
+        // Support verbose objects from JSON or minified array
+        const objects = data.map(o => {
+            if (o.type && typeof o.type === 'string') return o;
+            const t = ['path','obs','goal','start','btn','trig'][o[0]];
+            return {
+                type: (t==='start'?'start':t),
+                x: o[1], y: o[2], w: o[3], h: o[4],
+                kfs: o[5], tag: o[6], link: o[7], 
+                wait: !!o[8], dur: o[9]||2, z: o[10]||10, r: o[11]||0, loop: (o[12]!==0),
+                next: (t==='goal' && o[7]) ? o[7] : 'menu'
+            };
         });
-        this.els.css.innerHTML += css;
+        this.buildLevel(objects);
     },
 
     spawn(x,y,w,h,type,anim,next,holdTime) {
@@ -468,30 +459,18 @@ const Engine = {
 
             if(mx>bx && mx<bx+bw && my>by && my<by+bh) {
                 if(hb.type === 'obs' && this.state==='playing') return this.die();
-                
                 if(hb.type === 'path') safe = true;
-                
-                // Ghost Mode Logic
-                if(hb.type === 'start') { 
-                    safe = true; 
-                    if(this.state === 'waiting') { 
-                        this.state = 'playing'; 
-                        console.log("Game Active");
-                    } 
-                }
-                
+                if(hb.type === 'start') { safe = true; if(this.state === 'waiting') { this.state = 'playing'; } }
                 if(hb.type === 'goal') { 
                     safe=true; touchingGoal=true; 
                     if(hb.hold > 0) {
                         this.goalTimer += 16;
                         this.els.hud.style.display='block';
-                        this.els.hud.style.left = this.cursorX+'%'; 
-                        this.els.hud.style.top = (this.cursorY-5)+'%';
+                        this.els.hud.style.left = this.mx+'px'; this.els.hud.style.top = (this.my-20)+'px';
                         this.els.fill.style.width = (this.goalTimer/hb.hold*100)+'%';
                         if(this.goalTimer >= hb.hold) this.win(hb.next);
                     } else { this.win(hb.next); }
                 }
-                
                 if((hb.type==='btn' || hb.type==='trig') && hb.link) {
                     safe=true;
                     this.hitboxes.forEach(t => { if(t.tag === hb.link) { t.vis.classList.remove('paused'); t.hit.classList.remove('paused'); }});
@@ -499,7 +478,6 @@ const Engine = {
                 }
             }
         }
-        
         document.getElementById('game').style.cursor = (this.state==='playing' && safe) ? 'crosshair' : 'default';
         if(!touchingGoal) { this.goalTimer=0; this.els.hud.style.display='none'; }
         if(this.state === 'playing' && !safe) this.die();
@@ -514,7 +492,6 @@ const Engine = {
         this.els.curtain.style.display = 'none';
     },
     toMenu() { this.reset(); this.els.menu.style.display='block'; document.getElementById('db-room').innerText="ROOM: MENU"; },
-    
     openSavesMenu() { document.getElementById('saves-screen').style.display='block'; document.getElementById('menu').style.display='none'; this.checkSave(1); this.checkSave(2); },
     closeSaves() { document.getElementById('saves-screen').style.display='none'; document.getElementById('menu').style.display='block'; },
     checkSave(n) { const has = localStorage.getItem(`touchYellow_save${n}`) === 'true'; document.getElementById(`circle-${n}`).className = `slot-btn slot-${has?'unlocked':'locked'}`; },
@@ -524,23 +501,23 @@ const Engine = {
 // BOOTSTRAP
 ModLoader.init(() => {
     console.log("[System] Starting Engine...");
-    Engine.init();
+    window.Engine.init();
 });
 
 // --- COMMANDS ---
 Object.defineProperties(window, {
     'debug': { get: function() { const g=document.getElementById('game'); g.classList.toggle('debug'); const on=g.classList.contains('debug'); document.getElementById('debug-ind').style.display=on?'block':'none'; localStorage.setItem('touchYellow_debug', on); return `Debug: ${on?"ON":"OFF"}`; } },
-    'noclip': { get: function() { Engine.noclip=!Engine.noclip; document.getElementById('cheat-ind').style.display=Engine.noclip?'block':'none'; localStorage.setItem('touchYellow_noclip', Engine.noclip); return `God Mode: ${Engine.noclip?"ON":"OFF"}`; } },
+    'noclip': { get: function() { window.Engine.noclip=!window.Engine.noclip; document.getElementById('cheat-ind').style.display=window.Engine.noclip?'block':'none'; localStorage.setItem('touchYellow_noclip', window.Engine.noclip); return `God Mode: ${window.Engine.noclip?"ON":"OFF"}`; } },
     'clear': { get: function() { localStorage.clear(); alert("Wiped"); window.location.href='index.html'; return "Resetting..."; } }
 });
 window.s1='save1'; window.s2='save2'; window.menu='menu';
 window.load = function(t) {
-    if(typeof t==='number') { Engine.start(t); return `Level ${t}`; }
+    if(typeof t==='number') { window.Engine.start(t); return `Level ${t}`; }
     const s=String(t).toLowerCase();
-    if(s==='menu') { Engine.toMenu(); return "Menu"; }
-    if(s==='save'||s==='saves') { Engine.openSavesMenu(); return "Saves"; }
+    if(s==='menu') { window.Engine.toMenu(); return "Menu"; }
+    if(s==='save'||s==='saves') { window.Engine.openSavesMenu(); return "Saves"; }
     if(s==='save1'||s==='s1') { localStorage.setItem('touchYellow_save1','true'); location.href='save/save1.html'; return "World 2"; }
-    if(s==='save2'||s==='s2') { localStorage.setItem('touchYellow_save2','true'); alert("Unlocked 2"); Engine.openSavesMenu(); return "Unlock"; }
+    if(s==='save2'||s==='s2') { localStorage.setItem('touchYellow_save2','true'); alert("Unlocked 2"); window.Engine.openSavesMenu(); return "Unlock"; }
 };
 </script>
 </body>
