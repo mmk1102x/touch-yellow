@@ -85,7 +85,7 @@
         .btn { background:#33cc33; color:#33cc33; } .btn.on { background:#228822; color:#228822; }
         .paused { animation-play-state: paused !important; }
         
-        /* DEBUG */
+        /* DEBUG VISUALS */
         .hitbox { position:absolute; z-index:400; opacity:0; pointer-events:none; }
         .debug .hitbox { opacity:1 !important; }
         .debug .hitbox.path { background:transparent; border:none; }
@@ -94,6 +94,7 @@
         .debug .hitbox.trig, .debug .hitbox.btn { background:rgba(148,0,211,0.5); border:2px dashed magenta; }
         .debug .hitbox.start { background:rgba(0,255,0,0.1); border:1px dotted lime; }
 
+        /* DEBUG OVERLAY */
         .debug-overlay { display:none; pointer-events:none; position:absolute; top:0; left:0; width:100%; height:100%; z-index:9999; }
         .debug .debug-overlay { display:block; }
         #db-cross-x { position:absolute; width:100%; height:1px; background-color:cyan; left:0; }
@@ -118,6 +119,7 @@
         @keyframes safeRoomPatrol { 0% {transform:translate(0,0)} 25%{transform:translate(1000%,-20%)} 50%{transform:translate(500%,20%)} 75%{transform:translate(1000%,20%)} 90%{transform:translate(500%,-20%)} 100%{transform:translate(0,0)} }
         @keyframes superCrazyMove { 0% { transform: translate(0,0); } 10% { transform: translate(800%, 200%); } 20% { transform: translate(200%, 400%); } 30% { transform: translate(600%, 0%); } 40% { transform: translate(0%, 300%); } 50% { transform: translate(900%, 300%); } 60% { transform: translate(400%, 100%); } 70% { transform: translate(100%, 0%); } 80% { transform: translate(700%, 400%); } 90% { transform: translate(300%, 100%); } 100% { transform: translate(0,0); } }
 
+        /* MOBILE */
         @media screen and (orientation: portrait) {
             body { position: fixed; width: 100%; height: 100%; }
             #game {
@@ -230,7 +232,7 @@
 
 <script>
 // --- MOD LOADER (Async IndexedDB) ---
-const ModDB={db:null,open:()=>new Promise((r,j)=>{const q=indexedDB.open("TouchYellowMods",1);q.onupgradeneeded=e=>{if(!e.target.result.objectStoreNames.contains('mods'))e.target.result.createObjectStore('mods',{keyPath:'id'});};q.onsuccess=e=>{ModDB.db=e.target.result;r();};q.onerror=e=>j(e);}),save:m=>new Promise((r,j)=>{const t=ModDB.db.transaction(['mods'],'readwrite');t.objectStore('mods').put(m);t.oncomplete=()=>r();t.onerror=()=>j(t.error);}),getAll:()=>new Promise(r=>{if(!ModDB.db)return r([]);const t=ModDB.db.transaction(['mods'],'readonly');const q=t.objectStore('mods').getAll();q.onsuccess=()=>r(q.result);}),delete:id=>{ModDB.db.transaction(['mods'],'readwrite').objectStore('mods').delete(id);}};
+const ModDB={db:null,open:()=>new Promise((r,j)=>{const q=indexedDB.open("TouchYellowMods",2);q.onupgradeneeded=e=>{if(!e.target.result.objectStoreNames.contains('mods'))e.target.result.createObjectStore('mods',{keyPath:'id'});};q.onsuccess=e=>{ModDB.db=e.target.result;r();};q.onerror=e=>j(e);}),save:m=>new Promise((r,j)=>{const t=ModDB.db.transaction(['mods'],'readwrite');t.objectStore('mods').put(m);t.oncomplete=()=>r();t.onerror=()=>j(t.error);}),getAll:()=>new Promise(r=>{if(!ModDB.db)return r([]);const t=ModDB.db.transaction(['mods'],'readonly');const q=t.objectStore('mods').getAll();q.onsuccess=()=>r(q.result);}),delete:id=>{ModDB.db.transaction(['mods'],'readwrite').objectStore('mods').delete(id);}};
 const ModLoader={mods:[],init:async(cb)=>{console.log("[System] Booting ModLoader...");try{await ModDB.open();ModLoader.mods=await ModDB.getAll();ModLoader.mods.forEach(m=>{if(m.enabled){try{const f=new Function('ModAPI','Engine','Net',m.code);f(window.ModAPI,(window.Engine||{}),(window.Net||{}));console.log(`[Mod] Loaded: ${m.name}`);}catch(e){console.error(e);}}});}catch(e){console.error(e);}if(cb)cb();},install:async(d)=>{if(!d.name||!d.code)return alert("Invalid Mod");d.id=Date.now().toString();d.enabled=true;await ModDB.save(d);ModLoader.mods.push(d);ModUI.render();ModUI.triggerRestart();},delete:async(id)=>{if(confirm("Delete?")){ModLoader.mods=ModLoader.mods.filter(m=>m.id!==id);await ModDB.delete(id);ModUI.render();ModUI.triggerRestart();}},toggle:async(id)=>{const m=ModLoader.mods.find(x=>x.id===id);if(m){m.enabled=!m.enabled;await ModDB.save(m);ModUI.render();ModUI.triggerRestart();}}};
 window.ModAPI={hook:(t,f)=>{const p=t.split('.');const o=window[p[0]];if(o&&o[p[1]]){const org=o[p[1]].bind(o);o[p[1]]=(...a)=>f(org,...a);}}};
 
@@ -361,7 +363,9 @@ const Engine = {
         else if(GlobalLevels[id]) {
             if(GlobalLevels[id].world !== 1) { alert("Wrong World"); location.href='save/save1.html'; return; }
             this.buildLevel(GlobalLevels[id].objects);
-        } else { alert("You Win!"); this.toMenu(); }
+        } else { 
+            alert("You Win!"); this.toMenu(); 
+        }
     },
 
     buildLevel(objects) {
@@ -397,7 +401,7 @@ const Engine = {
     loadCustom(builder) {
         const raw = localStorage.getItem('ty_custom_level_data');
         if (!raw) { alert("No custom level."); this.toMenu(); return; }
-        try { this.parseCookie(raw); } catch(e) { alert("Corrupt"); this.toMenu(); }
+        try { this.parseCookie(raw, builder); } catch(e) { alert("Corrupt"); this.toMenu(); }
         
         const startObj = this.hitboxes.find(o => o.type === 'start');
         if(startObj) {
@@ -410,23 +414,27 @@ const Engine = {
     
     activateCustom() { this.els.curtain.style.display = 'none'; this.state = 'playing'; },
 
-    parseCookie(jsonStr) {
+    parseCookie(jsonStr, d) {
         const data = JSON.parse(jsonStr);
         let css = "";
         data.forEach(o => {
-            if (o.type && typeof o.type === 'string') {
-                // Already verbose, pass to builder
-            } else {
-                // Convert minified to verbose
-                const t = ['path','obs','goal','start','btn','trig'][o[0]];
-                o.type = (t==='start'?'start':t);
-                o.x=o[1]; o.y=o[2]; o.w=o[3]; o.h=o[4];
-                o.kfs=o[5]; o.tag=o[6]; o.link=o[7]; 
-                o.wait=!!o[8]; o.dur=o[9]||2; o.z=o[10]||10; o.r=o[11]||0; o.loop=(o[12]!==0);
-                o.next = (t==='goal' && o[7]) ? o[7] : 'menu';
+            const types = ['path','obs','goal','start','btn','trig'];
+            const t = types[o[0]];
+            let anim = null;
+            if(o[5] && o[5].length) {
+                const nm = `a-${Math.random().toString(36).substr(2)}`;
+                css += `@keyframes ${nm} { 0%{transform:translate(0,0)} `;
+                o[5].forEach((k,i) => css += `${Math.round((i+1)/(o[5].length+1)*100)}%{transform:translate(${k[0]}%,${k[1]}%)} `);
+                css += `100%{transform:translate(0,0)} } `;
+                anim = `${nm} ${o[9]||2}s linear infinite`;
             }
+            const type = (t==='start') ? 'start' : t;
+            const obj = this.spawn(o[1], o[2], o[3], o[4], type, anim, (t==='goal'?'menu':null));
+            if(o[6]) obj.tag = o[6]; if(o[7]) obj.link = o[7];
+            if(o[8]) { obj.vis.classList.add('paused'); obj.hit.classList.add('paused'); }
+            if(o[10]) obj.vis.style.zIndex = o[10];
         });
-        this.buildLevel(data);
+        this.els.css.innerHTML += css;
     },
 
     spawn(x,y,w,h,type,anim,next,holdTime) {
@@ -506,6 +514,7 @@ const Engine = {
         this.els.curtain.style.display = 'none';
     },
     toMenu() { this.reset(); this.els.menu.style.display='block'; document.getElementById('db-room').innerText="ROOM: MENU"; },
+    
     openSavesMenu() { document.getElementById('saves-screen').style.display='block'; document.getElementById('menu').style.display='none'; this.checkSave(1); this.checkSave(2); },
     closeSaves() { document.getElementById('saves-screen').style.display='none'; document.getElementById('menu').style.display='block'; },
     checkSave(n) { const has = localStorage.getItem(`touchYellow_save${n}`) === 'true'; document.getElementById(`circle-${n}`).className = `slot-btn slot-${has?'unlocked':'locked'}`; },

@@ -100,7 +100,13 @@ if (localStorage.getItem('touchYellow_save1') !== 'true') {
             if(o&&o[p[1]]) { const org=o[p[1]].bind(o); o[p[1]]=(...a)=>f(org,...a); }
         }
     };
-    const req = indexedDB.open("TouchYellowMods", 1);
+    const req = indexedDB.open("TouchYellowMods", 2);
+    req.onupgradeneeded = (e) => {
+        const db = e.target.result;
+        if (!db.objectStoreNames.contains('mods')) {
+            db.createObjectStore('mods', { keyPath: 'id' });
+        }
+    };
     req.onsuccess = (e) => {
         const db = e.target.result;
         if(!db.objectStoreNames.contains('mods')) return;
@@ -286,8 +292,8 @@ Engine.init();
 
 // --- COMMANDS ---
 Object.defineProperties(window, {
-    'debug': { get: function() { const g=document.getElementById('game'); g.classList.toggle('debug'); return `Debug: ${g.classList.contains('debug')?"ON":"OFF"}`; } },
-    'noclip': { get: function() { Engine.noclip=!Engine.noclip; document.getElementById('cheat-ind').style.display=Engine.noclip?'block':'none'; return `God Mode: ${Engine.noclip?"ON":"OFF"}`; } },
+    'debug': { get: function() { const g=document.getElementById('game'); g.classList.toggle('debug'); const on=g.classList.contains('debug'); document.getElementById('debug-ind').style.display=on?'block':'none'; localStorage.setItem('touchYellow_debug', on); return `Debug: ${on?"ON":"OFF"}`; } },
+    'noclip': { get: function() { Engine.noclip=!Engine.noclip; document.getElementById('cheat-ind').style.display=Engine.noclip?'block':'none'; localStorage.setItem('touchYellow_noclip', Engine.noclip); return `God Mode: ${Engine.noclip?"ON":"OFF"}`; } },
     'clear': { get: function() { localStorage.clear(); alert("Wiped"); window.location.href='../index.html'; return "Resetting..."; } }
 });
 window.s1='save1'; window.s2='save2'; window.menu='menu';
