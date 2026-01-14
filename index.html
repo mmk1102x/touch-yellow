@@ -5,13 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Touch Yellow Web</title>
     <link href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Roboto:wght@900&display=swap" rel="stylesheet">
+    <script>
+        if(window.location.pathname.endsWith('index.html')) {
+            window.history.replaceState({}, document.title, window.location.pathname.replace('index.html', ''));
+        }
+    </script>
     <style>
         body { margin:0; background:#000; overflow:hidden; font-family:'Roboto',sans-serif; height:100vh; display:flex; justify-content:center; align-items:center; user-select:none; touch-action:none; -webkit-user-select:none; }
         #game { width:100%; max-width:177.7vh; aspect-ratio:16/9; position:relative; background:#000; box-shadow:0 0 50px #333; }
         .layer { position:absolute; inset:0; pointer-events:none; }
         #ui { z-index:500; pointer-events:auto; }
 
-        /* MENU */
+        /* MENU STYLES */
         .menu-bg { background-color:#4d4d4d; width:100%; height:100%; position:absolute; top:0; left:0; pointer-events:auto; cursor:default; }
         .grid-line { position:absolute; border:1px dashed rgba(255,255,255,0.3); pointer-events:none; }
         .grid-x { width:100%; height:0; top:50%; left:0; }
@@ -31,7 +36,7 @@
         .circle-btn:active { transform:scale(0.9); }
         
         #grp-saves   { top:22%; right:5%; }
-        #grp-custom  { top:38%; right:5%; } /* Replaces Creator */
+        #grp-custom  { top:38%; right:5%; }
         #grp-start   { bottom:28%; left:15%; }
         #grp-exit    { bottom:8%; left:15%; }
 
@@ -85,15 +90,15 @@
         #catch-fill { width:0%; height:100%; background:#00ff00; transition:width 0.05s linear; }
         #dynamic-css { display:none; }
 
-        @keyframes slicerMove { 0% { transform: translateY(0%); } 50% { transform: translateY(200%); } 100% { transform: translateY(0%); } }
-        @keyframes waterfallDrop { 0% { transform: translateY(-250%); } 100% { transform: translateY(250%); } }
-        @keyframes crazyMove { 0% { transform: translate(0, 0); } 20% { transform: translate(250%, -350%); } 40% { transform: translate(250%, 0%); } 60% { transform: translate(120%, -150%); } 80% { transform: translate(0, -350%); } 100% { transform: translate(0, 0); } }
-        @keyframes safeRoomPatrol { 0% {transform:translate(0,0)} 25%{transform:translate(1000%,-20%)} 50%{transform:translate(500%,20%)} 75%{transform:translate(1000%,20%)} 90%{transform:translate(500%,-20%)} 100%{transform:translate(0,0)} }
-        @keyframes superCrazyMove { 0% { transform: translate(0,0); } 10% { transform: translate(800%, 200%); } 20% { transform: translate(200%, 400%); } 30% { transform: translate(600%, 0%); } 40% { transform: translate(0%, 300%); } 50% { transform: translate(900%, 300%); } 60% { transform: translate(400%, 100%); } 70% { transform: translate(100%, 0%); } 80% { transform: translate(700%, 400%); } 90% { transform: translate(300%, 100%); } 100% { transform: translate(0,0); } }
-
+        @keyframes spawnIn { 0% { transform: scale(0); } 100% { transform: scale(1); } }
         @media screen and (orientation: portrait) {
             body { position: fixed; width: 100%; height: 100%; }
-            #game { position: absolute; top: 50%; left: 50%; width: 100vh !important; height: 100vw !important; transform: translate(-50%, -50%) rotate(90deg); max-width: none !important; aspect-ratio: auto !important; box-shadow: none !important; }
+            #game {
+                position: absolute; top: 50%; left: 50%;
+                width: 100vh !important; height: 100vw !important;
+                transform: translate(-50%, -50%) rotate(90deg);
+                max-width: none !important; aspect-ratio: auto !important; box-shadow: none !important;
+            }
             .circle-btn { width: 8vw !important; height: 8vw !important; border-width: 0.5vw !important; }
             .btn-label { font-size: 3.5vw !important; text-shadow: none !important; }
             .title-text { font-size: 14vw !important; }
@@ -128,8 +133,7 @@
                     <div class="circle-btn" onmousedown="Engine.openSavesMenu()"></div>
                 </div>
                 
-                <!-- CREATOR BUTTON REMOVED. REPLACED BY CUSTOM LEVEL LOADER -->
-                <div id="grp-custom" class="btn-group" style="top:38%; right:5%;">
+                <div id="grp-custom" class="btn-group">
                     <span class="btn-label">Custom -&gt;</span>
                     <div class="circle-btn" style="background:#b0f; border-color:#80c;" onmousedown="Engine.loadCustom()"></div>
                 </div>
@@ -267,13 +271,33 @@ const Engine = {
         }
     },
 
-    buildLevel(data) {
-        data.forEach(o => {
-            const obj = this.spawn(o.x, o.y, o.w, o.h, o.type, o.anim, o.next, o.hold);
-            if(o.tag) obj.tag = o.tag;
+    buildLevel(objects) {
+        this.els.css.innerHTML = "";
+        objects.forEach(o => {
+            let animName = o.anim;
+            if (o.kfs && o.kfs.length > 0) {
+                const nm = `anim-${Math.random().toString(36).substr(2,5)}`;
+                let css = `@keyframes ${nm} { 0% { transform: translate(0,0) rotate(${o.r || 0}deg); } `;
+                o.kfs.forEach((k, i) => { 
+                    const pct = Math.round((i + 1) / (o.kfs.length + 1) * 100); 
+                    const kx = (Array.isArray(k) ? k[0] : k.x)||0;
+                    const ky = (Array.isArray(k) ? k[1] : k.y)||0;
+                    css += `${pct}% { transform: translate(${kx}%, ${ky}%) rotate(${o.r || 0}deg); } `; 
+                });
+                css += `100% { transform: translate(0,0) rotate(${o.r || 0}deg); } } `;
+                this.els.css.innerHTML += css;
+                animName = `${nm} ${o.dur || 2}s linear ${o.loop !== false ? 'infinite' : 'forwards'}`;
+            }
+
+            const obj = this.spawn(o.x, o.y, o.w, o.h, o.type, animName, o.next, o.hold);
+            if(o.tag) { obj.tag = o.tag; obj.vis.id = "run-" + o.tag; }
             if(o.link) obj.link = o.link;
             if(o.wait) { obj.vis.classList.add('paused'); obj.hit.classList.add('paused'); }
             if(o.z) obj.vis.style.zIndex = o.z;
+            if(o.r) {
+                obj.vis.style.transform = `rotate(${o.r}deg)`;
+                obj.hit.style.transform = `rotate(${o.r}deg)`;
+            }
         });
     },
 
@@ -296,24 +320,25 @@ const Engine = {
     parseCookie(jsonStr) {
         const data = JSON.parse(jsonStr);
         let css = "";
-        data.forEach(o => {
-            const types = ['path','obs','goal','start','btn','trig'];
-            const t = types[o[0]];
-            let anim = null;
-            if(o[5] && o[5].length) {
-                const nm = `a-${Math.random().toString(36).substr(2)}`;
-                css += `@keyframes ${nm} { 0%{transform:translate(0,0)} `;
-                o[5].forEach((k,i) => css += `${Math.round((i+1)/(o[5].length+1)*100)}%{transform:translate(${k[0]}%,${k[1]}%)} `);
-                css += `100%{transform:translate(0,0)} } `;
-                anim = `${nm} ${o[9]||2}s linear infinite`;
-            }
-            const type = (t==='start') ? 'start' : t;
-            const obj = this.spawn(o[1], o[2], o[3], o[4], type, anim, (t==='goal'?'menu':null));
-            if(o[6]) obj.tag = o[6]; if(o[7]) obj.link = o[7];
-            if(o[8]) { obj.vis.classList.add('paused'); obj.hit.classList.add('paused'); }
-            if(o[10]) obj.vis.style.zIndex = o[10];
+        // Support verbose objects from JSON or minified array from older creator
+        // Assume verbose object if o.type is string
+        const objects = data.map(o => {
+            if (o.type && typeof o.type === 'string') return o; // Already verbose
+            
+            // Fallback for array format
+            const t = ['path','obs','goal','start','btn','trig'][o[0]];
+            return {
+                type: (t==='start'?'start':t),
+                x: o[1], y: o[2], w: o[3], h: o[4],
+                kfs: o[5], 
+                tag: o[6], link: o[7], 
+                wait: !!o[8], dur: o[9]||2, 
+                z: o[10]||10, r: o[11]||0, 
+                loop: (o[12]!==0),
+                next: (t==='goal' && o[7]) ? o[7] : 'menu'
+            };
         });
-        this.els.css.innerHTML += css;
+        this.buildLevel(objects);
     },
 
     spawn(x,y,w,h,type,anim,next,holdTime) {
@@ -333,8 +358,8 @@ const Engine = {
         requestAnimationFrame(()=>this.loop());
         if(!this.active) return;
         const r = document.getElementById('game').getBoundingClientRect();
-        const mx = (this.mx - r.left)/r.width*100;
-        const my = (this.my - r.top)/r.height*100;
+        const mx = this.cursorX;
+        const my = this.cursorY;
         
         if((mx<0||mx>100||my<0||my>100) && this.state==='playing') return this.die();
         if(this.holdMode && !this.holding) return;
@@ -388,6 +413,7 @@ const Engine = {
 
 Engine.init();
 
+// --- COMMANDS ---
 Object.defineProperties(window, {
     'debug': { get: function() { const g=document.getElementById('game'); g.classList.toggle('debug'); const on=g.classList.contains('debug'); document.getElementById('debug-ind').style.display=on?'block':'none'; localStorage.setItem('touchYellow_debug', on); return `Debug: ${on?"ON":"OFF"}`; } },
     'noclip': { get: function() { Engine.noclip=!Engine.noclip; document.getElementById('cheat-ind').style.display=Engine.noclip?'block':'none'; localStorage.setItem('touchYellow_noclip', Engine.noclip); return `God Mode: ${Engine.noclip?"ON":"OFF"}`; } },

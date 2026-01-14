@@ -95,7 +95,7 @@ if (localStorage.getItem('touchYellow_save1') !== 'true') {
 let GlobalLevels = {};
 
 const Engine = {
-    active: false, state: 'menu', mx:0, my:0, mobile:false, holding:false, hitboxes:[], noclip: false,
+    active: false, state: 'menu', mx:0, my:0, mobile:false, holding:false, hitboxes:[], noclip: false, cursorX:0, cursorY:0,
     els: { gfx:document.getElementById('gfx'), phy:document.getElementById('phy'), ui:document.getElementById('ui'), curtain:null, trig:null },
     
     async init() {
@@ -121,6 +121,7 @@ const Engine = {
         const up = () => { this.holding=false; if(this.active && this.mobile) this.die(); };
         window.addEventListener('mousedown', down); window.addEventListener('touchstart', down);
         window.addEventListener('mouseup', up); window.addEventListener('touchend', up);
+        window.addEventListener('touchcancel', up);
         window.addEventListener('mousedown', e => { if(e.button===2 && this.active && !this.noclip) this.die(); });
         
         if(localStorage.getItem('touchYellow_noclip')==='true'){ this.noclip=true; document.getElementById('cheat-ind').style.display='block'; }
@@ -146,16 +147,41 @@ const Engine = {
     },
 
     buildLevel(objects) {
+        this.els.css.innerHTML = "";
         objects.forEach(o => {
-            const obj = this.spawn(o.x, o.y, o.w, o.h, o.type, o.anim, o.next, o.hold);
+            let animName = o.anim;
+            if (o.kfs && o.kfs.length > 0) {
+                const nm = `anim-${Math.random().toString(36).substr(2,5)}`;
+                let css = `@keyframes ${nm} { 0% { transform: translate(0,0) rotate(${o.r || 0}deg); } `;
+                o.kfs.forEach((k, i) => {
+                    const pct = Math.round((i + 1) / (o.kfs.length + 1) * 100);
+                    const kx = (Array.isArray(k) ? k[0] : k.x)||0;
+                    const ky = (Array.isArray(k) ? k[1] : k.y)||0;
+                    css += `${pct}% { transform: translate(${kx}%, ${ky}%) rotate(${o.r || 0}deg); } `;
+                });
+                css += `100% { transform: translate(0,0) rotate(${o.r || 0}deg); } } `;
+                this.els.css.innerHTML += css;
+                animName = `${nm} ${o.dur || 2}s linear ${o.loop !== false ? 'infinite' : 'forwards'}`;
+            }
+
+            const obj = this.spawn(o.x, o.y, o.w, o.h, o.type, animName, o.next, o.hold);
             if(o.tag) obj.tag = o.tag;
             if(o.link) obj.link = o.link;
             if(o.wait) { obj.vis.classList.add('paused'); obj.hit.classList.add('paused'); }
             if(o.z) obj.vis.style.zIndex = o.z;
         });
+        
+        // Show Blue Screen Logic (Required for World 2)
+        const startObj = this.hitboxes.find(o => o.type === 'start');
+        if(startObj) {
+            this.els.curtain.style.display = 'block';
+            const s = startObj.hit.style;
+            const sx=parseFloat(s.left), sy=parseFloat(s.top), sw=parseFloat(s.width), sh=parseFloat(s.height);
+            Object.assign(this.els.trig.style, { left: (sx + sw/2) + '%', top: (sy + sh/2) + '%', width: sw + '%', height: sh + '%' });
+        }
     },
-
-    spawn(x,y,w,h,type,anim,next) {
+    
+    spawn(x,y,w,h,type,anim,next,holdTime) {
         const s = {left:x+'%', top:y+'%', width:w+'%', height:h+'%'};
         const v = document.createElement('div'); v.className=`obj ${type}`; Object.assign(v.style, s);
         if(anim) v.style.animation = anim;
@@ -163,8 +189,9 @@ const Engine = {
         const p = document.createElement('div'); p.className=`hitbox ${type}`; Object.assign(p.style, s);
         if(anim) p.style.animation = anim;
         this.els.phy.appendChild(p);
-        const obj = { vis:v, hit:p, type, next, tag:"", link:"" };
-        this.hitboxes.push(obj); return obj;
+        const obj = { vis:v, hit:p, type, next, tag:"", link:"", hold:holdTime||0, style:s };
+        this.hitboxes.push(obj);
+        return obj;
     },
 
     loop() {
@@ -187,6 +214,7 @@ const Engine = {
                 
                 if(hb.type === 'path') safe = true;
                 
+                // Ghost Mode Logic
                 if(hb.type === 'start') { 
                     safe = true; 
                     if(this.state === 'waiting') { 
@@ -204,6 +232,7 @@ const Engine = {
                 }
             }
         }
+        
         document.getElementById('game').style.cursor = (this.state==='playing' && safe) ? 'crosshair' : 'default';
         if(this.state==='playing' && !safe) this.die();
     },
@@ -216,7 +245,6 @@ const Engine = {
     checkSave(n) { const has = localStorage.getItem(`touchYellow_save${n}`) === 'true'; document.getElementById(`circle-${n}`).className = `slot-btn slot-${has?'unlocked':'locked'}`; },
     loadSave(n) { if(localStorage.getItem(`touchYellow_save${n}`) === 'true') location.href=`save/save${n}.html`; else alert("Locked!"); }
 };
-
 Engine.init();
 
 // --- COMMANDS ---

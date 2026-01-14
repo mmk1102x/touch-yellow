@@ -19,7 +19,7 @@
             {"type":"path", "x":74.25, "y":18, "w":7.87, "h":38},
             {"type":"path", "x":37.12, "y":18, "w":45, "h":14},
             {"type":"path", "x":37.12, "y":4, "w":7.87, "h":28},
-            {"type":"obs", "x":35, "y":41, "w":4.7, "h":21, "anim":"slicerMove 2s linear infinite"},
+            {"type":"obs", "x":35, "y":41, "w":4.7, "h":21, "kfs":[[0,20]], "dur":2},
             {"type":"goal", "x":20, "y":63, "w":6.75, "h":12, "next":3}
         ]
     },
@@ -32,10 +32,10 @@
             {"type":"path", "x":74.25, "y":18, "w":7.87, "h":38},
             {"type":"path", "x":37.12, "y":18, "w":45, "h":14},
             {"type":"goal", "x":55, "y":4, "w":7.87, "h":14, "next":4},
-            {"type":"obs", "x":32, "y":41, "w":4.7, "h":21, "anim":"slicerMove 2s linear infinite"},
-            {"type":"obs", "x":42, "y":21, "w":4.7, "h":21, "anim":"slicerMove 3s linear infinite"},
-            {"type":"obs", "x":75, "y":18, "w":4.7, "h":21, "anim":"waterfallDrop 4s linear infinite"},
-            {"type":"obs", "x":75, "y":18, "w":4.7, "h":21, "anim":"waterfallDrop 4s linear infinite -1.3s"}
+            {"type":"obs", "x":32, "y":41, "w":4.7, "h":21, "kfs":[[0,20]], "dur":2},
+            {"type":"obs", "x":42, "y":21, "w":4.7, "h":21, "kfs":[[0,20]], "dur":3},
+            {"type":"obs", "x":75, "y":18, "w":4.7, "h":21, "kfs":[[0,250]], "dur":4},
+            {"type":"obs", "x":75, "y":18, "w":4.7, "h":21, "kfs":[[0,250]], "dur":4}
         ]
     },
     "4": {
@@ -43,7 +43,7 @@
         "objects": [
             {"type":"path", "x":50, "y":0, "w":50, "h":50},
             {"type":"path", "x":0, "y":50, "w":100, "h":50},
-            {"type":"goal", "x":10, "y":65, "w":7.87, "h":14, "next":5, "hold":500, "tag":"runner", "wait":true, "anim":"crazyMove 3s linear infinite"},
+            {"type":"goal", "x":10, "y":65, "w":7.87, "h":14, "next":5, "hold":500, "tag":"runner", "wait":true, "kfs":[[250,-350],[250,0],[120,-150],[0,-350]], "dur":3},
             {"type":"trig", "x":35, "y":50, "w":2, "h":50, "link":"runner"}
         ]
     },
@@ -51,7 +51,7 @@
         "world": 1,
         "objects": [
             {"type":"path", "x":5, "y":5, "w":90, "h":90},
-            {"type":"goal", "x":10, "y":10, "w":10, "h":10, "next":"redirect_save1", "hold":500, "tag":"runner", "wait":true, "anim":"superCrazyMove 4s linear infinite"},
+            {"type":"goal", "x":10, "y":10, "w":10, "h":10, "next":"redirect_save1", "hold":500, "tag":"runner", "wait":true, "kfs":[[800,200],[200,400],[600,0],[0,300],[900,300]], "dur":4},
             {"type":"trig", "x":5, "y":5, "w":90, "h":90, "link":"runner"}
         ]
     },
@@ -66,8 +66,8 @@
             {"type":"path", "x":72, "y":65, "w":18, "h":15},
             {"type":"path", "x":90, "y":65, "w":10, "h":15},
             {"type":"btn", "x":80, "y":5, "w":8, "h":10, "link":"btn2"},
-            {"type":"btn", "x":75, "y":68, "w":6, "h":8, "tag":"btn2", "link":"gate", "wait":true, "anim":"spawnIn 0.5s forwards"},
-            {"type":"obs", "x":88, "y":65, "w":4, "h":15, "tag":"gate", "wait":true, "anim":"openDoor 1s forwards", "z":20},
+            {"type":"btn", "x":75, "y":68, "w":6, "h":8, "tag":"btn2", "link":"gate", "wait":true, "kfs":[[0,0]], "dur":0.5, "loop":false},
+            {"type":"obs", "x":88, "y":65, "w":4, "h":15, "tag":"gate", "wait":true, "kfs":[[0,-150]], "dur":1, "loop":false, "z":20},
             {"type":"goal", "x":92, "y":67, "w":6, "h":10, "next":7}
         ]
     },
