@@ -6,7 +6,6 @@
     <title>Touch Yellow Web</title>
     <link href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Roboto:wght@900&display=swap" rel="stylesheet">
     <script>
-        // Clean URL
         if(window.location.pathname.endsWith('index.html')) {
             window.history.replaceState({}, document.title, window.location.pathname.replace('index.html', ''));
         }
@@ -29,12 +28,10 @@
         .title-text { font-family:'Luckiest Guy',cursive; font-size:14vh; color:#ffff00; text-transform:uppercase; text-shadow:0.8vh 0.8vh 0 #000; letter-spacing:-0.5vh; display:inline-block; }
         .title-sub { font-family:'Luckiest Guy',cursive; font-size:5vh; color:#ff9900; text-transform:uppercase; text-shadow:0.4vh 0.4vh 0 #000; position:absolute; top:10.5vh; left:14vh; transform:rotate(-3deg); }
 
-        /* BUTTONS */
+        /* BUTTONS (No Animation) */
         .btn-group { position:absolute; display:flex; align-items:center; gap:15px; pointer-events:none; }
-        .btn-group:active { transform:scale(0.95); }
         .btn-label { font-family:'Roboto',sans-serif; font-weight:bold; font-size:3.5vh; color:#000; text-shadow: 0 0 2px rgba(255,255,255,0.5); pointer-events:none; user-select:none; }
-        .circle-btn { width:8vh; height:8vh; background:#f2a922; border:0.4vh solid #b37a15; border-radius:50%; box-shadow:0 0 10px rgba(0,0,0,0.5); cursor:pointer; pointer-events:auto; transition:transform 0.05s; }
-        .circle-btn:active { transform:scale(0.9); }
+        .circle-btn { width:8vh; height:8vh; background:#f2a922; border:0.4vh solid #b37a15; border-radius:50%; box-shadow:0 0 10px rgba(0,0,0,0.5); cursor:pointer; pointer-events:auto; }
         
         #grp-saves   { top:22%; right:5%; }
         #grp-custom  { top:38%; right:5%; }
@@ -45,38 +42,35 @@
         #mode-btn { position:absolute; bottom:5%; right:5%; font-family:'Luckiest Guy',cursive; font-size:5vh; color:#ffff00; text-shadow:0.4vh 0.4vh 0 #000; cursor:pointer; user-select:none; z-index:501; transition:transform 0.15s ease-in, color 0.1s; transform-style:preserve-3d; }
         .flip-out { transform:rotateX(90deg); opacity:0.5; }
 
-        /* SAVE SELECT */
+        /* SAVE SELECT (Fullscreen) */
         #saves-screen { display:none; position:absolute; top:0; left:0; width:100%; height:100%; background-color:#4d4d4d; z-index:600; cursor:default; }
         .save-title { position:absolute; top:15%; width:100%; text-align:center; font-family:'Luckiest Guy',cursive; font-size:12vh; color:#ffff00; text-shadow:0.6vh 0.6vh 0 #000; pointer-events:none; }
         .save-row { position:absolute; top:45%; width:100%; display:flex; justify-content:center; gap:15vh; }
         .slot-group { display:flex; align-items:center; gap:10px; pointer-events:none; }
-        .slot-btn { width:10vh; height:10vh; border-radius:50%; border:0.5vh solid #000; box-shadow:0 0 10px rgba(0,0,0,0.5); pointer-events:auto; transition:transform 0.05s; }
-        .slot-btn:active { transform:scale(0.9); }
+        .slot-btn { width:10vh; height:10vh; border-radius:50%; border:0.5vh solid #000; box-shadow:0 0 10px rgba(0,0,0,0.5); pointer-events:auto; }
         .slot-locked { background-color:#444; border-color:#222; cursor:not-allowed; opacity:0.7; }
         .slot-unlocked { background-color:#00ff00; border-color:#004400; cursor:pointer; }
         #btn-back { position:absolute; bottom:10%; left:10%; display:flex; align-items:center; gap:15px; pointer-events:none; }
-        .back-circle { width:10vh; height:10vh; background:#fca503; border:0.5vh solid #000; border-radius:50%; cursor:pointer; pointer-events:auto; transition:transform 0.05s; }
-        .back-circle:active { transform:scale(0.9); }
+        .back-circle { width:10vh; height:10vh; background:#fca503; border:0.5vh solid #000; border-radius:50%; cursor:pointer; pointer-events:auto; }
 
-        /* MOD MANAGER UI */
-        #mod-screen { position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:2000; display:none; justify-content:center; align-items:center; }
-        .mod-window { width:80vh; height:80vh; background-color:#3c2a4d; border:3px solid #1d1226; border-radius:10px; display:flex; flex-direction:column; box-shadow:0 0 50px #000; }
-        .mod-header { background:#261a33; padding:15px; border-bottom:2px solid #1d1226; display:flex; justify-content:space-between; align-items:center; }
-        .mod-title { font-family:'Luckiest Guy',cursive; font-size:4vh; color:#fff; text-shadow:2px 2px 0 #000; }
-        .mod-list-container { flex:1; background:#1d1226; margin:10px; padding:10px; border-radius:8px; overflow-y:auto; }
-        .mod-list-container.drag-over { border:2px dashed #0f0; background:rgba(0,255,0,0.1); }
-        .mod-item { background:#2a1a38; border:1px solid #000; border-radius:8px; padding:10px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; }
-        .mod-info h3 { margin:0; color:#fff; font-family:'Luckiest Guy'; font-size:2.5vh; }
-        .mod-info .version { color:#4f4; font-size:1.5vh; margin-left:5px; }
-        .mod-info .author { color:#f2a922; font-size:1.5vh; font-family:'Roboto'; display:block; }
-        .mod-actions { display:flex; align-items:center; gap:10px; }
-        .mod-toggle { width:4vh; height:4vh; background:#111; border:2px solid #555; border-radius:5px; cursor:pointer; display:flex; justify-content:center; align-items:center; }
+        /* MOD MANAGER UI (Fullscreen) */
+        #mod-screen { position:absolute; top:0; left:0; width:100%; height:100%; background:#3c2a4d; z-index:2000; display:none; flex-direction:column; align-items:center; justify-content:center; }
+        .mod-header { width:80%; display:flex; justify-content:space-between; align-items:center; margin-bottom:2vh; }
+        .mod-title { font-family:'Luckiest Guy',cursive; font-size:8vh; color:#fff; text-shadow:2px 2px 0 #000; }
+        .mod-list-container { width:80%; height:60%; background:#1d1226; padding:20px; border-radius:8px; overflow-y:auto; border:3px solid #1d1226; box-shadow:0 0 50px #000; }
+        .mod-list-container.drag-over { border:3px dashed #0f0; background:rgba(0,255,0,0.1); }
+        .mod-item { background:#2a1a38; border:1px solid #000; border-radius:8px; padding:15px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; }
+        .mod-info h3 { margin:0; color:#fff; font-family:'Luckiest Guy'; font-size:3vh; }
+        .mod-info .version { color:#4f4; font-size:2vh; margin-left:10px; }
+        .mod-info .author { color:#f2a922; font-size:2vh; font-family:'Roboto'; display:block; }
+        .mod-actions { display:flex; align-items:center; gap:15px; }
+        .mod-toggle { width:5vh; height:5vh; background:#111; border:2px solid #555; border-radius:5px; cursor:pointer; display:flex; justify-content:center; align-items:center; }
         .mod-toggle.enabled { background:#0f0; border-color:#040; }
-        .mod-toggle.enabled::after { content:"✔"; color:black; font-weight:bold; }
-        .mod-btn-small { background:#a33; border:1px solid #f55; color:white; font-weight:bold; cursor:pointer; padding:5px 10px; }
-        .mod-footer { padding:10px; text-align:center; }
-        .mp-btn { background:#444; border:2px solid #fff; color:white; font-family:'Luckiest Guy'; font-size:3vh; padding:10px 20px; cursor:pointer; }
-        #mod-restart-btn { display:none; background:#f30; color:white; font-family:'Luckiest Guy'; font-size:3vh; text-align:center; padding:15px; cursor:pointer; border-top:3px solid #fff; width:100%; animation:pulse-alert 1s infinite alternate; }
+        .mod-toggle.enabled::after { content:"✔"; color:black; font-weight:bold; font-size:3vh; }
+        .mod-btn-small { background:#a33; border:1px solid #f55; color:white; font-weight:bold; cursor:pointer; padding:5px 15px; font-size:2vh; }
+        .mod-footer { width:80%; margin-top:2vh; text-align:center; display:flex; justify-content:center; gap:20px; }
+        .mp-btn { background:#444; border:2px solid #fff; color:white; font-family:'Luckiest Guy'; font-size:3vh; padding:10px 30px; cursor:pointer; }
+        #mod-restart-btn { display:none; background:#f30; color:white; font-family:'Luckiest Guy'; font-size:3vh; text-align:center; padding:15px; cursor:pointer; border-top:3px solid #fff; width:100%; animation:pulse-alert 1s infinite alternate; position:absolute; bottom:0; left:0; }
         @keyframes pulse-alert { from { background-color:#f30; transform:scale(1); } to { background-color:#c00; transform:scale(1.02); } }
 
         /* GAME OBJECTS */
@@ -103,8 +97,8 @@
         #db-coords { position:absolute; bottom:5px; right:5px; color:cyan; font-family:monospace; font-size:2vh; font-weight:bold; background:rgba(0,0,0,0.8); padding:2px 5px; border:1px solid cyan; }
         #db-room { position:absolute; bottom:5px; left:5px; color:cyan; font-family:monospace; font-size:2vh; font-weight:bold; background:rgba(0,0,0,0.8); padding:2px 5px; border:1px solid cyan; }
         
-        #cheat-ind { position:absolute; bottom:10px; left:10px; color:yellow; font-weight:bold; display:none; z-index:999; font-family:monospace; font-size:2vh; }
-        #debug-ind { position:absolute; bottom:35px; left:10px; color:lime; font-weight:bold; display:none; z-index:999; font-family:monospace; font-size:2vh; }
+        #cheat-ind { position:absolute; top:10px; left:10px; color:yellow; font-weight:bold; display:none; z-index:999; font-family:monospace; font-size:2vh; text-shadow:1px 1px 0 #000; }
+        #debug-ind { position:absolute; top:35px; left:10px; color:lime; font-weight:bold; display:none; z-index:999; font-family:monospace; font-size:2vh; text-shadow:1px 1px 0 #000; }
         #catch-meter { position:fixed; display:none; width:40px; height:6px; background:#333; border:1px solid white; border-radius:3px; pointer-events:none; z-index:9999; transform:translate(-50%,-20px); }
         #catch-fill { width:0%; height:100%; background:#00ff00; transition:width 0.05s linear; }
         #dynamic-css { display:none; }
@@ -206,21 +200,23 @@
                 </div>
             </div>
             
-            <!-- MOD MANAGER UI -->
+            <!-- MOD MANAGER UI (Fullscreen) -->
             <div id="mod-screen" style="display:none;">
                 <div class="mod-window">
                     <div class="mod-header">
                         <span class="mod-title">MODS</span>
-                        <div style="display:flex; gap:10px;">
-                            <input type="text" id="mod-search" placeholder="Search..." onkeyup="ModUI.filter()" style="padding:5px;">
-                            <button class="mod-btn-small" onclick="ModUI.close()">X</button>
-                        </div>
+                        <input type="text" id="mod-search" placeholder="Search..." onkeyup="ModUI.filter()" style="padding:5px; font-family:'Roboto'; border-radius:4px; border:none;">
                     </div>
                     <div id="mod-list" class="mod-list-container"></div>
                     <div id="mod-restart-btn" onclick="location.reload()">⚠ RESTART REQUIRED TO APPLY ⚠</div>
                     <div class="mod-footer">
                         <button class="mp-btn" onclick="ModUI.importFile()">+ IMPORT .ADDON</button>
                     </div>
+                </div>
+                <!-- Back Button for Mods -->
+                <div id="btn-back-mod" style="position:absolute; bottom:10%; left:10%; display:flex; align-items:center; gap:15px; pointer-events:none;">
+                    <div class="back-circle" onmousedown="ModUI.close()" style="pointer-events:auto;"></div>
+                    <span class="btn-label">&lt;- Back</span>
                 </div>
             </div>
 
@@ -282,8 +278,9 @@ window.Engine = {
     async init() {
         try {
             const response = await fetch('levels.json');
+            if(!response.ok) throw new Error("File not found");
             GlobalLevels = await response.json();
-        } catch (e) { console.error("Levels missing"); }
+        } catch (e) { console.error("Levels missing (Local/CORS)"); }
 
         const urlParams = new URLSearchParams(window.location.search);
         if(urlParams.has('data')) {
@@ -355,10 +352,16 @@ window.Engine = {
         this.state = (id==='custom') ? 'waiting' : 'playing'; 
         document.getElementById('db-room').innerText = (id==='custom') ? "ROOM: CUSTOM" : "ROOM: LEVEL " + id;
         
-        if (id === 'custom') {
-            this.loadCustom();
-        } else if (GlobalLevels[id]) {
-            if (GlobalLevels[id].world !== 1) { alert("Wrong World"); location.href='save/save1.html'; return; }
+        const builder = {
+            path: (x,y,w,h) => this.spawn(x,y,w,h,'path'),
+            obs: (x,y,w,h,a) => this.spawn(x,y,w,h,'obs',a),
+            goal: (x,y,w,h,n,t) => this.spawn(x,y,w,h,'goal',null,n,t),
+            trig: (x,y,w,h) => this.spawn(x,y,w,h,'trig')
+        };
+
+        if(id === 'custom') this.loadCustom(builder);
+        else if(GlobalLevels[id]) {
+            if(GlobalLevels[id].world !== 1) { alert("Wrong World"); location.href='save/save1.html'; return; }
             this.buildLevel(GlobalLevels[id].objects);
         } else { 
             alert("You Win!"); this.toMenu(); 
@@ -398,7 +401,7 @@ window.Engine = {
     loadCustom(builder) {
         const raw = localStorage.getItem('ty_custom_level_data');
         if (!raw) { alert("No custom level."); this.toMenu(); return; }
-        try { this.parseCookie(raw); } catch(e) { alert("Corrupt"); this.toMenu(); }
+        try { this.parseCookie(raw, builder); } catch(e) { alert("Corrupt"); this.toMenu(); }
         
         const startObj = this.hitboxes.find(o => o.type === 'start');
         if(startObj) {
@@ -411,21 +414,27 @@ window.Engine = {
     
     activateCustom() { this.els.curtain.style.display = 'none'; this.state = 'playing'; },
 
-    parseCookie(jsonStr) {
+    parseCookie(jsonStr, d) {
         const data = JSON.parse(jsonStr);
-        // Support verbose objects from JSON or minified array
-        const objects = data.map(o => {
-            if (o.type && typeof o.type === 'string') return o;
-            const t = ['path','obs','goal','start','btn','trig'][o[0]];
-            return {
-                type: (t==='start'?'start':t),
-                x: o[1], y: o[2], w: o[3], h: o[4],
-                kfs: o[5], tag: o[6], link: o[7], 
-                wait: !!o[8], dur: o[9]||2, z: o[10]||10, r: o[11]||0, loop: (o[12]!==0),
-                next: (t==='goal' && o[7]) ? o[7] : 'menu'
-            };
+        let css = "";
+        data.forEach(o => {
+            const types = ['path','obs','goal','start','btn','trig'];
+            const t = types[o[0]];
+            let anim = null;
+            if(o[5] && o[5].length) {
+                const nm = `a-${Math.random().toString(36).substr(2)}`;
+                css += `@keyframes ${nm} { 0%{transform:translate(0,0)} `;
+                o[5].forEach((k,i) => css += `${Math.round((i+1)/(o[5].length+1)*100)}%{transform:translate(${k[0]}%,${k[1]}%)} `);
+                css += `100%{transform:translate(0,0)} } `;
+                anim = `${nm} ${o[9]||2}s linear infinite`;
+            }
+            const type = (t==='start') ? 'start' : t;
+            const obj = this.spawn(o[1], o[2], o[3], o[4], type, anim, (t==='goal'?'menu':null));
+            if(o[6]) obj.tag = o[6]; if(o[7]) obj.link = o[7];
+            if(o[8]) { obj.vis.classList.add('paused'); obj.hit.classList.add('paused'); }
+            if(o[10]) obj.vis.style.zIndex = o[10];
         });
-        this.buildLevel(objects);
+        this.els.css.innerHTML += css;
     },
 
     spawn(x,y,w,h,type,anim,next,holdTime) {
