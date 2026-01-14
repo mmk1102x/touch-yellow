@@ -16,7 +16,7 @@
         .layer { position:absolute; inset:0; pointer-events:none; }
         #ui { z-index:500; pointer-events:auto; }
 
-        /* MENU STYLES */
+        /* MENU */
         .menu-bg { background-color:#4d4d4d; width:100%; height:100%; position:absolute; top:0; left:0; pointer-events:auto; cursor:default; }
         .grid-line { position:absolute; border:1px dashed rgba(255,255,255,0.3); pointer-events:none; }
         .grid-x { width:100%; height:0; top:50%; left:0; }
@@ -37,6 +37,7 @@
         
         #grp-saves   { top:22%; right:5%; }
         #grp-custom  { top:38%; right:5%; }
+        #grp-mods    { bottom:8%; right:5%; }
         #grp-start   { bottom:28%; left:15%; }
         #grp-exit    { bottom:8%; left:15%; }
 
@@ -56,6 +57,27 @@
         .back-circle { width:10vh; height:10vh; background:#fca503; border:0.5vh solid #000; border-radius:50%; cursor:pointer; pointer-events:auto; transition:transform 0.05s; }
         .back-circle:active { transform:scale(0.9); }
 
+        /* MOD MANAGER UI */
+        #mod-screen { position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:2000; display:flex; justify-content:center; align-items:center; }
+        .mod-window { width:80vh; height:80vh; background-color:#3c2a4d; border:3px solid #1d1226; border-radius:10px; display:flex; flex-direction:column; box-shadow:0 0 50px #000; }
+        .mod-header { background:#261a33; padding:15px; border-bottom:2px solid #1d1226; display:flex; justify-content:space-between; align-items:center; }
+        .mod-title { font-family:'Luckiest Guy',cursive; font-size:4vh; color:#fff; text-shadow:2px 2px 0 #000; }
+        .mod-list-container { flex:1; background:#1d1226; margin:10px; padding:10px; border-radius:8px; overflow-y:auto; }
+        .mod-list-container.drag-over { border:2px dashed #0f0; background:rgba(0,255,0,0.1); }
+        .mod-item { background:#2a1a38; border:1px solid #000; border-radius:8px; padding:10px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; }
+        .mod-info h3 { margin:0; color:#fff; font-family:'Luckiest Guy'; font-size:2.5vh; }
+        .mod-info .version { color:#4f4; font-size:1.5vh; margin-left:5px; }
+        .mod-info .author { color:#f2a922; font-size:1.5vh; font-family:'Roboto'; display:block; }
+        .mod-actions { display:flex; align-items:center; gap:10px; }
+        .mod-toggle { width:4vh; height:4vh; background:#111; border:2px solid #555; border-radius:5px; cursor:pointer; display:flex; justify-content:center; align-items:center; }
+        .mod-toggle.enabled { background:#0f0; border-color:#040; }
+        .mod-toggle.enabled::after { content:"✔"; color:black; font-weight:bold; }
+        .mod-btn-small { background:#a33; border:1px solid #f55; color:white; font-weight:bold; cursor:pointer; padding:5px 10px; }
+        .mod-footer { padding:10px; text-align:center; }
+        .mp-btn { background:#444; border:2px solid #fff; color:white; font-family:'Luckiest Guy'; font-size:3vh; padding:10px 20px; cursor:pointer; }
+        #mod-restart-btn { display:none; background:#f30; color:white; font-family:'Luckiest Guy'; font-size:3vh; text-align:center; padding:15px; cursor:pointer; border-top:3px solid #fff; width:100%; animation:pulse-alert 1s infinite alternate; }
+        @keyframes pulse-alert { from { background-color:#f30; transform:scale(1); } to { background-color:#c00; transform:scale(1.02); } }
+
         /* GAME OBJECTS */
         .obj { position:absolute; box-shadow: 0 0 0 1px currentColor; }
         .path { background:#26a9e1; color:#26a9e1; } .goal { background:#f1a92a; color:#f1a92a; } 
@@ -63,11 +85,6 @@
         .btn { background:#33cc33; color:#33cc33; } .btn.on { background:#228822; color:#228822; }
         .paused { animation-play-state: paused !important; }
         
-        /* START CURTAIN */
-        #start-curtain { display:none; position:absolute; top:0; left:0; width:100%; height:100%; background-color:#26a9e1; z-index:9000; cursor:default; pointer-events:auto; }
-        #start-trigger { position:absolute; width:10%; height:10%; background:#f1a92a; border-radius:50%; border:2px solid white; box-shadow:0 0 20px white; cursor:pointer; transform:translate(-50%,-50%); animation:pulse 1s infinite alternate; pointer-events:auto; }
-        @keyframes pulse { from { transform:translate(-50%,-50%) scale(1); } to { transform:translate(-50%,-50%) scale(1.1); } }
-
         /* DEBUG */
         .hitbox { position:absolute; z-index:400; opacity:0; pointer-events:none; }
         .debug .hitbox { opacity:1 !important; }
@@ -89,16 +106,21 @@
         #catch-meter { position:fixed; display:none; width:40px; height:6px; background:#333; border:1px solid white; border-radius:3px; pointer-events:none; z-index:9999; transform:translate(-50%,-20px); }
         #catch-fill { width:0%; height:100%; background:#00ff00; transition:width 0.05s linear; }
         #dynamic-css { display:none; }
+        
+        /* START CURTAIN */
+        #start-curtain { display:none; position:absolute; top:0; left:0; width:100%; height:100%; background-color:#26a9e1; z-index:9000; cursor:default; pointer-events:auto; }
+        #start-trigger { position:absolute; width:10%; height:10%; background:#f1a92a; border-radius:50%; border:2px solid white; box-shadow:0 0 20px white; cursor:pointer; transform:translate(-50%,-50%); animation:pulse 1s infinite alternate; pointer-events:auto; }
+        @keyframes pulse { from { transform:translate(-50%,-50%) scale(1); } to { transform:translate(-50%,-50%) scale(1.1); } }
 
-        @keyframes spawnIn { 0% { transform: scale(0); } 100% { transform: scale(1); } }
+        @keyframes slicerMove { 0% { transform: translateY(0%); } 50% { transform: translateY(200%); } 100% { transform: translateY(0%); } }
+        @keyframes waterfallDrop { 0% { transform: translateY(-250%); } 100% { transform: translateY(250%); } }
+        @keyframes crazyMove { 0% { transform: translate(0, 0); } 20% { transform: translate(250%, -350%); } 40% { transform: translate(250%, 0%); } 60% { transform: translate(120%, -150%); } 80% { transform: translate(0, -350%); } 100% { transform: translate(0, 0); } }
+        @keyframes safeRoomPatrol { 0% {transform:translate(0,0)} 25%{transform:translate(1000%,-20%)} 50%{transform:translate(500%,20%)} 75%{transform:translate(1000%,20%)} 90%{transform:translate(500%,-20%)} 100%{transform:translate(0,0)} }
+        @keyframes superCrazyMove { 0% { transform: translate(0,0); } 10% { transform: translate(800%, 200%); } 20% { transform: translate(200%, 400%); } 30% { transform: translate(600%, 0%); } 40% { transform: translate(0%, 300%); } 50% { transform: translate(900%, 300%); } 60% { transform: translate(400%, 100%); } 70% { transform: translate(100%, 0%); } 80% { transform: translate(700%, 400%); } 90% { transform: translate(300%, 100%); } 100% { transform: translate(0,0); } }
+
         @media screen and (orientation: portrait) {
             body { position: fixed; width: 100%; height: 100%; }
-            #game {
-                position: absolute; top: 50%; left: 50%;
-                width: 100vh !important; height: 100vw !important;
-                transform: translate(-50%, -50%) rotate(90deg);
-                max-width: none !important; aspect-ratio: auto !important; box-shadow: none !important;
-            }
+            #game { position: absolute; top: 50%; left: 50%; width: 100vh !important; height: 100vw !important; transform: translate(-50%, -50%) rotate(90deg); max-width: none !important; aspect-ratio: auto !important; box-shadow: none !important; }
             .circle-btn { width: 8vw !important; height: 8vw !important; border-width: 0.5vw !important; }
             .btn-label { font-size: 3.5vw !important; text-shadow: none !important; }
             .title-text { font-size: 14vw !important; }
@@ -133,9 +155,16 @@
                     <div class="circle-btn" onmousedown="Engine.openSavesMenu()"></div>
                 </div>
                 
+                <!-- CUSTOM LEVEL BUTTON -->
                 <div id="grp-custom" class="btn-group">
                     <span class="btn-label">Custom -&gt;</span>
                     <div class="circle-btn" style="background:#b0f; border-color:#80c;" onmousedown="Engine.loadCustom()"></div>
+                </div>
+
+                <!-- MODS BUTTON -->
+                <div id="grp-mods" class="btn-group">
+                    <span class="btn-label">Mods -&gt;</span>
+                    <div class="circle-btn" style="background:#800080; border-color:#500050;" onmousedown="ModUI.open()"></div>
                 </div>
                 
                 <div id="grp-start" class="btn-group">
@@ -169,6 +198,24 @@
                 </div>
             </div>
             
+            <!-- MOD MANAGER UI -->
+            <div id="mod-screen" style="display:none;">
+                <div class="mod-window">
+                    <div class="mod-header">
+                        <span class="mod-title">MODS</span>
+                        <div style="display:flex; gap:10px;">
+                            <input type="text" id="mod-search" placeholder="Search..." onkeyup="ModUI.filter()" style="padding:5px;">
+                            <button class="mod-btn-small" onclick="ModUI.close()">X</button>
+                        </div>
+                    </div>
+                    <div id="mod-list" class="mod-list-container"></div>
+                    <div id="mod-restart-btn" onclick="location.reload()">⚠ RESTART REQUIRED TO APPLY ⚠</div>
+                    <div class="mod-footer">
+                        <button class="mp-btn" onclick="ModUI.importFile()">+ IMPORT .ADDON</button>
+                    </div>
+                </div>
+            </div>
+
             <div id="start-curtain">
                 <div id="start-trigger" onmousedown="Engine.activateCustom()"></div>
             </div>
@@ -179,6 +226,46 @@
     </div>
 
 <script>
+// --- MOD LOADER (Async IndexedDB) ---
+const ModDB={db:null,open:()=>new Promise((r,j)=>{const q=indexedDB.open("TouchYellowMods",1);q.onupgradeneeded=e=>{if(!e.target.result.objectStoreNames.contains('mods'))e.target.result.createObjectStore('mods',{keyPath:'id'});};q.onsuccess=e=>{ModDB.db=e.target.result;r();};q.onerror=e=>j(e);}),save:m=>new Promise((r,j)=>{const t=ModDB.db.transaction(['mods'],'readwrite');t.objectStore('mods').put(m);t.oncomplete=()=>r();t.onerror=()=>j(t.error);}),getAll:()=>new Promise(r=>{if(!ModDB.db)return r([]);const t=ModDB.db.transaction(['mods'],'readonly');const q=t.objectStore('mods').getAll();q.onsuccess=()=>r(q.result);}),delete:id=>{ModDB.db.transaction(['mods'],'readwrite').objectStore('mods').delete(id);}};
+const ModLoader={mods:[],init:async()=>{await ModDB.open();ModLoader.mods=await ModDB.getAll();ModLoader.mods.forEach(m=>{if(m.enabled){try{if(m.code.length>1e7)console.warn("Mod too big");else{const f=new Function('ModAPI','Engine','Net',m.code);f(window.ModAPI,(window.Engine||{}),(window.Net||{}));console.log(`[Mod] Loaded: ${m.name}`);}}catch(e){console.error(e);}}});},install:async(d)=>{const s=new Blob([JSON.stringify(d)]).size;if(s>50*1024*1024)return alert("File too big");d.id=Date.now().toString();d.enabled=true;await ModDB.save(d);if(confirm("Installed! Reload?"))location.reload();},delete:async(id)=>{if(confirm("Delete?")){ModLoader.mods=ModLoader.mods.filter(m=>m.id!==id);await ModDB.delete(id);ModUI.render();ModUI.triggerRestart();}},toggle:async(id)=>{const m=ModLoader.mods.find(x=>x.id===id);if(m){m.enabled=!m.enabled;await ModDB.save(m);ModUI.render();ModUI.triggerRestart();}}};
+window.ModAPI={hook:(t,f)=>{const p=t.split('.');const o=window[p[0]];if(o&&o[p[1]]){const org=o[p[1]].bind(o);o[p[1]]=(...a)=>f(org,...a);}}};
+ModLoader.init();
+
+// --- MOD UI ---
+const ModUI={
+    open:()=>{document.getElementById('mod-screen').style.display='flex';ModUI.render();setTimeout(ModUI.initDrag,100);},
+    close:()=>document.getElementById('mod-screen').style.display='none',
+    render:()=>{
+        const l=document.getElementById('mod-list'); l.innerHTML='';
+        const f=document.getElementById('mod-search').value.toLowerCase();
+        if(!ModLoader.mods.length){l.innerHTML='<div style="text-align:center;color:#666;margin-top:50px">No Mods</div>';return;}
+        ModLoader.mods.forEach(m=>{
+            if(!m.name.toLowerCase().includes(f))return;
+            const d=document.createElement('div'); d.className='mod-item';
+            d.innerHTML=`<div class="mod-info"><h3>${m.name} <span class="version">v${m.version}</span></h3><span class="author">by ${m.author}</span></div><div class="mod-actions"><button class="mod-btn-small" onclick="ModLoader.delete('${m.id}')">DEL</button><div class="mod-toggle ${m.enabled?'enabled':''}" onclick="ModLoader.toggle('${m.id}')"></div></div>`;
+            l.appendChild(d);
+        });
+    },
+    triggerRestart:()=>{document.getElementById('mod-restart-btn').style.display='block';},
+    importFile:()=>{
+        const i=document.createElement('input'); i.type='file'; i.accept='.addon,.json';
+        i.onchange=e=>{const f=e.target.files[0]; if(!f)return; if(f.size>1e8)return alert("Too big"); const r=new FileReader(); r.onload=ev=>{try{const d=JSON.parse(ev.target.result); if(!d.name||!d.code)throw 0; ModLoader.install(d); ModUI.render(); ModUI.triggerRestart();}catch(e){alert("Invalid Mod");}}; r.readAsText(f);};
+        i.click();
+    },
+    initDrag:()=>{
+        const z=document.getElementById('mod-list');
+        ['dragenter','dragover'].forEach(e=>z.addEventListener(e,ev=>{ev.preventDefault();z.classList.add('drag-over');}));
+        z.addEventListener('dragleave',e=>{e.preventDefault();z.classList.remove('drag-over');});
+        z.addEventListener('drop',e=>{e.preventDefault();z.classList.remove('drag-over'); if(e.dataTransfer.files[0])ModUI.processFile(e.dataTransfer.files[0]);});
+    },
+    processFile:(f)=>{
+        if(!f.name.endsWith('.addon')&&!f.name.endsWith('.json'))return alert("Invalid type");
+        const r=new FileReader(); r.onload=e=>{try{const d=JSON.parse(e.target.result); if(!d.name)throw 0; ModLoader.install(d); ModUI.render(); ModUI.triggerRestart();}catch(e){alert("Invalid");}}; r.readAsText(f);
+    },
+    filter:()=>ModUI.render()
+};
+
 let GlobalLevels = {};
 
 const Engine = {
@@ -213,14 +300,28 @@ const Engine = {
 
         const move = (x,y) => { 
             this.mx=x; this.my=y; 
+            const r = document.getElementById('game').getBoundingClientRect();
+            const isPortrait = window.matchMedia("(orientation: portrait)").matches;
+            let px, py;
+
+            if (isPortrait && this.mobile) {
+                const relX = x - r.left; const relY = y - r.top;
+                const visualX = (relX / r.width) * 100; const visualY = (relY / r.height) * 100;
+                px = visualY; py = 100 - visualX;
+            } else {
+                px = ((x - r.left) / r.width) * 100;
+                py = ((y - r.top) / r.height) * 100;
+            }
+            
+            this.cursorX = px; this.cursorY = py;
+
             const cx = document.getElementById('db-cross-x');
             const cy = document.getElementById('db-cross-y');
             const ct = document.getElementById('db-coords');
             if(cx && cy) { 
-                const r = document.getElementById('game').getBoundingClientRect();
                 const ly = y - r.top; const lx = x - r.left;
                 cx.style.top = ly + 'px'; cy.style.left = lx + 'px';
-                if(ct) ct.innerText = `X: ${(lx/r.width*100).toFixed(2)}% Y: ${(ly/r.height*100).toFixed(2)}%`;
+                if(ct) ct.innerText = `X: ${px.toFixed(2)}% Y: ${py.toFixed(2)}%`;
             }
         };
         window.addEventListener('mousemove', e => move(e.clientX, e.clientY));
@@ -261,14 +362,18 @@ const Engine = {
         this.state = (id==='custom') ? 'waiting' : 'playing'; 
         document.getElementById('db-room').innerText = (id==='custom') ? "ROOM: CUSTOM" : "ROOM: LEVEL " + id;
         
-        if (id === 'custom') {
-            this.loadCustom();
-        } else if (GlobalLevels[id]) {
-            if (GlobalLevels[id].world !== 1) { alert("Wrong World"); location.href='save/save1.html'; return; }
+        const builder = {
+            path: (x,y,w,h) => this.spawn(x,y,w,h,'path'),
+            obs: (x,y,w,h,a) => this.spawn(x,y,w,h,'obs',a),
+            goal: (x,y,w,h,n,t) => this.spawn(x,y,w,h,'goal',null,n,t),
+            trig: (x,y,w,h) => this.spawn(x,y,w,h,'trig')
+        };
+
+        if(id === 'custom') this.loadCustom(builder);
+        else if(GlobalLevels[id]) {
+            if(GlobalLevels[id].world !== 1) { alert("Wrong World"); location.href='save/save1.html'; return; }
             this.buildLevel(GlobalLevels[id].objects);
-        } else { 
-            alert("You Win!"); this.toMenu(); 
-        }
+        } else { alert("You Win!"); this.toMenu(); }
     },
 
     buildLevel(objects) {
@@ -301,7 +406,7 @@ const Engine = {
         });
     },
 
-    loadCustom() {
+    loadCustom(builder) {
         const raw = localStorage.getItem('ty_custom_level_data');
         if (!raw) { alert("No custom level."); this.toMenu(); return; }
         try { this.parseCookie(raw); } catch(e) { alert("Corrupt"); this.toMenu(); }
@@ -320,25 +425,20 @@ const Engine = {
     parseCookie(jsonStr) {
         const data = JSON.parse(jsonStr);
         let css = "";
-        // Support verbose objects from JSON or minified array from older creator
-        // Assume verbose object if o.type is string
-        const objects = data.map(o => {
-            if (o.type && typeof o.type === 'string') return o; // Already verbose
-            
-            // Fallback for array format
-            const t = ['path','obs','goal','start','btn','trig'][o[0]];
-            return {
-                type: (t==='start'?'start':t),
-                x: o[1], y: o[2], w: o[3], h: o[4],
-                kfs: o[5], 
-                tag: o[6], link: o[7], 
-                wait: !!o[8], dur: o[9]||2, 
-                z: o[10]||10, r: o[11]||0, 
-                loop: (o[12]!==0),
-                next: (t==='goal' && o[7]) ? o[7] : 'menu'
-            };
+        data.forEach(o => {
+            if (o.type && typeof o.type === 'string') {
+                // Already verbose, pass to builder
+            } else {
+                // Convert minified to verbose
+                const t = ['path','obs','goal','start','btn','trig'][o[0]];
+                o.type = (t==='start'?'start':t);
+                o.x=o[1]; o.y=o[2]; o.w=o[3]; o.h=o[4];
+                o.kfs=o[5]; o.tag=o[6]; o.link=o[7]; 
+                o.wait=!!o[8]; o.dur=o[9]||2; o.z=o[10]||10; o.r=o[11]||0; o.loop=(o[12]!==0);
+                o.next = (t==='goal' && o[7]) ? o[7] : 'menu';
+            }
         });
-        this.buildLevel(objects);
+        this.buildLevel(data);
     },
 
     spawn(x,y,w,h,type,anim,next,holdTime) {
@@ -379,7 +479,8 @@ const Engine = {
                     if(hb.hold > 0) {
                         this.goalTimer += 16;
                         this.els.hud.style.display='block';
-                        this.els.hud.style.left = this.mx+'px'; this.els.hud.style.top = (this.my-20)+'px';
+                        this.els.hud.style.left = this.cursorX+'%'; 
+                        this.els.hud.style.top = (this.cursorY-5)+'%';
                         this.els.fill.style.width = (this.goalTimer/hb.hold*100)+'%';
                         if(this.goalTimer >= hb.hold) this.win(hb.next);
                     } else { this.win(hb.next); }
@@ -410,10 +511,8 @@ const Engine = {
     checkSave(n) { const has = localStorage.getItem(`touchYellow_save${n}`) === 'true'; document.getElementById(`circle-${n}`).className = `slot-btn slot-${has?'unlocked':'locked'}`; },
     loadSave(n) { if(localStorage.getItem(`touchYellow_save${n}`) === 'true') location.href=`save/save${n}.html`; else alert("Locked!"); }
 };
-
 Engine.init();
 
-// --- COMMANDS ---
 Object.defineProperties(window, {
     'debug': { get: function() { const g=document.getElementById('game'); g.classList.toggle('debug'); const on=g.classList.contains('debug'); document.getElementById('debug-ind').style.display=on?'block':'none'; localStorage.setItem('touchYellow_debug', on); return `Debug: ${on?"ON":"OFF"}`; } },
     'noclip': { get: function() { Engine.noclip=!Engine.noclip; document.getElementById('cheat-ind').style.display=Engine.noclip?'block':'none'; localStorage.setItem('touchYellow_noclip', Engine.noclip); return `God Mode: ${Engine.noclip?"ON":"OFF"}`; } },
