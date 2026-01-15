@@ -5,6 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Touch Yellow Web</title>
     <link href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Roboto:wght@900&display=swap" rel="stylesheet">
+    <script>
+        if(window.location.pathname.endsWith('index.html')) {
+            window.history.replaceState({}, document.title, window.location.pathname.replace('index.html', ''));
+        }
+    </script>
     <style>
         body { margin:0; background:#000; overflow:hidden; font-family:'Roboto',sans-serif; height:100vh; display:flex; justify-content:center; align-items:center; user-select:none; touch-action:none; -webkit-user-select:none; }
         #game { width:100%; max-width:177.7vh; aspect-ratio:16/9; position:relative; background:#000; box-shadow:0 0 50px #333; }
@@ -25,15 +30,15 @@
 
         /* BUTTONS */
         .btn-group { position:absolute; display:flex; align-items:center; gap:15px; pointer-events:none; }
+        .btn-group:active { transform:scale(0.95); }
         .btn-label { font-family:'Roboto',sans-serif; font-weight:bold; font-size:3.5vh; color:#000; text-shadow: 0 0 2px rgba(255,255,255,0.5); pointer-events:none; user-select:none; }
         .circle-btn { width:8vh; height:8vh; background:#f2a922; border:0.4vh solid #b37a15; border-radius:50%; box-shadow:0 0 10px rgba(0,0,0,0.5); cursor:pointer; pointer-events:auto; }
         
-        /* Layout */
         #grp-saves   { top:22%; right:5%; }
         #grp-custom  { top:38%; right:5%; }
         #grp-mods    { top:54%; right:5%; }
-        #grp-start   { bottom:28%; left:5%; } /* MOVED LEFT */
-        #grp-exit    { bottom:8%; left:5%; }  /* MOVED LEFT */
+        #grp-start   { bottom:28%; left:5%; }
+        #grp-exit    { bottom:8%; left:5%; }
 
         #mode-btn { position:absolute; bottom:5%; right:5%; font-family:'Luckiest Guy',cursive; font-size:5vh; color:#ffff00; text-shadow:0.4vh 0.4vh 0 #000; cursor:pointer; user-select:none; z-index:501; transition:transform 0.15s ease-in, color 0.1s; transform-style:preserve-3d; }
         .flip-out { transform:rotateX(90deg); opacity:0.5; }
@@ -56,6 +61,7 @@
         /* MOD MANAGER UI */
         #mod-screen { display:none; position:absolute; top:0; left:0; width:100%; height:100%; background-color:#3c2a4d; z-index:2000; }
         .mod-header { background:#261a33; padding:15px; border-bottom:2px solid #1d1226; display:flex; justify-content:space-between; align-items:center; }
+        .mod-title { font-family:'Luckiest Guy',cursive; font-size:4vh; color:#fff; text-shadow:2px 2px 0 #000; }
         .mod-list-container { position:absolute; top:75px; bottom:75px; left:50%; transform:translateX(-50%); width:80%; background:#1d1226; padding:10px; border-radius:8px; overflow-y:auto; }
         .mod-list-container.drag-over { border:2px dashed #0f0; background:rgba(0,255,0,0.1); }
         .mod-item { background:#2a1a38; border:1px solid #000; border-radius:8px; padding:10px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; }
@@ -84,14 +90,14 @@
         .cfg-input { width:100%; background:#111; border:1px solid #555; color:white; padding:5px; font-family:monospace; }
         .cfg-input:focus { border-color:#f2a922; outline:none; }
 
-        /* GAME ELEMENTS */
+        /* GAME OBJECTS */
         .obj { position:absolute; box-shadow: 0 0 0 1px currentColor; }
         .path { background:#26a9e1; color:#26a9e1; } .goal { background:#f1a92a; color:#f1a92a; } 
         .obs { background:#000; color:transparent; } 
         .btn { background:#33cc33; color:#33cc33; } .btn.on { background:#228822; color:#228822; }
         .paused { animation-play-state: paused !important; }
         
-        /* DEBUG */
+        /* DEBUG VISUALS */
         .hitbox { position:absolute; z-index:400; opacity:0; pointer-events:none; }
         .debug .hitbox { opacity:1 !important; }
         .debug .hitbox.path { background:transparent; border:none; }
@@ -100,6 +106,7 @@
         .debug .hitbox.trig, .debug .hitbox.btn { background:rgba(148,0,211,0.5); border:2px dashed magenta; }
         .debug .hitbox.start { background:rgba(0,255,0,0.1); border:1px dotted lime; }
 
+        /* DEBUG OVERLAY */
         .debug-overlay { display:none; pointer-events:none; position:absolute; top:0; left:0; width:100%; height:100%; z-index:9999; }
         .debug .debug-overlay { display:block; }
         #db-cross-x { position:absolute; width:100%; height:1px; background-color:cyan; left:0; }
@@ -205,17 +212,21 @@
                 </div>
             </div>
             
-            <div id="mod-screen" class="menu-bg" style="display:none;">
-                <div class="mod-header">
-                    <div class="btn-group" style="position:static; pointer-events:auto;" onmousedown="ModUI.close()">
-                        <div class="circle-btn"></div><span class="btn-label">&lt;- Back</span>
+            <!-- MOD MANAGER UI -->
+            <div id="mod-screen" style="display:none;">
+                <div class="mod-window">
+                    <div class="mod-header">
+                        <span class="mod-title">MODS</span>
+                        <div style="display:flex; gap:10px;">
+                            <input type="text" id="mod-search" placeholder="Search..." onkeyup="ModUI.filter()" style="padding:5px; font-family:'Roboto'; border-radius:4px; border:none;">
+                            <button class="mod-btn-small" onclick="ModUI.close()">X</button>
+                        </div>
                     </div>
-                    <span class="save-title" style="font-size:10vh; color:#fff;">MODS</span>
-                </div>
-                <div id="mod-list" class="mod-list-container"></div>
-                <div id="mod-restart-btn" onclick="location.reload()">⚠ RESTART REQUIRED ⚠</div>
-                <div class="mod-footer">
-                    <button class="mp-btn" onclick="ModUI.importFile()">+ IMPORT .ADDON</button>
+                    <div id="mod-list" class="mod-list-container"></div>
+                    <div id="mod-restart-btn" onclick="location.reload()">⚠ RESTART REQUIRED TO APPLY ⚠</div>
+                    <div class="mod-footer">
+                        <button class="mp-btn" onclick="ModUI.importFile()">+ IMPORT .ADDON</button>
+                    </div>
                 </div>
             </div>
 
@@ -237,7 +248,7 @@
     </div>
 
 <script>
-// --- MOD LOADER ---
+// --- MOD LOADER (Async IndexedDB) ---
 const ModDB={db:null,open:()=>new Promise((r,j)=>{const q=indexedDB.open("TouchYellowMods",2);q.onupgradeneeded=e=>{if(!e.target.result.objectStoreNames.contains('mods'))e.target.result.createObjectStore('mods',{keyPath:'id'});};q.onsuccess=e=>{ModDB.db=e.target.result;r();};q.onerror=e=>j(e);}),save:m=>new Promise((r,j)=>{const t=ModDB.db.transaction(['mods'],'readwrite');t.objectStore('mods').put(m);t.oncomplete=()=>r();t.onerror=()=>j(t.error);}),getAll:()=>new Promise(r=>{if(!ModDB.db)return r([]);const t=ModDB.db.transaction(['mods'],'readonly');const q=t.objectStore('mods').getAll();q.onsuccess=()=>r(q.result);}),delete:id=>{ModDB.db.transaction(['mods'],'readwrite').objectStore('mods').delete(id);}};
 const ModLoader={mods:[],init:async(cb)=>{console.log("[System] Booting ModLoader...");try{await ModDB.open();ModLoader.mods=await ModDB.getAll();
     const list = document.getElementById('active-mods-list');
@@ -249,22 +260,17 @@ const ModLoader={mods:[],init:async(cb)=>{console.log("[System] Booting ModLoade
     const existing = ModLoader.mods.find(m => m.name === d.name);
     d.id = existing ? existing.id : Date.now().toString();
     d.enabled = true;
-    if(existing) {
-        Object.assign(existing, d);
-        console.log("[Mod] Updating existing mod.");
-    } else {
-        ModLoader.mods.push(d);
-    }
+    if(existing) { Object.assign(existing, d); } else { ModLoader.mods.push(d); }
     await ModDB.save(d);ModUI.render();ModUI.triggerRestart();},delete:async(id)=>{if(confirm("Delete?")){ModLoader.mods=ModLoader.mods.filter(m=>m.id!==id);await ModDB.delete(id);ModUI.render();ModUI.triggerRestart();}},toggle:async(id)=>{const m=ModLoader.mods.find(x=>x.id===id);if(m){m.enabled=!m.enabled;await ModDB.save(m);ModUI.render();ModUI.triggerRestart();}}};
-window.ModAPI={hook:(t,f)=>{const p=t.split('.');const o=window[p[0]];if(o&&o[p[1]]){const org=o[p[1]].bind(o);o[p[1]]=(...a)=>f(org,...a);}}};
+window.ModAPI={hook:(t,f)=>{const p=t.split('.');const o=window[p[0]];if(o&&o[p[1]]){const org=o[p[1]].bind(o);o[p[1]]=(...a)=>f(org,...a);}}, addLevel: (id, data) => { window.GlobalLevels[id] = data; }, injectCSS: (css) => { const s=document.createElement('style'); s.textContent=css; document.head.appendChild(s); }};
 
 // --- MOD UI ---
 const ModUI={
     currentModId:null,
-    open:()=>{document.getElementById('mod-screen').style.display='block';ModUI.render();setTimeout(ModUI.initDrag,100);},
-    close:()=>document.getElementById('mod-screen').style.display='none',
+    open:()=>{const el=document.getElementById('mod-screen'); if(el){el.style.display='flex';ModUI.render();setTimeout(ModUI.initDrag,100);}},
+    close:()=>{const el=document.getElementById('mod-screen'); if(el)el.style.display='none';},
     render:()=>{
-        const l=document.getElementById('mod-list'); l.innerHTML='';
+        const l=document.getElementById('mod-list'); if(!l)return; l.innerHTML='';
         const f=document.getElementById('mod-search').value.toLowerCase();
         if(!ModLoader.mods.length){l.innerHTML='<div style="text-align:center;color:#888;margin-top:50px">No Mods Installed.<br>Drag & Drop .addon file here.</div>';return;}
         ModLoader.mods.forEach(m=>{
@@ -319,22 +325,19 @@ const ModUI={
     filter:()=>ModUI.render()
 };
 
-let GlobalLevels = {};
+window.GlobalLevels = {};
 
 window.Engine = {
     active: false, state: 'menu', mx:0, my:0, mobile:false, holding:false, holdMode:false, hitboxes:[], noclip: false, goalTimer:0, linkPlay: false, cursorX:0, cursorY:0,
-    els: {},
+    els: { gfx:document.getElementById('gfx'), phy:document.getElementById('phy'), menu:document.getElementById('menu'), hud:document.getElementById('catch-meter'), fill:document.getElementById('catch-fill'), css:document.getElementById('dynamic-css'), curtain:document.getElementById('start-curtain'), trig:document.getElementById('start-trigger') },
 
     async init() {
-        this.els = { gfx:document.getElementById('gfx'), phy:document.getElementById('phy'), menu:document.getElementById('menu'), hud:document.getElementById('catch-meter'), fill:document.getElementById('catch-fill'), css:document.getElementById('dynamic-css'), curtain:document.getElementById('start-curtain'), trig:document.getElementById('start-trigger') };
-
         try {
             const response = await fetch('levels.json');
             if(!response.ok) throw new Error("File not found");
-            GlobalLevels = await response.json();
+            window.GlobalLevels = await response.json();
         } catch (e) { console.error("Levels missing (Local/CORS)"); }
 
-        // ... (Rest of init() is identical to previous commit) ...
         const urlParams = new URLSearchParams(window.location.search);
         if(urlParams.has('data')) {
             try {
@@ -343,32 +346,28 @@ window.Engine = {
                 setTimeout(() => this.start('custom'), 50);
             } catch(e) { alert("Corrupt Link"); }
         }
+
         this.mobile = 'ontouchstart' in window;
         const savedHold = localStorage.getItem('touchYellow_holdMode') === 'true';
-        if(this.mobile) { this.holdMode=true; const mb = document.getElementById('mode-btn'); if(mb) mb.style.display='none'; }
-        else if(savedHold) { this.holdMode=true; const mb = document.getElementById('mode-btn'); if(mb) { mb.innerText="HOLD MODE"; mb.style.color="#f2a922"; } }
+        if(this.mobile) {
+            this.holdMode=true; 
+            const mb = document.getElementById('mode-btn'); if(mb) mb.style.display='none';
+        } else if(savedHold) {
+            this.holdMode=true;
+            const mb = document.getElementById('mode-btn'); 
+            if(mb) { mb.innerText="HOLD MODE"; mb.style.color="#f2a922"; }
+        }
 
         const move = (x,y) => { 
             this.mx=x; this.my=y; 
-            const r = document.getElementById('game').getBoundingClientRect();
-            const isPortrait = window.matchMedia("(orientation: portrait)").matches;
-            let px, py;
-            if (isPortrait && this.mobile) {
-                const relX = x - r.left; const relY = y - r.top;
-                const visualX = (relX / r.width) * 100; const visualY = (relY / r.height) * 100;
-                px = visualY; py = 100 - visualX;
-            } else {
-                px = ((x - r.left) / r.width) * 100; py = ((y - r.top) / r.height) * 100;
-            }
-            this.cursorX = px; this.cursorY = py;
-
             const cx = document.getElementById('db-cross-x');
             const cy = document.getElementById('db-cross-y');
             const ct = document.getElementById('db-coords');
             if(cx && cy) { 
+                const r = document.getElementById('game').getBoundingClientRect();
                 const ly = y - r.top; const lx = x - r.left;
                 cx.style.top = ly + 'px'; cy.style.left = lx + 'px';
-                if(ct) ct.innerText = `X: ${px.toFixed(2)}% Y: ${py.toFixed(2)}%`;
+                if(ct) ct.innerText = `X: ${(lx/r.width*100).toFixed(2)}% Y: ${(ly/r.height*100).toFixed(2)}%`;
             }
         };
         window.addEventListener('mousemove', e => move(e.clientX, e.clientY));
@@ -417,9 +416,9 @@ window.Engine = {
         };
 
         if(id === 'custom') this.loadCustom(builder);
-        else if(GlobalLevels.levels[id]) {
-            if(GlobalLevels.levels[id].world !== 1) { alert("Wrong World"); location.href='save/save1.html'; return; }
-            this.buildLevel(GlobalLevels.levels[id].objects);
+        else if(window.GlobalLevels[id]) {
+            if (window.GlobalLevels[id].world !== 1) { alert("Wrong World"); location.href='save/save1.html'; return; }
+            this.buildLevel(window.GlobalLevels[id].objects);
         } else { 
             alert("You Win!"); this.toMenu(); 
         }
@@ -427,10 +426,10 @@ window.Engine = {
 
     buildLevel(objects) {
         this.els.css.innerHTML = "";
-        if(GlobalLevels.animations) {
-            for(const name in GlobalLevels.animations) this.els.css.innerHTML += `@keyframes ${name} { ${GlobalLevels.animations[name]} } `;
+        if(window.GlobalLevels.animations) {
+            for(const name in window.GlobalLevels.animations) this.els.css.innerHTML += `@keyframes ${name} { ${window.GlobalLevels.animations[name]} } `;
         }
-
+        
         objects.forEach(o => {
             let animName = o.anim;
             if (o.kfs && o.kfs.length > 0) {
@@ -457,45 +456,40 @@ window.Engine = {
                 obj.hit.style.transform = `rotate(${o.r}deg)`;
             }
         });
-    },
-
-    loadCustom(builder) {
-        const raw = localStorage.getItem('ty_custom_level_data');
-        if (!raw) { alert("No custom level data."); this.toMenu(); return; }
-        try { this.parseCookie(raw, builder); } catch(e) { alert("Level Corrupt"); this.toMenu(); }
         
+        // Show Blue Curtain
         const startObj = this.hitboxes.find(o => o.type === 'start');
         if(startObj) {
             this.els.curtain.style.display = 'block';
-            // Fix: Center the trigger
             const s = startObj.hit.style;
             const sx=parseFloat(s.left), sy=parseFloat(s.top), sw=parseFloat(s.width), sh=parseFloat(s.height);
-            Object.assign(this.els.trig.style, { 
-                left: (sx + sw/2) + '%', 
-                top: (sy + sh/2) + '%', 
-                width: sw + '%', 
-                height: sh + '%' 
-            });
-        } else { alert("Level has no Start!"); this.toMenu(); }
+            Object.assign(this.els.trig.style, { left: (sx + sw/2) + '%', top: (sy + sh/2) + '%', width: sw + '%', height: sh + '%' });
+        }
     },
-    
+
     activateCustom() { this.els.curtain.style.display = 'none'; this.state = 'playing'; },
 
     parseCookie(jsonStr, d) {
         const data = JSON.parse(jsonStr);
         let css = "";
-        const objects = data.map(o => {
-            if (o.type && typeof o.type === 'string') return o;
-            const t = ['path','obs','goal','start','btn','trig'][o[0]];
-            return {
-                type: (t==='start'?'start':t),
-                x: o[1], y: o[2], w: o[3], h: o[4],
-                kfs: o[5], tag: o[6], link: o[7], 
-                wait: !!o[8], dur: o[9]||2, z: o[10]||10, r: o[11]||0, loop: (o[12]!==0),
-                next: (t==='goal' && o[7]) ? o[7] : 'menu'
-            };
+        data.forEach(o => {
+            const types = ['path','obs','goal','start','btn','trig'];
+            const t = types[o[0]];
+            let anim = null;
+            if(o[5] && o[5].length) {
+                const nm = `a-${Math.random().toString(36).substr(2)}`;
+                css += `@keyframes ${nm} { 0%{transform:translate(0,0)} `;
+                o[5].forEach((k,i) => css += `${Math.round((i+1)/(o[5].length+1)*100)}%{transform:translate(${k[0]}%,${k[1]}%)} `);
+                css += `100%{transform:translate(0,0)} } `;
+                anim = `${nm} ${o[9]||2}s linear infinite`;
+            }
+            const type = (t==='start') ? 'start' : t;
+            const obj = this.spawn(o[1], o[2], o[3], o[4], type, anim, (t==='goal'?'menu':null));
+            if(o[6]) obj.tag = o[6]; if(o[7]) obj.link = o[7];
+            if(o[8]) { obj.vis.classList.add('paused'); obj.hit.classList.add('paused'); }
+            if(o[10]) obj.vis.style.zIndex = o[10];
         });
-        this.buildLevel(objects);
+        this.els.css.innerHTML += css;
     },
 
     spawn(x,y,w,h,type,anim,next,holdTime) {
@@ -529,8 +523,18 @@ window.Engine = {
 
             if(mx>bx && mx<bx+bw && my>by && my<by+bh) {
                 if(hb.type === 'obs' && this.state==='playing') return this.die();
+                
                 if(hb.type === 'path') safe = true;
-                if(hb.type === 'start') { safe = true; if(this.state === 'waiting') { this.state = 'playing'; } }
+                
+                // Ghost Mode Logic
+                if(hb.type === 'start') { 
+                    safe = true; 
+                    if(this.state === 'waiting') { 
+                        this.state = 'playing'; 
+                        console.log("Game Active");
+                    } 
+                }
+                
                 if(hb.type === 'goal') { 
                     safe=true; touchingGoal=true; 
                     if(hb.hold > 0) {
@@ -542,6 +546,7 @@ window.Engine = {
                         if(this.goalTimer >= hb.hold) this.win(hb.next);
                     } else { this.win(hb.next); }
                 }
+                
                 if((hb.type==='btn' || hb.type==='trig') && hb.link) {
                     safe=true;
                     this.hitboxes.forEach(t => { if(t.tag === hb.link) { t.vis.classList.remove('paused'); t.hit.classList.remove('paused'); }});
@@ -549,6 +554,7 @@ window.Engine = {
                 }
             }
         }
+        
         document.getElementById('game').style.cursor = (this.state==='playing' && safe) ? 'crosshair' : 'default';
         if(!touchingGoal) { this.goalTimer=0; this.els.hud.style.display='none'; }
         if(this.state === 'playing' && !safe) this.die();
@@ -561,13 +567,19 @@ window.Engine = {
         this.els.gfx.innerHTML=''; this.els.phy.innerHTML=''; 
         document.getElementById('game').style.cursor='default';
         this.els.curtain.style.display = 'none';
-        const ml = document.getElementById('active-mods-list'); if(ml) ml.style.display = 'none';
+        
+        // Hide Active Mod List when playing
+        const ml = document.getElementById('active-mods-list');
+        if(ml) ml.style.display = 'none';
     },
     toMenu() { 
         this.reset(); 
         this.els.menu.style.display='block'; 
         document.getElementById('db-room').innerText="ROOM: MENU"; 
-        const ml = document.getElementById('active-mods-list'); if(ml) ml.style.display = 'flex';
+        
+        // Show Active Mod List in Menu
+        const ml = document.getElementById('active-mods-list');
+        if(ml) ml.style.display = 'flex';
     },
     
     openSavesMenu() { document.getElementById('saves-screen').style.display='block'; document.getElementById('menu').style.display='none'; this.checkSave(1); this.checkSave(2); },
@@ -599,17 +611,21 @@ window.load = function(t) {
 };
 
 // --- EMERGENCY MOD TOOLS ---
-window.listMods = () => { if (ModLoader.mods.length===0) return console.log("No mods."); console.table(ModLoader.mods.map(m=>({Name:m.name,Version:m.version,Enabled:m.enabled,ID:m.id}))); };
+window.listMods = () => {
+    if (ModLoader.mods.length === 0) return console.log("No mods installed.");
+    console.table(ModLoader.mods.map(m => ({ Name: m.name, Version: m.version, Enabled: m.enabled, ID: m.id })));
+};
 window.deleteMod = async (name) => {
     if (!name) return console.warn("Usage: deleteMod('Mod Name')");
     const target = ModLoader.mods.find(m => m.name.toLowerCase() === name.toLowerCase());
     if (target) {
         console.log(`%c[System] Deleting "${target.name}"...`, "color: orange");
         await ModDB.delete(target.id);
-        console.log(`%c[System] Success! Reloading...`, "color: lime");
+        console.log(`%c[System] Success! Reloading game...`, "color: lime");
         setTimeout(() => location.reload(), 500);
     } else {
-        console.error(`Mod "${name}" not found.`); console.log("Type listMods() to see installed mods.");
+        console.error(`Mod "${name}" not found.`);
+        console.log("Type listMods() to see installed mods.");
     }
 };
 </script>

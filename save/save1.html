@@ -57,7 +57,6 @@
             .btn-text { font-size: 5vw !important; }
         }
     </style>
-    <style id="dynamic-css"></style>
 </head>
 <body>
     <div id="game">
@@ -84,11 +83,11 @@
                     <div class="btn-text">&lt;-Exit</div>
                 </div>
             </div>
-
+            
             <div id="start-curtain">
-                <div id="start-trigger" onmousedown="Engine.activateLevel()"></div>
+                <div id="start-trigger" onmousedown="window.Engine.activateCustom()"></div>
             </div>
-
+            
             <div id="cheat-ind">NOCLIP ON</div>
             <div id="debug-ind">HITBOXES ON</div>
         </div>
@@ -102,7 +101,7 @@ if (localStorage.getItem('touchYellow_save1') !== 'true') {
     throw new Error("Redirecting...");
 }
 
-// --- MOD LOADER ---
+// --- MOD LOADER (Async) ---
 (async function() {
     window.ModAPI = { hook: (t, f) => { const p=t.split('.'); const o=window[p[0]]; if(o&&o[p[1]]) { const org=o[p[1]].bind(o); o[p[1]]=(...a)=>f(org,...a); } } };
     const req = indexedDB.open("TouchYellowMods", 2);
@@ -113,7 +112,7 @@ if (localStorage.getItem('touchYellow_save1') !== 'true') {
             get.result.forEach(mod => {
                 if(mod.enabled) {
                     try {
-                        const settings={}; if(mod.configSchema){for(let k in mod.configSchema){const s=mod.userConfig?m.userConfig[k]:undefined;settings[k]=(s!==undefined)?s:m.configSchema[k].default;}}
+                        const settings={}; if(mod.configSchema){for(let k in mod.configSchema){const s=mod.userConfig?mod.userConfig[k]:undefined;settings[k]=(s!==undefined)?s:mod.configSchema[k].default;}}
                         const f = new Function('ModAPI', 'Engine', 'Net', 'Settings', mod.code);
                         f(window.ModAPI, (window.Engine||{}), (window.Net||{}), settings);
                         console.log(`[Mod] Loaded: ${mod.name}`);
@@ -139,23 +138,12 @@ window.Engine = {
         this.mobile = 'ontouchstart' in window;
         const move = (x,y) => { 
             this.mx=x; this.my=y;
-            const r = document.getElementById('game').getBoundingClientRect();
-            const isPortrait = window.matchMedia("(orientation: portrait)").matches;
-            let px, py;
-            if (isPortrait && this.mobile) {
-                const relX = x - r.left; const relY = y - r.top;
-                const visualX = (relX / r.width) * 100; const visualY = (relY / r.height) * 100;
-                px = visualY; py = 100 - visualX;
-            } else {
-                px = ((x - r.left) / r.width) * 100; py = ((y - r.top) / r.height) * 100;
-            }
-            this.cursorX = px; this.cursorY = py;
-
             const cx=document.getElementById('db-cross-x'); const cy=document.getElementById('db-cross-y'); const ct=document.getElementById('db-coords');
             if(cx&&cy){
+                const r=document.getElementById('game').getBoundingClientRect();
                 const ly=y-r.top; const lx=x-r.left;
                 cx.style.top=ly+'px'; cy.style.left=lx+'px';
-                if(ct){ ct.innerText=`X: ${px.toFixed(2)}% Y: ${py.toFixed(2)}%`; }
+                if(ct){ const px=((lx/r.width*100).toFixed(2)); const py=((ly/r.height*100).toFixed(2)); ct.innerText=`X: ${px}% Y: ${py}%`; }
             }
         };
         window.addEventListener('mousemove', e => move(e.clientX, e.clientY));
@@ -185,9 +173,9 @@ window.Engine = {
         
         document.getElementById('db-room').innerText = "ROOM: LEVEL " + id;
         
-        if (GlobalLevels.levels[id]) {
-            if (GlobalLevels.levels[id].world !== 2) { alert("Wrong World"); location.href='../index.html'; return; }
-            this.buildLevel(GlobalLevels.levels[id].objects);
+        if (GlobalLevels[id]) {
+            if (GlobalLevels[id].world !== 2) { alert("Wrong World"); location.href='../index.html'; return; }
+            this.buildLevel(GlobalLevels[id].objects);
         } else { 
             alert("World 2 Complete!"); location.href='../index.html'; 
         }
@@ -220,13 +208,9 @@ window.Engine = {
             if(o.link) obj.link = o.link;
             if(o.wait) { obj.vis.classList.add('paused'); obj.hit.classList.add('paused'); }
             if(o.z) obj.vis.style.zIndex = o.z;
-            if(o.r) {
-                obj.vis.style.transform = `rotate(${o.r}deg)`;
-                obj.hit.style.transform = `rotate(${o.r}deg)`;
-            }
         });
-
-        // Setup Blue Curtain
+        
+        // Show Blue Curtain
         const startObj = this.hitboxes.find(o => o.type === 'start');
         if(startObj) {
             this.els.curtain.style.display = 'block';
@@ -237,7 +221,7 @@ window.Engine = {
     },
 
     activateCustom() { this.els.curtain.style.display = 'none'; this.state = 'playing'; },
-    
+
     spawn(x,y,w,h,type,anim,next,holdTime) {
         const s = {left:x+'%', top:y+'%', width:w+'%', height:h+'%'};
         const v = document.createElement('div'); v.className=`obj ${type}`; Object.assign(v.style, s);
@@ -246,7 +230,7 @@ window.Engine = {
         const p = document.createElement('div'); p.className=`hitbox ${type}`; Object.assign(p.style, s);
         if(anim) p.style.animation = anim;
         this.els.phy.appendChild(p);
-        const obj = { vis:v, hit:p, type, next, tag:"", link:"", hold:holdTime||0 };
+        const obj = { vis:v, hit:p, type, next, tag:"", link:"", hold:holdTime||0, style:s };
         this.hitboxes.push(obj);
         return obj;
     },
@@ -291,15 +275,21 @@ window.Engine = {
         }
         
         document.getElementById('game').style.cursor = (this.state==='playing' && safe) ? 'crosshair' : 'default';
+        
+        // Void Death
         if(this.state==='playing' && !safe) this.die();
     },
     die() { if(this.noclip) return; this.active = false; this.start(6); },
     reset() { this.active=false; this.hitboxes=[]; this.els.gfx.innerHTML=''; this.els.phy.innerHTML=''; document.getElementById('game').style.cursor='default'; },
-    toMenu() { this.reset(); document.getElementById('menu-screen').style.display='flex'; document.getElementById('db-room').innerText="ROOM: MENU"; }
+    toMenu() { this.reset(); document.getElementById('menu-screen').style.display='flex'; document.getElementById('db-room').innerText="ROOM: MENU"; },
+    
+    openSavesMenu() { document.getElementById('saves-screen').style.display='block'; document.getElementById('menu').style.display='none'; this.checkSave(1); this.checkSave(2); },
+    closeSaves() { document.getElementById('saves-screen').style.display='none'; document.getElementById('menu').style.display='block'; },
+    checkSave(n) { const has = localStorage.getItem(`touchYellow_save${n}`) === 'true'; document.getElementById(`circle-${n}`).className = `slot-btn slot-${has?'unlocked':'locked'}`; },
+    loadSave(n) { if(localStorage.getItem(`touchYellow_save${n}`) === 'true') location.href=`save/save${n}.html`; else alert("Locked!"); }
 };
 
-// BOOTSTRAP
-Engine.init();
+window.Engine.init();
 
 // --- COMMANDS ---
 Object.defineProperties(window, {
@@ -307,7 +297,7 @@ Object.defineProperties(window, {
     'noclip': { get: function() { window.Engine.noclip=!window.Engine.noclip; document.getElementById('cheat-ind').style.display=window.Engine.noclip?'block':'none'; localStorage.setItem('touchYellow_noclip', window.Engine.noclip); return `God Mode: ${window.Engine.noclip?"ON":"OFF"}`; } },
     'clear': { get: function() { localStorage.clear(); alert("Wiped"); window.location.href='../index.html'; return "Resetting..."; } }
 });
-window.s1='save1'; window.menu='menu';
+window.s1='save1'; window.s2='save2'; window.menu='menu';
 window.load = function(t) {
     if(typeof t==='number') { window.Engine.start(t); return `Level ${t}`; }
     const s=String(t).toLowerCase();
