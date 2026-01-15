@@ -40,9 +40,8 @@
         #grp-start   { bottom:28%; left:5%; }
         #grp-exit    { bottom:8%; left:5%; }
 
-        #mode-btn { position:absolute; bottom:5%; right:5%; font-family:'Luckiest Guy',cursive; font-size:5vh; color:#ffff00; text-shadow:0.4vh 0.4vh 0 #000; cursor:pointer; user-select:none; z-index:501; transition:transform 0.15s ease-in, color 0.1s; transform-style:preserve-3d; }
-        .flip-out { transform:rotateX(90deg); opacity:0.5; }
-
+        #mode-btn { position:absolute; bottom:5%; right:5%; font-family:'Luckiest Guy',cursive; font-size:5vh; color:#ffff00; text-shadow:0.4vh 0.4vh 0 #000; cursor:pointer; user-select:none; z-index:501; transform-style:preserve-3d; }
+        
         /* ACTIVE MOD LIST */
         #active-mods-list { position:absolute; top:10px; left:10px; text-align:left; pointer-events:none; z-index:550; display:flex; flex-direction:column; gap:2px; }
         .active-mod-item { color:rgba(255,255,255,0.5); font-family:'Roboto',sans-serif; font-size:1.5vh; font-weight:bold; text-shadow:1px 1px 0 #000; opacity:0.9; }
@@ -117,13 +116,12 @@
         #cheat-ind { position:absolute; top:10px; left:10px; color:yellow; font-weight:bold; display:none; z-index:999; font-family:monospace; font-size:2vh; text-shadow:1px 1px 0 #000; }
         #debug-ind { position:absolute; top:35px; left:10px; color:lime; font-weight:bold; display:none; z-index:999; font-family:monospace; font-size:2vh; text-shadow:1px 1px 0 #000; }
         #catch-meter { position:fixed; display:none; width:40px; height:6px; background:#333; border:1px solid white; border-radius:3px; pointer-events:none; z-index:9999; transform:translate(-50%,-20px); }
-        #catch-fill { width:0%; height:100%; background:#00ff00; transition:width 0.05s linear; }
+        #catch-fill { width:0%; height:100%; background:#00ff00; }
         #dynamic-css { display:none; }
         
         /* START CURTAIN */
         #start-curtain { display:none; position:absolute; top:0; left:0; width:100%; height:100%; background-color:#26a9e1; z-index:9000; cursor:default; pointer-events:auto; }
-        #start-trigger { position:absolute; width:10%; height:10%; background:#f1a92a; border-radius:50%; border:2px solid white; box-shadow:0 0 20px white; cursor:pointer; transform:translate(-50%,-50%); animation:pulse 1s infinite alternate; pointer-events:auto; }
-        @keyframes pulse { from { transform:translate(-50%,-50%) scale(1); } to { transform:translate(-50%,-50%) scale(1.1); } }
+        #start-trigger { position:absolute; width:10%; height:10%; background:#f1a92a; border-radius:50%; border:2px solid white; box-shadow:0 0 20px white; cursor:pointer; transform:translate(-50%,-50%); pointer-events:auto; }
 
         /* MOBILE */
         @media screen and (orientation: portrait) {
@@ -173,7 +171,7 @@
                 
                 <div id="grp-custom" class="btn-group">
                     <span class="btn-label">Custom -&gt;</span>
-                    <div class="circle-btn" style="background:#b0f; border-color:#80c;" onmousedown="window.Engine.loadCustom()"></div>
+                    <div class="circle-btn" style="background:#b0f; border-color:#80c;" onmousedown="window.Engine.start('custom')"></div>
                 </div>
 
                 <div id="grp-mods" class="btn-group">
@@ -328,7 +326,7 @@ const ModUI={
 window.GlobalLevels = {};
 
 window.Engine = {
-    active: false, state: 'menu', mx:0, my:0, mobile:false, holding:false, holdMode:false, hitboxes:[], noclip: false, goalTimer:0, linkPlay: false, cursorX:0, cursorY:0,
+    active: false, state: 'menu', mx:0, my:0, mobile:false, holding:false, holdMode:false, hitboxes:[], noclip: false, goalTimer:0, linkPlay: false, cursorX:0, cursorY:0, ignoreUp: false,
     els: { gfx:document.getElementById('gfx'), phy:document.getElementById('phy'), menu:document.getElementById('menu'), hud:document.getElementById('catch-meter'), fill:document.getElementById('catch-fill'), css:document.getElementById('dynamic-css'), curtain:document.getElementById('start-curtain'), trig:document.getElementById('start-trigger') },
 
     async init() {
@@ -374,7 +372,11 @@ window.Engine = {
         window.addEventListener('touchmove', e => { e.preventDefault(); move(e.touches[0].clientX, e.touches[0].clientY); }, {passive:false});
         
         const down = () => this.holding=true;
-        const up = () => { this.holding=false; if(this.state==='playing' && this.holdMode) this.die(); };
+        const up = () => { 
+            this.holding=false; 
+            if(this.ignoreUp) { this.ignoreUp = false; return; }
+            if(this.state==='playing' && this.holdMode) this.die(); 
+        };
         window.addEventListener('mousedown', down); window.addEventListener('touchstart', down);
         window.addEventListener('mouseup', up); window.addEventListener('touchend', up);
         window.addEventListener('touchcancel', up);
@@ -387,15 +389,13 @@ window.Engine = {
     },
 
     toggleMode() {
-        const btn = document.getElementById('mode-btn'); if(!btn) return;
-        btn.classList.add('flip-out');
-        setTimeout(() => {
-            this.holdMode = !this.holdMode;
-            localStorage.setItem('touchYellow_holdMode', this.holdMode);
+        this.holdMode = !this.holdMode;
+        localStorage.setItem('touchYellow_holdMode', this.holdMode);
+        const btn = document.getElementById('mode-btn');
+        if(btn) {
             if(this.holdMode) { btn.innerText="HOLD MODE"; btn.style.color="#f2a922"; }
             else { btn.innerText="HOVER MODE"; btn.style.color="#ffff00"; }
-            btn.classList.remove('flip-out');
-        }, 150);
+        }
     },
 
     start(id) {
@@ -403,25 +403,29 @@ window.Engine = {
         if (!document.fullscreenElement) { document.documentElement.requestFullscreen().catch(e=>{}); }
         this.reset();
         this.active = true;
+        this.ignoreUp = true;
         this.els.menu.style.display='none'; document.getElementById('saves-screen').style.display='none';
         
         this.state = (id==='custom') ? 'waiting' : 'playing'; 
         document.getElementById('db-room').innerText = (id==='custom') ? "ROOM: CUSTOM" : "ROOM: LEVEL " + id;
         
-        const builder = {
-            path: (x,y,w,h) => this.spawn(x,y,w,h,'path'),
-            obs: (x,y,w,h,a) => this.spawn(x,y,w,h,'obs',a),
-            goal: (x,y,w,h,n,t) => this.spawn(x,y,w,h,'goal',null,n,t),
-            trig: (x,y,w,h) => this.spawn(x,y,w,h,'trig')
-        };
-
-        if(id === 'custom') this.loadCustom(builder);
+        if(id === 'custom') this.loadCustom();
         else if(window.GlobalLevels[id]) {
             if (window.GlobalLevels[id].world !== 1) { alert("Wrong World"); location.href='save/save1.html'; return; }
             this.buildLevel(window.GlobalLevels[id].objects);
         } else { 
             alert("You Win!"); this.toMenu(); 
         }
+    },
+
+    loadCustom() {
+        let data = localStorage.getItem('ty_custom_level_data');
+        if(!data) {
+            data = prompt("Paste Level Data (JSON):");
+            if(data) localStorage.setItem('ty_custom_level_data', data);
+            else { this.toMenu(); return; }
+        }
+        try { this.parseCookie(data); } catch(e) { alert("Invalid Data"); this.toMenu(); }
     },
 
     buildLevel(objects) {
@@ -469,7 +473,7 @@ window.Engine = {
 
     activateCustom() { this.els.curtain.style.display = 'none'; this.state = 'playing'; },
 
-    parseCookie(jsonStr, d) {
+    parseCookie(jsonStr) {
         const data = JSON.parse(jsonStr);
         let css = "";
         data.forEach(o => {
