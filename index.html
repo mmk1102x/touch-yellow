@@ -5,12 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Touch Yellow Web</title>
     <link href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Roboto:wght@900&display=swap" rel="stylesheet">
-    <script>
-        // Clean URL
-        if(window.location.pathname.endsWith('index.html')) {
-            window.history.replaceState({}, document.title, window.location.pathname.replace('index.html', ''));
-        }
-    </script>
     <style>
         body { margin:0; background:#000; overflow:hidden; font-family:'Roboto',sans-serif; height:100vh; display:flex; justify-content:center; align-items:center; user-select:none; touch-action:none; -webkit-user-select:none; }
         #game { width:100%; max-width:177.7vh; aspect-ratio:16/9; position:relative; background:#000; box-shadow:0 0 50px #333; }
@@ -31,16 +25,15 @@
 
         /* BUTTONS */
         .btn-group { position:absolute; display:flex; align-items:center; gap:15px; pointer-events:none; }
-        .btn-group:active { transform:scale(0.95); }
         .btn-label { font-family:'Roboto',sans-serif; font-weight:bold; font-size:3.5vh; color:#000; text-shadow: 0 0 2px rgba(255,255,255,0.5); pointer-events:none; user-select:none; }
-        .circle-btn { width:8vh; height:8vh; background:#f2a922; border:0.4vh solid #b37a15; border-radius:50%; box-shadow:0 0 10px rgba(0,0,0,0.5); cursor:pointer; pointer-events:auto; transition:transform 0.05s; }
-        .circle-btn:active { transform:scale(0.9); }
+        .circle-btn { width:8vh; height:8vh; background:#f2a922; border:0.4vh solid #b37a15; border-radius:50%; box-shadow:0 0 10px rgba(0,0,0,0.5); cursor:pointer; pointer-events:auto; }
         
+        /* Layout */
         #grp-saves   { top:22%; right:5%; }
         #grp-custom  { top:38%; right:5%; }
         #grp-mods    { top:54%; right:5%; }
-        #grp-start   { bottom:28%; left:15%; }
-        #grp-exit    { bottom:8%; left:15%; }
+        #grp-start   { bottom:28%; left:5%; } /* MOVED LEFT */
+        #grp-exit    { bottom:8%; left:5%; }  /* MOVED LEFT */
 
         #mode-btn { position:absolute; bottom:5%; right:5%; font-family:'Luckiest Guy',cursive; font-size:5vh; color:#ffff00; text-shadow:0.4vh 0.4vh 0 #000; cursor:pointer; user-select:none; z-index:501; transition:transform 0.15s ease-in, color 0.1s; transform-style:preserve-3d; }
         .flip-out { transform:rotateX(90deg); opacity:0.5; }
@@ -54,18 +47,15 @@
         .save-title { position:absolute; top:15%; width:100%; text-align:center; font-family:'Luckiest Guy',cursive; font-size:12vh; color:#ffff00; text-shadow:0.6vh 0.6vh 0 #000; pointer-events:none; }
         .save-row { position:absolute; top:45%; width:100%; display:flex; justify-content:center; gap:15vh; }
         .slot-group { display:flex; align-items:center; gap:10px; pointer-events:none; }
-        .slot-btn { width:10vh; height:10vh; border-radius:50%; border:0.5vh solid #000; box-shadow:0 0 10px rgba(0,0,0,0.5); pointer-events:auto; transition:transform 0.05s; }
-        .slot-btn:active { transform:scale(0.9); }
+        .slot-btn { width:10vh; height:10vh; border-radius:50%; border:0.5vh solid #000; box-shadow:0 0 10px rgba(0,0,0,0.5); pointer-events:auto; }
         .slot-locked { background-color:#444; border-color:#222; cursor:not-allowed; opacity:0.7; }
         .slot-unlocked { background-color:#00ff00; border-color:#004400; cursor:pointer; }
         #btn-back { position:absolute; bottom:10%; left:10%; display:flex; align-items:center; gap:15px; pointer-events:none; }
-        .back-circle { width:10vh; height:10vh; background:#fca503; border:0.5vh solid #000; border-radius:50%; cursor:pointer; pointer-events:auto; transition:transform 0.05s; }
-        .back-circle:active { transform:scale(0.9); }
+        .back-circle { width:10vh; height:10vh; background:#fca503; border:0.5vh solid #000; border-radius:50%; cursor:pointer; pointer-events:auto; }
 
         /* MOD MANAGER UI */
         #mod-screen { display:none; position:absolute; top:0; left:0; width:100%; height:100%; background-color:#3c2a4d; z-index:2000; }
         .mod-header { background:#261a33; padding:15px; border-bottom:2px solid #1d1226; display:flex; justify-content:space-between; align-items:center; }
-        .mod-title { font-family:'Luckiest Guy',cursive; font-size:4vh; color:#fff; text-shadow:2px 2px 0 #000; }
         .mod-list-container { position:absolute; top:75px; bottom:75px; left:50%; transform:translateX(-50%); width:80%; background:#1d1226; padding:10px; border-radius:8px; overflow-y:auto; }
         .mod-list-container.drag-over { border:2px dashed #0f0; background:rgba(0,255,0,0.1); }
         .mod-item { background:#2a1a38; border:1px solid #000; border-radius:8px; padding:10px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; }
@@ -101,7 +91,7 @@
         .btn { background:#33cc33; color:#33cc33; } .btn.on { background:#228822; color:#228822; }
         .paused { animation-play-state: paused !important; }
         
-        /* DEBUG VISUALS */
+        /* DEBUG */
         .hitbox { position:absolute; z-index:400; opacity:0; pointer-events:none; }
         .debug .hitbox { opacity:1 !important; }
         .debug .hitbox.path { background:transparent; border:none; }
@@ -110,7 +100,6 @@
         .debug .hitbox.trig, .debug .hitbox.btn { background:rgba(148,0,211,0.5); border:2px dashed magenta; }
         .debug .hitbox.start { background:rgba(0,255,0,0.1); border:1px dotted lime; }
 
-        /* DEBUG OVERLAY */
         .debug-overlay { display:none; pointer-events:none; position:absolute; top:0; left:0; width:100%; height:100%; z-index:9999; }
         .debug .debug-overlay { display:block; }
         #db-cross-x { position:absolute; width:100%; height:1px; background-color:cyan; left:0; }
@@ -122,6 +111,7 @@
         #debug-ind { position:absolute; top:35px; left:10px; color:lime; font-weight:bold; display:none; z-index:999; font-family:monospace; font-size:2vh; text-shadow:1px 1px 0 #000; }
         #catch-meter { position:fixed; display:none; width:40px; height:6px; background:#333; border:1px solid white; border-radius:3px; pointer-events:none; z-index:9999; transform:translate(-50%,-20px); }
         #catch-fill { width:0%; height:100%; background:#00ff00; transition:width 0.05s linear; }
+        #dynamic-css { display:none; }
         
         /* START CURTAIN */
         #start-curtain { display:none; position:absolute; top:0; left:0; width:100%; height:100%; background-color:#26a9e1; z-index:9000; cursor:default; pointer-events:auto; }
@@ -131,7 +121,12 @@
         /* MOBILE */
         @media screen and (orientation: portrait) {
             body { position: fixed; width: 100%; height: 100%; }
-            #game { position: absolute; top: 50%; left: 50%; width: 100vh !important; height: 100vw !important; transform: translate(-50%, -50%) rotate(90deg); max-width: none !important; aspect-ratio: auto !important; box-shadow: none !important; }
+            #game {
+                position: absolute; top: 50%; left: 50%;
+                width: 100vh !important; height: 100vw !important;
+                transform: translate(-50%, -50%) rotate(90deg);
+                max-width: none !important; aspect-ratio: auto !important; box-shadow: none !important;
+            }
             .circle-btn { width: 8vw !important; height: 8vw !important; border-width: 0.5vw !important; }
             .btn-label { font-size: 3.5vw !important; text-shadow: none !important; }
             .title-text { font-size: 14vw !important; }
@@ -250,7 +245,17 @@ const ModLoader={mods:[],init:async(cb)=>{console.log("[System] Booting ModLoade
         const settings={}; if(m.configSchema){for(let k in m.configSchema){const s=m.userConfig?m.userConfig[k]:undefined;settings[k]=(s!==undefined)?s:m.configSchema[k].default;}}
         const f=new Function('ModAPI','Engine','Net','Settings',m.code);f(window.ModAPI,(window.Engine||{}),(window.Net||{}),settings);console.log(`[Mod] Loaded: ${m.name}`);
         if(list) list.innerHTML += `<div class="active-mod-item">${m.name} v${m.version}</div>`;
-    }catch(e){console.error(e);}}});}catch(e){console.error(e);}if(cb)cb();},install:async(d)=>{if(!d.name||!d.code)return alert("Invalid Mod");d.id=Date.now().toString();d.enabled=true;await ModDB.save(d);ModLoader.mods.push(d);ModUI.render();ModUI.triggerRestart();},delete:async(id)=>{if(confirm("Delete?")){ModLoader.mods=ModLoader.mods.filter(m=>m.id!==id);await ModDB.delete(id);ModUI.render();ModUI.triggerRestart();}},toggle:async(id)=>{const m=ModLoader.mods.find(x=>x.id===id);if(m){m.enabled=!m.enabled;await ModDB.save(m);ModUI.render();ModUI.triggerRestart();}}};
+    }catch(e){console.error(e);}}});}catch(e){console.error(e);}if(cb)cb();},install:async(d)=>{if(!d.name||!d.code)return alert("Invalid Mod");
+    const existing = ModLoader.mods.find(m => m.name === d.name);
+    d.id = existing ? existing.id : Date.now().toString();
+    d.enabled = true;
+    if(existing) {
+        Object.assign(existing, d);
+        console.log("[Mod] Updating existing mod.");
+    } else {
+        ModLoader.mods.push(d);
+    }
+    await ModDB.save(d);ModUI.render();ModUI.triggerRestart();},delete:async(id)=>{if(confirm("Delete?")){ModLoader.mods=ModLoader.mods.filter(m=>m.id!==id);await ModDB.delete(id);ModUI.render();ModUI.triggerRestart();}},toggle:async(id)=>{const m=ModLoader.mods.find(x=>x.id===id);if(m){m.enabled=!m.enabled;await ModDB.save(m);ModUI.render();ModUI.triggerRestart();}}};
 window.ModAPI={hook:(t,f)=>{const p=t.split('.');const o=window[p[0]];if(o&&o[p[1]]){const org=o[p[1]].bind(o);o[p[1]]=(...a)=>f(org,...a);}}};
 
 // --- MOD UI ---
@@ -345,14 +350,25 @@ window.Engine = {
 
         const move = (x,y) => { 
             this.mx=x; this.my=y; 
+            const r = document.getElementById('game').getBoundingClientRect();
+            const isPortrait = window.matchMedia("(orientation: portrait)").matches;
+            let px, py;
+            if (isPortrait && this.mobile) {
+                const relX = x - r.left; const relY = y - r.top;
+                const visualX = (relX / r.width) * 100; const visualY = (relY / r.height) * 100;
+                px = visualY; py = 100 - visualX;
+            } else {
+                px = ((x - r.left) / r.width) * 100; py = ((y - r.top) / r.height) * 100;
+            }
+            this.cursorX = px; this.cursorY = py;
+
             const cx = document.getElementById('db-cross-x');
             const cy = document.getElementById('db-cross-y');
             const ct = document.getElementById('db-coords');
             if(cx && cy) { 
-                const r = document.getElementById('game').getBoundingClientRect();
                 const ly = y - r.top; const lx = x - r.left;
                 cx.style.top = ly + 'px'; cy.style.left = lx + 'px';
-                if(ct) ct.innerText = `X: ${(lx/r.width*100).toFixed(2)}% Y: ${(ly/r.height*100).toFixed(2)}%`;
+                if(ct) ct.innerText = `X: ${px.toFixed(2)}% Y: ${py.toFixed(2)}%`;
             }
         };
         window.addEventListener('mousemove', e => move(e.clientX, e.clientY));
@@ -411,6 +427,10 @@ window.Engine = {
 
     buildLevel(objects) {
         this.els.css.innerHTML = "";
+        if(GlobalLevels.animations) {
+            for(const name in GlobalLevels.animations) this.els.css.innerHTML += `@keyframes ${name} { ${GlobalLevels.animations[name]} } `;
+        }
+
         objects.forEach(o => {
             let animName = o.anim;
             if (o.kfs && o.kfs.length > 0) {
@@ -464,24 +484,18 @@ window.Engine = {
     parseCookie(jsonStr, d) {
         const data = JSON.parse(jsonStr);
         let css = "";
-        data.forEach(o => {
-            const types = ['path','obs','goal','start','btn','trig'];
-            const t = types[o[0]];
-            let anim = null;
-            if(o[5] && o[5].length) {
-                const nm = `a-${Math.random().toString(36).substr(2)}`;
-                css += `@keyframes ${nm} { 0%{transform:translate(0,0)} `;
-                o[5].forEach((k,i) => css += `${Math.round((i+1)/(o[5].length+1)*100)}%{transform:translate(${k[0]}%,${k[1]}%)} `);
-                css += `100%{transform:translate(0,0)} } `;
-                anim = `${nm} ${o[9]||2}s linear infinite`;
-            }
-            const type = (t==='start') ? 'start' : t;
-            const obj = this.spawn(o[1], o[2], o[3], o[4], type, anim, (t==='goal'?'menu':null));
-            if(o[6]) obj.tag = o[6]; if(o[7]) obj.link = o[7];
-            if(o[8]) { obj.vis.classList.add('paused'); obj.hit.classList.add('paused'); }
-            if(o[10]) obj.vis.style.zIndex = o[10];
+        const objects = data.map(o => {
+            if (o.type && typeof o.type === 'string') return o;
+            const t = ['path','obs','goal','start','btn','trig'][o[0]];
+            return {
+                type: (t==='start'?'start':t),
+                x: o[1], y: o[2], w: o[3], h: o[4],
+                kfs: o[5], tag: o[6], link: o[7], 
+                wait: !!o[8], dur: o[9]||2, z: o[10]||10, r: o[11]||0, loop: (o[12]!==0),
+                next: (t==='goal' && o[7]) ? o[7] : 'menu'
+            };
         });
-        this.els.css.innerHTML += css;
+        this.buildLevel(objects);
     },
 
     spawn(x,y,w,h,type,anim,next,holdTime) {
@@ -515,18 +529,8 @@ window.Engine = {
 
             if(mx>bx && mx<bx+bw && my>by && my<by+bh) {
                 if(hb.type === 'obs' && this.state==='playing') return this.die();
-                
                 if(hb.type === 'path') safe = true;
-                
-                // Ghost Mode Logic
-                if(hb.type === 'start') { 
-                    safe = true; 
-                    if(this.state === 'waiting') { 
-                        this.state = 'playing'; 
-                        console.log("Game Active");
-                    } 
-                }
-                
+                if(hb.type === 'start') { safe = true; if(this.state === 'waiting') { this.state = 'playing'; } }
                 if(hb.type === 'goal') { 
                     safe=true; touchingGoal=true; 
                     if(hb.hold > 0) {
@@ -538,7 +542,6 @@ window.Engine = {
                         if(this.goalTimer >= hb.hold) this.win(hb.next);
                     } else { this.win(hb.next); }
                 }
-                
                 if((hb.type==='btn' || hb.type==='trig') && hb.link) {
                     safe=true;
                     this.hitboxes.forEach(t => { if(t.tag === hb.link) { t.vis.classList.remove('paused'); t.hit.classList.remove('paused'); }});
@@ -546,7 +549,6 @@ window.Engine = {
                 }
             }
         }
-        
         document.getElementById('game').style.cursor = (this.state==='playing' && safe) ? 'crosshair' : 'default';
         if(!touchingGoal) { this.goalTimer=0; this.els.hud.style.display='none'; }
         if(this.state === 'playing' && !safe) this.die();
@@ -559,19 +561,13 @@ window.Engine = {
         this.els.gfx.innerHTML=''; this.els.phy.innerHTML=''; 
         document.getElementById('game').style.cursor='default';
         this.els.curtain.style.display = 'none';
-        
-        // Hide Active Mod List when playing
-        const ml = document.getElementById('active-mods-list');
-        if(ml) ml.style.display = 'none';
+        const ml = document.getElementById('active-mods-list'); if(ml) ml.style.display = 'none';
     },
     toMenu() { 
         this.reset(); 
         this.els.menu.style.display='block'; 
         document.getElementById('db-room').innerText="ROOM: MENU"; 
-        
-        // Show Active Mod List in Menu
-        const ml = document.getElementById('active-mods-list');
-        if(ml) ml.style.display = 'flex';
+        const ml = document.getElementById('active-mods-list'); if(ml) ml.style.display = 'flex';
     },
     
     openSavesMenu() { document.getElementById('saves-screen').style.display='block'; document.getElementById('menu').style.display='none'; this.checkSave(1); this.checkSave(2); },
@@ -603,21 +599,17 @@ window.load = function(t) {
 };
 
 // --- EMERGENCY MOD TOOLS ---
-window.listMods = () => {
-    if (ModLoader.mods.length === 0) return console.log("No mods installed.");
-    console.table(ModLoader.mods.map(m => ({ Name: m.name, Version: m.version, Enabled: m.enabled, ID: m.id })));
-};
+window.listMods = () => { if (ModLoader.mods.length===0) return console.log("No mods."); console.table(ModLoader.mods.map(m=>({Name:m.name,Version:m.version,Enabled:m.enabled,ID:m.id}))); };
 window.deleteMod = async (name) => {
     if (!name) return console.warn("Usage: deleteMod('Mod Name')");
     const target = ModLoader.mods.find(m => m.name.toLowerCase() === name.toLowerCase());
     if (target) {
         console.log(`%c[System] Deleting "${target.name}"...`, "color: orange");
         await ModDB.delete(target.id);
-        console.log(`%c[System] Success! Reloading game...`, "color: lime");
+        console.log(`%c[System] Success! Reloading...`, "color: lime");
         setTimeout(() => location.reload(), 500);
     } else {
-        console.error(`Mod "${name}" not found.`);
-        console.log("Type listMods() to see installed mods.");
+        console.error(`Mod "${name}" not found.`); console.log("Type listMods() to see installed mods.");
     }
 };
 </script>

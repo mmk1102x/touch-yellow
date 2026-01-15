@@ -46,7 +46,7 @@
         #start-curtain { display:none; position:absolute; top:0; left:0; width:100%; height:100%; background-color:#26a9e1; z-index:9000; cursor:default; pointer-events:auto; }
         #start-trigger { position:absolute; width:10%; height:10%; background:#f1a92a; border-radius:50%; border:2px solid white; box-shadow:0 0 20px white; cursor:pointer; transform:translate(-50%,-50%); animation:pulse 1s infinite alternate; pointer-events:auto; }
         @keyframes pulse { from { transform:translate(-50%,-50%) scale(1); } to { transform:translate(-50%,-50%) scale(1.1); } }
-
+        
         @keyframes spawnIn { 0% { transform: scale(0); } 100% { transform: scale(1); } }
         @keyframes openDoor { 100% { transform:translateY(-150%); } }
 
@@ -86,9 +86,9 @@
             </div>
 
             <div id="start-curtain">
-                <div id="start-trigger" onmousedown="Engine.activateCustom()"></div>
+                <div id="start-trigger" onmousedown="Engine.activateLevel()"></div>
             </div>
-            
+
             <div id="cheat-ind">NOCLIP ON</div>
             <div id="debug-ind">HITBOXES ON</div>
         </div>
@@ -113,7 +113,7 @@ if (localStorage.getItem('touchYellow_save1') !== 'true') {
             get.result.forEach(mod => {
                 if(mod.enabled) {
                     try {
-                        const settings={}; if(mod.configSchema){for(let k in mod.configSchema){const s=mod.userConfig?mod.userConfig[k]:undefined;settings[k]=(s!==undefined)?s:mod.configSchema[k].default;}}
+                        const settings={}; if(mod.configSchema){for(let k in mod.configSchema){const s=mod.userConfig?m.userConfig[k]:undefined;settings[k]=(s!==undefined)?s:m.configSchema[k].default;}}
                         const f = new Function('ModAPI', 'Engine', 'Net', 'Settings', mod.code);
                         f(window.ModAPI, (window.Engine||{}), (window.Net||{}), settings);
                         console.log(`[Mod] Loaded: ${mod.name}`);
@@ -139,12 +139,23 @@ window.Engine = {
         this.mobile = 'ontouchstart' in window;
         const move = (x,y) => { 
             this.mx=x; this.my=y;
+            const r = document.getElementById('game').getBoundingClientRect();
+            const isPortrait = window.matchMedia("(orientation: portrait)").matches;
+            let px, py;
+            if (isPortrait && this.mobile) {
+                const relX = x - r.left; const relY = y - r.top;
+                const visualX = (relX / r.width) * 100; const visualY = (relY / r.height) * 100;
+                px = visualY; py = 100 - visualX;
+            } else {
+                px = ((x - r.left) / r.width) * 100; py = ((y - r.top) / r.height) * 100;
+            }
+            this.cursorX = px; this.cursorY = py;
+
             const cx=document.getElementById('db-cross-x'); const cy=document.getElementById('db-cross-y'); const ct=document.getElementById('db-coords');
             if(cx&&cy){
-                const r=document.getElementById('game').getBoundingClientRect();
                 const ly=y-r.top; const lx=x-r.left;
                 cx.style.top=ly+'px'; cy.style.left=lx+'px';
-                if(ct){ const px=((lx/r.width*100).toFixed(2)); const py=((ly/r.height*100).toFixed(2)); ct.innerText=`X: ${px}% Y: ${py}%`; }
+                if(ct){ ct.innerText=`X: ${px.toFixed(2)}% Y: ${py.toFixed(2)}%`; }
             }
         };
         window.addEventListener('mousemove', e => move(e.clientX, e.clientY));
@@ -183,8 +194,10 @@ window.Engine = {
     },
 
     buildLevel(objects) {
-        if(!this.els.css) this.els.css = document.getElementById('dynamic-css');
         this.els.css.innerHTML = "";
+        if(GlobalLevels.animations) {
+            for(const name in GlobalLevels.animations) this.els.css.innerHTML += `@keyframes ${name} { ${GlobalLevels.animations[name]} } `;
+        }
         
         objects.forEach(o => {
             let animName = o.anim;
@@ -212,8 +225,8 @@ window.Engine = {
                 obj.hit.style.transform = `rotate(${o.r}deg)`;
             }
         });
-        
-        // Show Blue Curtain
+
+        // Setup Blue Curtain
         const startObj = this.hitboxes.find(o => o.type === 'start');
         if(startObj) {
             this.els.curtain.style.display = 'block';
@@ -258,6 +271,7 @@ window.Engine = {
                 
                 if(hb.type === 'path') safe = true;
                 
+                // Ghost Mode Logic
                 if(hb.type === 'start') { 
                     safe = true; 
                     if(this.state === 'waiting') { 
@@ -284,10 +298,8 @@ window.Engine = {
     toMenu() { this.reset(); document.getElementById('menu-screen').style.display='flex'; document.getElementById('db-room').innerText="ROOM: MENU"; }
 };
 
-ModLoader.init(() => {
-    console.log("[System] Starting World 2 Engine...");
-    window.Engine.init();
-});
+// BOOTSTRAP
+Engine.init();
 
 // --- COMMANDS ---
 Object.defineProperties(window, {
