@@ -39,21 +39,6 @@
         #db-coords { position:absolute; bottom:5px; right:5px; color:cyan; font-family:monospace; font-size:2vh; font-weight:bold; background:rgba(0,0,0,0.8); padding:2px 5px; border:1px solid cyan; }
         #db-room { position:absolute; bottom:5px; left:5px; color:cyan; font-family:monospace; font-size:2vh; font-weight:bold; background:rgba(0,0,0,0.8); padding:2px 5px; border:1px solid cyan; }
         
-        /* ACTIVE MOD LIST (Small White Text) */
-        #active-mods-list {
-            position: absolute; top: 10px; left: 10px;
-            text-align: left; pointer-events: none; z-index: 550;
-            display: flex; flex-direction: column; gap: 2px;
-        }
-        .active-mod-item {
-            color: #fff;
-            font-family: 'Roboto', sans-serif;
-            font-size: 1.5vh;
-            font-weight: bold;
-            text-shadow: 1px 1px 0 #000;
-            opacity: 0.9;
-        }
-
         .paused { animation-play-state: paused !important; }
         #cheat-ind { position:absolute; top:10px; left:10px; color:yellow; font-weight:bold; display:none; z-index:999; font-family:monospace; font-size:2vh; text-shadow:1px 1px 0 #000; }
         #debug-ind { position:absolute; top:35px; left:10px; color:lime; font-weight:bold; display:none; z-index:999; font-family:monospace; font-size:2vh; text-shadow:1px 1px 0 #000; }
@@ -68,6 +53,8 @@
             .btn-text { font-size: 5vw !important; }
         }
     </style>
+    <!-- ADDED: Dynamic CSS Target -->
+    <style id="dynamic-css"></style>
 </head>
 <body>
     <div id="game">
@@ -81,10 +68,6 @@
         <div id="ui" class="layer">
             <div id="menu-screen">
                 <div class="save-title">Got Save!</div>
-                
-                <!-- ACTIVE MOD LIST -->
-                <div id="active-mods-list"></div>
-
                 <div class="menu-btn-row">
                     <div class="btn-circle" onmousedown="window.Engine.start(6)"></div>
                     <div class="btn-text">&lt;-Continue</div>
@@ -132,14 +115,12 @@ if (localStorage.getItem('touchYellow_save1') !== 'true') {
         const tx = db.transaction(['mods'], 'readonly');
         const get = tx.objectStore('mods').getAll();
         get.onsuccess = () => {
-            const list = document.getElementById('active-mods-list');
             get.result.forEach(mod => {
                 if(mod.enabled) {
                     try {
                         const f = new Function('ModAPI', 'Engine', 'Net', mod.code);
                         f(window.ModAPI, (window.Engine||{}), (window.Net||{}));
                         console.log(`[Mod] Loaded: ${mod.name}`);
-                        if(list) list.innerHTML += `<div class="active-mod-item">${mod.name} v${mod.version}</div>`;
                     } catch(err) { console.error(err); }
                 }
             });
@@ -151,6 +132,7 @@ let GlobalLevels = {};
 
 window.Engine = {
     active: false, state: 'menu', mx:0, my:0, mobile:false, holding:false, hitboxes:[], noclip: false, cursorX:0, cursorY:0,
+    // FIXED: Initialize elements here
     els: { gfx:document.getElementById('gfx'), phy:document.getElementById('phy'), ui:document.getElementById('ui'), css:document.getElementById('dynamic-css') },
 
     async init() {
@@ -193,11 +175,6 @@ window.Engine = {
         this.state = 'waiting'; 
         
         document.getElementById('menu-screen').style.display='none';
-        
-        // Hide Mod List when playing
-        const ml = document.getElementById('active-mods-list');
-        if(ml) ml.style.display = 'none';
-
         this.hitboxes=[]; this.els.gfx.innerHTML=''; this.els.phy.innerHTML='';
         
         document.getElementById('db-room').innerText = "ROOM: LEVEL " + id;
@@ -296,20 +273,8 @@ window.Engine = {
         if(this.state==='playing' && !safe) this.die();
     },
     die() { if(this.noclip) return; this.active = false; this.start(6); },
-    reset() { 
-        this.active=false; this.hitboxes=[]; 
-        this.els.gfx.innerHTML=''; this.els.phy.innerHTML=''; 
-        document.getElementById('game').style.cursor='default';
-    },
-    toMenu() { 
-        this.reset(); 
-        document.getElementById('menu-screen').style.display='flex'; 
-        document.getElementById('db-room').innerText="ROOM: MENU"; 
-        
-        // Show Active Mod List in Menu
-        const ml = document.getElementById('active-mods-list');
-        if(ml) ml.style.display = 'flex';
-    },
+    reset() { this.active=false; this.hitboxes=[]; this.els.gfx.innerHTML=''; this.els.phy.innerHTML=''; document.getElementById('game').style.cursor='default'; },
+    toMenu() { this.reset(); document.getElementById('menu-screen').style.display='flex'; document.getElementById('db-room').innerText="ROOM: MENU"; },
     
     openSavesMenu() { document.getElementById('saves-screen').style.display='block'; document.getElementById('menu').style.display='none'; this.checkSave(1); this.checkSave(2); },
     closeSaves() { document.getElementById('saves-screen').style.display='none'; document.getElementById('menu').style.display='block'; },

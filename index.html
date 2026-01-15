@@ -23,21 +23,6 @@
         .title-text { font-family:'Luckiest Guy',cursive; font-size:14vh; color:#ffff00; text-transform:uppercase; text-shadow:0.8vh 0.8vh 0 #000; letter-spacing:-0.5vh; display:inline-block; }
         .title-sub { font-family:'Luckiest Guy',cursive; font-size:5vh; color:#ff9900; text-transform:uppercase; text-shadow:0.4vh 0.4vh 0 #000; position:absolute; top:10.5vh; left:14vh; transform:rotate(-3deg); }
 
-        /* ACTIVE MOD LIST (Small White Text) */
-        #active-mods-list {
-            position: absolute; top: 10px; left: 10px;
-            text-align: left; pointer-events: none; z-index: 550;
-            display: flex; flex-direction: column; gap: 2px;
-        }
-        .active-mod-item {
-            color: #fff;
-            font-family: 'Roboto', sans-serif;
-            font-size: 1.5vh;
-            font-weight: bold;
-            text-shadow: 1px 1px 0 #000;
-            opacity: 0.9;
-        }
-
         /* BUTTONS */
         .btn-group { position:absolute; display:flex; align-items:center; gap:15px; pointer-events:none; }
         .btn-group:active { transform:scale(0.95); }
@@ -45,15 +30,20 @@
         .circle-btn { width:8vh; height:8vh; background:#f2a922; border:0.4vh solid #b37a15; border-radius:50%; box-shadow:0 0 10px rgba(0,0,0,0.5); cursor:pointer; pointer-events:auto; transition:transform 0.05s; }
         .circle-btn:active { transform:scale(0.9); }
         
+        /* Adjusted Layout (Removed Creator) */
         #grp-saves   { top:22%; right:5%; }
-        #grp-creator { top:38%; right:5%; }
-        #grp-custom  { top:54%; right:5%; }
+        #grp-custom  { top:38%; right:5%; }
         #grp-mods    { bottom:8%; right:5%; }
+        
         #grp-start   { bottom:28%; left:15%; }
         #grp-exit    { bottom:8%; left:15%; }
 
         #mode-btn { position:absolute; bottom:5%; right:5%; font-family:'Luckiest Guy',cursive; font-size:5vh; color:#ffff00; text-shadow:0.4vh 0.4vh 0 #000; cursor:pointer; user-select:none; z-index:501; transition:transform 0.15s ease-in, color 0.1s; transform-style:preserve-3d; }
         .flip-out { transform:rotateX(90deg); opacity:0.5; }
+
+        /* ACTIVE MOD LIST */
+        #active-mods-list { position:absolute; top:10px; left:10px; text-align:left; pointer-events:none; z-index:550; display:flex; flex-direction:column; gap:2px; }
+        .active-mod-item { color:#fff; font-family:'Roboto',sans-serif; font-size:1.5vh; font-weight:bold; text-shadow:1px 1px 0 #000; opacity:0.9; }
 
         /* SAVE SELECT */
         #saves-screen { display:none; position:absolute; top:0; left:0; width:100%; height:100%; background-color:#4d4d4d; z-index:600; cursor:default; }
@@ -84,10 +74,22 @@
         .mod-toggle.enabled { background:#0f0; border-color:#040; }
         .mod-toggle.enabled::after { content:"✔"; color:black; font-weight:bold; }
         .mod-btn-small { background:#a33; border:1px solid #f55; color:white; font-weight:bold; cursor:pointer; padding:5px 10px; }
+        .mod-btn-gear { background:#444; border:1px solid #888; color:#f2a922; font-weight:bold; cursor:pointer; padding:5px 10px; font-size:1.5vh; }
+        .mod-btn-gear:hover { background:#666; }
         .mod-footer { padding:10px; text-align:center; }
         .mp-btn { background:#444; border:2px solid #fff; color:white; font-family:'Luckiest Guy'; font-size:3vh; padding:10px 20px; cursor:pointer; }
         #mod-restart-btn { display:none; background:#f30; color:white; font-family:'Luckiest Guy'; font-size:3vh; text-align:center; padding:15px; cursor:pointer; border-top:3px solid #fff; width:100%; animation:pulse-alert 1s infinite alternate; }
         @keyframes pulse-alert { from { background-color:#f30; transform:scale(1); } to { background-color:#c00; transform:scale(1.02); } }
+
+        /* CONFIG WINDOW */
+        #config-overlay { position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:2100; display:none; justify-content:center; align-items:center; }
+        .config-window { width:60vh; max-height:80vh; background-color:#2a1a38; border:2px solid #f2a922; border-radius:8px; display:flex; flex-direction:column; box-shadow:0 0 50px #000; }
+        .config-body { flex:1; overflow-y:auto; padding:15px; }
+        #config-table { width:100%; border-collapse:collapse; color:white; font-family:'Roboto',sans-serif; }
+        #config-table td { padding:10px; border-bottom:1px solid #444; }
+        .cfg-label { font-weight:bold; color:#f2a922; width:50%; }
+        .cfg-input { width:100%; background:#111; border:1px solid #555; color:white; padding:5px; font-family:monospace; }
+        .cfg-input:focus { border-color:#f2a922; outline:none; }
 
         /* GAME OBJECTS */
         .obj { position:absolute; box-shadow: 0 0 0 1px currentColor; }
@@ -147,6 +149,7 @@
             #mode-btn { display: none !important; }
         }
     </style>
+    <style id="dynamic-css"></style>
 </head>
 <body oncontextmenu="return false;" ondragstart="return false;">
     <div id="catch-meter"><div id="catch-fill"></div></div>
@@ -235,6 +238,22 @@
                 </div>
             </div>
 
+            <!-- CONFIG EDITOR OVERLAY -->
+            <div id="config-overlay" style="display:none;">
+                <div class="config-window">
+                    <div class="mod-header">
+                        <span class="mod-title" id="cfg-title">SETTINGS</span>
+                        <button class="mod-btn-small" onclick="ModUI.closeConfig()">X</button>
+                    </div>
+                    <div class="config-body">
+                        <table id="config-table"></table>
+                    </div>
+                    <div class="mod-footer">
+                        <button class="mp-btn" onclick="ModUI.saveConfig()">SAVE & RELOAD</button>
+                    </div>
+                </div>
+            </div>
+
             <div id="start-curtain">
                 <div id="start-trigger" onmousedown="window.Engine.activateCustom()"></div>
             </div>
@@ -249,13 +268,16 @@
 const ModDB={db:null,open:()=>new Promise((r,j)=>{const q=indexedDB.open("TouchYellowMods",2);q.onupgradeneeded=e=>{if(!e.target.result.objectStoreNames.contains('mods'))e.target.result.createObjectStore('mods',{keyPath:'id'});};q.onsuccess=e=>{ModDB.db=e.target.result;r();};q.onerror=e=>j(e);}),save:m=>new Promise((r,j)=>{const t=ModDB.db.transaction(['mods'],'readwrite');t.objectStore('mods').put(m);t.oncomplete=()=>r();t.onerror=()=>j(t.error);}),getAll:()=>new Promise(r=>{if(!ModDB.db)return r([]);const t=ModDB.db.transaction(['mods'],'readonly');const q=t.objectStore('mods').getAll();q.onsuccess=()=>r(q.result);}),delete:id=>{ModDB.db.transaction(['mods'],'readwrite').objectStore('mods').delete(id);}};
 const ModLoader={mods:[],init:async(cb)=>{console.log("[System] Booting ModLoader...");try{await ModDB.open();ModLoader.mods=await ModDB.getAll();
     const list = document.getElementById('active-mods-list');
-    ModLoader.mods.forEach(m=>{if(m.enabled){try{const f=new Function('ModAPI','Engine','Net',m.code);f(window.ModAPI,(window.Engine||{}),(window.Net||{}));console.log(`[Mod] Loaded: ${m.name}`);
-    if(list) list.innerHTML += `<div class="active-mod-item">${m.name} v${m.version}</div>`;
+    ModLoader.mods.forEach(m=>{if(m.enabled){try{
+        const settings={}; if(m.configSchema){for(let k in m.configSchema){const s=m.userConfig?m.userConfig[k]:undefined;settings[k]=(s!==undefined)?s:m.configSchema[k].default;}}
+        const f=new Function('ModAPI','Engine','Net','Settings',m.code);f(window.ModAPI,(window.Engine||{}),(window.Net||{}),settings);console.log(`[Mod] Loaded: ${m.name}`);
+        if(list) list.innerHTML += `<div class="active-mod-item">${m.name} v${m.version}</div>`;
     }catch(e){console.error(e);}}});}catch(e){console.error(e);}if(cb)cb();},install:async(d)=>{if(!d.name||!d.code)return alert("Invalid Mod");d.id=Date.now().toString();d.enabled=true;await ModDB.save(d);ModLoader.mods.push(d);ModUI.render();ModUI.triggerRestart();},delete:async(id)=>{if(confirm("Delete?")){ModLoader.mods=ModLoader.mods.filter(m=>m.id!==id);await ModDB.delete(id);ModUI.render();ModUI.triggerRestart();}},toggle:async(id)=>{const m=ModLoader.mods.find(x=>x.id===id);if(m){m.enabled=!m.enabled;await ModDB.save(m);ModUI.render();ModUI.triggerRestart();}}};
 window.ModAPI={hook:(t,f)=>{const p=t.split('.');const o=window[p[0]];if(o&&o[p[1]]){const org=o[p[1]].bind(o);o[p[1]]=(...a)=>f(org,...a);}}};
 
 // --- MOD UI ---
 const ModUI={
+    currentModId:null,
     open:()=>{document.getElementById('mod-screen').style.display='flex';ModUI.render();setTimeout(ModUI.initDrag,100);},
     close:()=>document.getElementById('mod-screen').style.display='none',
     render:()=>{
@@ -264,11 +286,37 @@ const ModUI={
         if(!ModLoader.mods.length){l.innerHTML='<div style="text-align:center;color:#888;margin-top:50px">No Mods Installed.<br>Drag & Drop .addon file here.</div>';return;}
         ModLoader.mods.forEach(m=>{
             if(!m.name.toLowerCase().includes(f))return;
+            const hasCfg = m.configSchema && Object.keys(m.configSchema).length>0;
+            const gear = hasCfg ? `<button class="mod-btn-gear" onclick="ModUI.openConfig('${m.id}')">⚙️</button>` : '';
             const d=document.createElement('div'); d.className='mod-item';
-            d.innerHTML=`<div class="mod-info"><h3>${m.name} <span class="version">v${m.version}</span></h3><span class="author">by ${m.author}</span></div><div class="mod-actions"><button class="mod-btn-small" onclick="ModLoader.delete('${m.id}')">DEL</button><div class="mod-toggle ${m.enabled?'enabled':''}" onclick="ModLoader.toggle('${m.id}')"></div></div>`;
+            d.innerHTML=`<div class="mod-info"><h3>${m.name} <span class="version">v${m.version}</span></h3><span class="author">by ${m.author}</span></div><div class="mod-actions">${gear}<button class="mod-btn-small" onclick="ModLoader.delete('${m.id}')">DEL</button><div class="mod-toggle ${m.enabled?'enabled':''}" onclick="ModLoader.toggle('${m.id}')"></div></div>`;
             l.appendChild(d);
         });
     },
+    openConfig:(id)=>{
+        ModUI.currentModId=id; const m=ModLoader.mods.find(x=>x.id===id); if(!m||!m.configSchema)return;
+        document.getElementById('cfg-title').innerText=m.name+" Settings"; const t=document.getElementById('config-table'); t.innerHTML="";
+        for(let k in m.configSchema){
+            const def=m.configSchema[k]; const val=(m.userConfig&&m.userConfig[k]!==undefined)?m.userConfig[k]:def.default;
+            const tr=document.createElement('tr'); const tdL=document.createElement('td'); tdL.className="cfg-label"; tdL.innerText=def.name||k;
+            const tdI=document.createElement('td'); let inp;
+            if(def.type==='boolean'){inp=document.createElement('input'); inp.type='checkbox'; inp.checked=val; inp.id=`cfg-${k}`;}
+            else if(def.type==='key'){inp=document.createElement('input'); inp.type='text'; inp.className='cfg-input'; inp.value=val; inp.readOnly=true; inp.id=`cfg-${k}`; inp.style.cursor="pointer"; inp.style.textAlign="center"; inp.onkeydown=e=>{e.preventDefault();inp.value=e.key.toUpperCase();inp.blur();};}
+            else{inp=document.createElement('input'); inp.type=def.type||'text'; inp.className='cfg-input'; inp.value=val; inp.id=`cfg-${k}`;}
+            tdI.appendChild(inp); tr.append(tdL,tdI); t.appendChild(tr);
+        }
+        document.getElementById('config-overlay').style.display='flex';
+    },
+    saveConfig:async()=>{
+        const id=ModUI.currentModId; const m=ModLoader.mods.find(x=>x.id===id); if(!m)return;
+        if(!m.userConfig)m.userConfig={};
+        for(let k in m.configSchema){
+            const el=document.getElementById(`cfg-${k}`); const def=m.configSchema[k];
+            if(def.type==='boolean') m.userConfig[k]=el.checked; else if(def.type==='number') m.userConfig[k]=parseFloat(el.value); else m.userConfig[k]=el.value;
+        }
+        await ModDB.save(m); location.reload();
+    },
+    closeConfig:()=>{document.getElementById('config-overlay').style.display='none';},
     triggerRestart:()=>{document.getElementById('mod-restart-btn').style.display='block';},
     importFile:()=>{
         const i=document.createElement('input'); i.type='file'; i.accept='.addon,.json';
@@ -292,13 +340,16 @@ let GlobalLevels = {};
 
 window.Engine = {
     active: false, state: 'menu', mx:0, my:0, mobile:false, holding:false, holdMode:false, hitboxes:[], noclip: false, goalTimer:0, linkPlay: false, cursorX:0, cursorY:0,
-    els: { gfx:document.getElementById('gfx'), phy:document.getElementById('phy'), menu:document.getElementById('menu'), hud:document.getElementById('catch-meter'), fill:document.getElementById('catch-fill'), css:document.getElementById('dynamic-css'), curtain:document.getElementById('start-curtain'), trig:document.getElementById('start-trigger') },
+    els: {},
 
     async init() {
+        this.els = { gfx:document.getElementById('gfx'), phy:document.getElementById('phy'), menu:document.getElementById('menu'), hud:document.getElementById('catch-meter'), fill:document.getElementById('catch-fill'), css:document.getElementById('dynamic-css'), curtain:document.getElementById('start-curtain'), trig:document.getElementById('start-trigger') };
+
         try {
             const response = await fetch('levels.json');
+            if(!response.ok) throw new Error("File not found");
             GlobalLevels = await response.json();
-        } catch (e) { console.error("Levels missing"); }
+        } catch (e) { console.error("Levels missing (Local/CORS)"); }
 
         const urlParams = new URLSearchParams(window.location.search);
         if(urlParams.has('data')) {
