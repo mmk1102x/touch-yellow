@@ -43,6 +43,10 @@
         #cheat-ind { position:absolute; top:10px; left:10px; color:yellow; font-weight:bold; display:none; z-index:999; font-family:monospace; font-size:2vh; text-shadow:1px 1px 0 #000; }
         #debug-ind { position:absolute; top:35px; left:10px; color:lime; font-weight:bold; display:none; z-index:999; font-family:monospace; font-size:2vh; text-shadow:1px 1px 0 #000; }
         
+        #start-curtain { display:none; position:absolute; top:0; left:0; width:100%; height:100%; background-color:#26a9e1; z-index:9000; cursor:default; pointer-events:auto; }
+        #start-trigger { position:absolute; width:10%; height:10%; background:#f1a92a; border-radius:50%; border:2px solid white; box-shadow:0 0 20px white; cursor:pointer; transform:translate(-50%,-50%); animation:pulse 1s infinite alternate; pointer-events:auto; }
+        @keyframes pulse { from { transform:translate(-50%,-50%) scale(1); } to { transform:translate(-50%,-50%) scale(1.1); } }
+
         @keyframes spawnIn { 0% { transform: scale(0); } 100% { transform: scale(1); } }
         @keyframes openDoor { 100% { transform:translateY(-150%); } }
 
@@ -53,7 +57,6 @@
             .btn-text { font-size: 5vw !important; }
         }
     </style>
-    <!-- ADDED: Dynamic CSS Target -->
     <style id="dynamic-css"></style>
 </head>
 <body>
@@ -81,6 +84,11 @@
                     <div class="btn-text">&lt;-Exit</div>
                 </div>
             </div>
+
+            <div id="start-curtain">
+                <div id="start-trigger" onmousedown="Engine.activateCustom()"></div>
+            </div>
+            
             <div id="cheat-ind">NOCLIP ON</div>
             <div id="debug-ind">HITBOXES ON</div>
         </div>
@@ -94,32 +102,20 @@ if (localStorage.getItem('touchYellow_save1') !== 'true') {
     throw new Error("Redirecting...");
 }
 
-// --- MOD LOADER (Async) ---
+// --- MOD LOADER ---
 (async function() {
-    window.ModAPI = {
-        hook: (t, f) => {
-            const p=t.split('.'); const o=window[p[0]];
-            if(o&&o[p[1]]) { const org=o[p[1]].bind(o); o[p[1]]=(...a)=>f(org,...a); }
-        }
-    };
+    window.ModAPI = { hook: (t, f) => { const p=t.split('.'); const o=window[p[0]]; if(o&&o[p[1]]) { const org=o[p[1]].bind(o); o[p[1]]=(...a)=>f(org,...a); } } };
     const req = indexedDB.open("TouchYellowMods", 2);
-    req.onupgradeneeded = (e) => {
-        const db = e.target.result;
-        if (!db.objectStoreNames.contains('mods')) {
-            db.createObjectStore('mods', { keyPath: 'id' });
-        }
-    };
     req.onsuccess = (e) => {
-        const db = e.target.result;
-        if(!db.objectStoreNames.contains('mods')) return;
-        const tx = db.transaction(['mods'], 'readonly');
-        const get = tx.objectStore('mods').getAll();
+        const db = e.target.result; if(!db.objectStoreNames.contains('mods')) return;
+        const tx = db.transaction(['mods'], 'readonly'); const get = tx.objectStore('mods').getAll();
         get.onsuccess = () => {
             get.result.forEach(mod => {
                 if(mod.enabled) {
                     try {
-                        const f = new Function('ModAPI', 'Engine', 'Net', mod.code);
-                        f(window.ModAPI, (window.Engine||{}), (window.Net||{}));
+                        const settings={}; if(mod.configSchema){for(let k in mod.configSchema){const s=mod.userConfig?mod.userConfig[k]:undefined;settings[k]=(s!==undefined)?s:mod.configSchema[k].default;}}
+                        const f = new Function('ModAPI', 'Engine', 'Net', 'Settings', mod.code);
+                        f(window.ModAPI, (window.Engine||{}), (window.Net||{}), settings);
                         console.log(`[Mod] Loaded: ${mod.name}`);
                     } catch(err) { console.error(err); }
                 }
@@ -132,8 +128,7 @@ let GlobalLevels = {};
 
 window.Engine = {
     active: false, state: 'menu', mx:0, my:0, mobile:false, holding:false, hitboxes:[], noclip: false, cursorX:0, cursorY:0,
-    // FIXED: Initialize elements here
-    els: { gfx:document.getElementById('gfx'), phy:document.getElementById('phy'), ui:document.getElementById('ui'), css:document.getElementById('dynamic-css') },
+    els: { gfx:document.getElementById('gfx'), phy:document.getElementById('phy'), ui:document.getElementById('ui'), css:document.getElementById('dynamic-css'), curtain:document.getElementById('start-curtain'), trig:document.getElementById('start-trigger') },
 
     async init() {
         try {
@@ -171,7 +166,7 @@ window.Engine = {
         if (!document.fullscreenElement) { document.documentElement.requestFullscreen().catch(e=>{}); }
         this.active = true; 
         
-        // Ghost Mode (Waiting for player to touch Start)
+        // World 2 always uses Blue Curtain
         this.state = 'waiting'; 
         
         document.getElementById('menu-screen').style.display='none';
@@ -179,16 +174,18 @@ window.Engine = {
         
         document.getElementById('db-room').innerText = "ROOM: LEVEL " + id;
         
-        if (GlobalLevels[id]) {
-            if (GlobalLevels[id].world !== 2) { alert("Wrong World"); location.href='../index.html'; return; }
-            this.buildLevel(GlobalLevels[id].objects);
+        if (GlobalLevels.levels[id]) {
+            if (GlobalLevels.levels[id].world !== 2) { alert("Wrong World"); location.href='../index.html'; return; }
+            this.buildLevel(GlobalLevels.levels[id].objects);
         } else { 
             alert("World 2 Complete!"); location.href='../index.html'; 
         }
     },
 
     buildLevel(objects) {
+        if(!this.els.css) this.els.css = document.getElementById('dynamic-css');
         this.els.css.innerHTML = "";
+        
         objects.forEach(o => {
             let animName = o.anim;
             if (o.kfs && o.kfs.length > 0) {
@@ -215,8 +212,19 @@ window.Engine = {
                 obj.hit.style.transform = `rotate(${o.r}deg)`;
             }
         });
+        
+        // Show Blue Curtain
+        const startObj = this.hitboxes.find(o => o.type === 'start');
+        if(startObj) {
+            this.els.curtain.style.display = 'block';
+            const s = startObj.hit.style;
+            const sx=parseFloat(s.left), sy=parseFloat(s.top), sw=parseFloat(s.width), sh=parseFloat(s.height);
+            Object.assign(this.els.trig.style, { left: (sx + sw/2) + '%', top: (sy + sh/2) + '%', width: sw + '%', height: sh + '%' });
+        }
     },
 
+    activateCustom() { this.els.curtain.style.display = 'none'; this.state = 'playing'; },
+    
     spawn(x,y,w,h,type,anim,next,holdTime) {
         const s = {left:x+'%', top:y+'%', width:w+'%', height:h+'%'};
         const v = document.createElement('div'); v.className=`obj ${type}`; Object.assign(v.style, s);
@@ -250,7 +258,6 @@ window.Engine = {
                 
                 if(hb.type === 'path') safe = true;
                 
-                // Ghost Mode Logic
                 if(hb.type === 'start') { 
                     safe = true; 
                     if(this.state === 'waiting') { 
@@ -274,15 +281,13 @@ window.Engine = {
     },
     die() { if(this.noclip) return; this.active = false; this.start(6); },
     reset() { this.active=false; this.hitboxes=[]; this.els.gfx.innerHTML=''; this.els.phy.innerHTML=''; document.getElementById('game').style.cursor='default'; },
-    toMenu() { this.reset(); document.getElementById('menu-screen').style.display='flex'; document.getElementById('db-room').innerText="ROOM: MENU"; },
-    
-    openSavesMenu() { document.getElementById('saves-screen').style.display='block'; document.getElementById('menu').style.display='none'; this.checkSave(1); this.checkSave(2); },
-    closeSaves() { document.getElementById('saves-screen').style.display='none'; document.getElementById('menu').style.display='block'; },
-    checkSave(n) { const has = localStorage.getItem(`touchYellow_save${n}`) === 'true'; document.getElementById(`circle-${n}`).className = `slot-btn slot-${has?'unlocked':'locked'}`; },
-    loadSave(n) { if(localStorage.getItem(`touchYellow_save${n}`) === 'true') location.href=`save/save${n}.html`; else alert("Locked!"); }
+    toMenu() { this.reset(); document.getElementById('menu-screen').style.display='flex'; document.getElementById('db-room').innerText="ROOM: MENU"; }
 };
 
-window.Engine.init();
+ModLoader.init(() => {
+    console.log("[System] Starting World 2 Engine...");
+    window.Engine.init();
+});
 
 // --- COMMANDS ---
 Object.defineProperties(window, {
@@ -290,7 +295,7 @@ Object.defineProperties(window, {
     'noclip': { get: function() { window.Engine.noclip=!window.Engine.noclip; document.getElementById('cheat-ind').style.display=window.Engine.noclip?'block':'none'; localStorage.setItem('touchYellow_noclip', window.Engine.noclip); return `God Mode: ${window.Engine.noclip?"ON":"OFF"}`; } },
     'clear': { get: function() { localStorage.clear(); alert("Wiped"); window.location.href='../index.html'; return "Resetting..."; } }
 });
-window.s1='save1'; window.s2='save2'; window.menu='menu';
+window.s1='save1'; window.menu='menu';
 window.load = function(t) {
     if(typeof t==='number') { window.Engine.start(t); return `Level ${t}`; }
     const s=String(t).toLowerCase();
